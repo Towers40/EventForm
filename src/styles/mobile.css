@@ -1,0 +1,92 @@
+/* EventForm — diseño mobile-first */
+.app-shell {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.app-nav {
+  padding: 12px 16px !important;
+  min-height: 56px !important;
+}
+
+.app-nav-actions {
+  width: 100%;
+  justify-content: flex-end;
+}
+
+.app-nav-actions button {
+  min-height: 44px;
+  font-size: 12px !important;
+}
+
+.app-main {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 20px 16px 32px !important;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.app-brand {
+  font-size: 18px !important;
+}
+
+@media (max-width: 480px) {
+  .app-main {
+    padding: 16px 12px 28px !important;
+  }
+
+  .app-nav-actions {
+    gap: 6px !important;
+  }
+
+  .app-nav-actions button {
+    padding: 10px 10px !important;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .date-row {
+    flex-direction: column !important;
+  }
+
+  .date-row select {
+    width: 100% !important;
+  }
+
+  .field-grid-2 {
+    grid-template-columns: 1fr !important;
+  }
+
+  .admin-actions {
+    flex-direction: column !important;
+  }
+
+  .admin-actions button {
+    width: 100% !important;
+  }
+
+  .nav-links-row {
+    flex-direction: column !important;
+  }
+
+  .nav-links-row a,
+  .nav-links-row button {
+    width: 100% !important;
+  }
+}
+
+.touch-target {
+  min-height: 44px;
+}
+
+.sold-out-badge {
+  background: #991b1b;
+  color: #fff;
+  font-weight: 800;
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 100px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}

@@ -1,0 +1,244 @@
+/* Estilo inspirado en Typeform — formulario público */
+.tf-screen {
+  min-height: 100dvh;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+}
+
+.tf-progress {
+  height: 4px;
+  background: #e8edf2;
+  width: 100%;
+}
+
+.tf-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #0d3b66, #1a5f8a);
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tf-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 32px 24px 120px;
+  max-width: 720px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.tf-step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: #0d3b66;
+  color: #fff;
+  font-weight: 800;
+  font-size: 14px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+.tf-question {
+  font-size: clamp(22px, 5vw, 28px);
+  font-weight: 400;
+  line-height: 1.35;
+  color: #0d1b2a;
+  margin: 0 0 12px;
+}
+
+.tf-question strong {
+  font-weight: 600;
+}
+
+.tf-hint {
+  font-size: 15px;
+  color: #5c6b7a;
+  margin: 0 0 28px;
+  line-height: 1.5;
+}
+
+.tf-input-line {
+  width: 100%;
+  border: none;
+  border-bottom: 2px solid #b8c5d4;
+  padding: 12px 0;
+  font-size: 20px;
+  font-weight: 300;
+  color: #0d3b66;
+  background: transparent;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.tf-input-line:focus {
+  border-bottom-color: #0d3b66;
+}
+
+.tf-input-line::placeholder {
+  color: #a8b8c8;
+}
+
+.tf-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 16px 20px 24px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(transparent, #fff 24%);
+  max-width: 720px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.tf-btn-back {
+  width: 48px;
+  height: 48px;
+  border: none;
+  border-radius: 6px;
+  background: #0d3b66;
+  color: #fff;
+  font-size: 20px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.tf-btn-ok {
+  flex: 1;
+  max-width: 200px;
+  height: 48px;
+  border: none;
+  border-radius: 6px;
+  background: #0d3b66;
+  color: #fff;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+}
+
+.tf-btn-ok:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.tf-choice {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 14px 18px;
+  margin-bottom: 8px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 16px;
+  font-weight: 500;
+  color: #0d1b2a;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.tf-choice:hover,
+.tf-choice.selected {
+  border-color: #0d3b66;
+  background: #f0f6fc;
+}
+
+.tf-header-img {
+  width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  border-radius: 0;
+}
+
+.tf-consent {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #4a5568;
+}
+
+.tf-consent a {
+  color: #0d3b66;
+  font-weight: 700;
+}
+
+.tf-fade {
+  animation: tfFadeIn 0.35s ease-out;
+}
+
+@keyframes tfFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes tfFadeOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+.tf-fade-out {
+  animation: tfFadeOut 0.2s ease-in both;
+  pointer-events: none;
+}
+
+/* Panel admin — más suave que el estilo plano anterior */
+.panel-card {
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  box-shadow: 0 4px 24px rgba(13, 59, 102, 0.06);
+  overflow: hidden;
+}
+
+.panel-card-header {
+  padding: 20px 24px;
+  background: linear-gradient(135deg, #e6f4ea 0%, #f0f9f4 100%);
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.soft-btn {
+  border-radius: 10px;
+  padding: 12px 20px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  border: none;
+  transition: transform 0.1s, box-shadow 0.15s;
+}
+
+.soft-btn:active {
+  transform: scale(0.98);
+}
+
+.soft-btn-primary {
+  background: linear-gradient(135deg, #0d3b66, #1a5f8a);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(13, 59, 102, 0.25);
+}
+
+.soft-btn-secondary {
+  background: #fff;
+  color: #0d3b66;
+  border: 2px solid #0d3b66;
+}
