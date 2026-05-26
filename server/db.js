@@ -9,23 +9,23 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const TURSO_URL = process.env.TURSO_URL;
 const isVercel = Boolean(process.env.VERCEL);
 
-let dbPath;
-if (!TURSO_URL) {
-  // Local o Vercel sin Turso → usar /tmp en Vercel, ./data localmente
-  dbPath = isVercel
-    ? "file:/tmp/eventform.db"
-    : `file:${path.join(process.env.DATA_DIR || path.join(__dirname, "data"), "eventform.db")}`;
-  if (!isVercel) {
-    const dataDir = process.env.DATA_DIR || path.join(__dirname, "data");
-    if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
-  }
+// En Vercel sin TURSO_URL: lanzar error claro en lugar de crashear
+if (isVercel && !TURSO_URL) {
+  console.error("TURSO_URL no configurada. Ve a Vercel → Settings → Environment Variables.");
 }
 
-export const db = createClient(
-  TURSO_URL
-    ? { url: TURSO_URL, authToken: process.env.TURSO_TOKEN }
-    : { url: dbPath }
-);
+let dbConfig;
+if (TURSO_URL) {
+  dbConfig = { url: TURSO_URL, authToken: process.env.TURSO_TOKEN };
+} else {
+  // Solo para desarrollo local
+  const dataDir = process.env.DATA_DIR || path.join(__dirname, "data");
+  if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+  dbConfig = { url: `file:${path.join(dataDir, "eventform.db")}` };
+}
+
+export const db = createClient(dbConfig);
+export const dbReady = Boolean(TURSO_URL || !isVercel);
 
 export async function initDb() {
   // Tablas principales

@@ -2,7 +2,7 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import { nanoid } from "nanoid";
-import { db, initDb, parseEvent, slugify } from "./db.js";
+import { db, dbReady, initDb, parseEvent, slugify } from "./db.js";
 import {
   authMiddleware,
   hashPassword,
@@ -348,18 +348,25 @@ app.post("/api/events/:id/check-in", authMiddleware, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.get("/api/health", (_, res) => res.json({ ok: true }));
+app.get("/api/health", (_, res) => {
+  if (!dbReady) return res.status(503).json({ ok: false, error: "Agrega TURSO_URL en Vercel → Settings → Environment Variables" });
+  res.json({ ok: true });
+});
 
 // Inicializar DB y arrancar
-initDb()
-  .then(() => {
-    if (!process.env.VERCEL) {
-      app.listen(PORT, () => console.log(`EventForm API http://localhost:${PORT}`));
-    }
-  })
-  .catch((e) => {
-    console.error("DB init failed:", e);
-    process.exit(1);
-  });
+if (dbReady) {
+  initDb()
+    .then(() => {
+      if (!process.env.VERCEL) {
+        app.listen(PORT, () => console.log(`EventForm API http://localhost:${PORT}`));
+      }
+    })
+    .catch((e) => {
+      console.error("DB init failed:", e);
+      if (!process.env.VERCEL) process.exit(1);
+    });
+} else if (!process.env.VERCEL) {
+  app.listen(PORT, () => console.log(`EventForm API http://localhost:${PORT}`));
+}
 
 export default app;
