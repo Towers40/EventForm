@@ -275,7 +275,7 @@ function PasswordStrength({ password }) {
 // ─── ONBOARDING FLOW PRINCIPAL ────────────────────────────────────────────────
 // phase: 0=bienvenida, 1–4=wizard, 5=crear cuenta, 6=verificar correo
 export default function OnboardingFlow({ onDraftReady }) {
-  const { register } = useAuth();
+  const { register, loginWithToken } = useAuth();
   const nav = useNavigate();
 
   const [phase, setPhase] = useState(0);
@@ -310,7 +310,11 @@ export default function OnboardingFlow({ onDraftReady }) {
   const [acErr, setAcErr] = useState("");
   const [busy, setBusy] = useState(false);
   const [pendingEmail, setPendingEmail] = useState("");
-  const [resendStatus, setResendStatus] = useState("idle"); // idle | sending | sent | error
+  const [digits, setDigits] = useState(["", "", "", ""]);
+  const [codeErr, setCodeErr] = useState("");
+  const [codeBusy, setCodeBusy] = useState(false);
+  const [resendStatus, setResendStatus] = useState("idle");
+  const digitRefs = [useRef(), useRef(), useRef(), useRef()];
 
   const maxDay = daysInMonth(dMonth, dYear);
   useEffect(() => {
@@ -384,11 +388,42 @@ export default function OnboardingFlow({ onDraftReady }) {
     }
   };
 
+  const handleDigitChange = (i, val) => {
+    const v = val.replace(/\D/g, "").slice(-1);
+    const next = [...digits];
+    next[i] = v;
+    setDigits(next);
+    setCodeErr("");
+    if (v && i < 3) digitRefs[i + 1].current?.focus();
+    if (next.every((d) => d !== "")) handleVerifyCode(next.join(""));
+  };
+
+  const handleDigitKey = (i, e) => {
+    if (e.key === "Backspace" && !digits[i] && i > 0) digitRefs[i - 1].current?.focus();
+  };
+
+  const handleVerifyCode = async (code) => {
+    setCodeErr(""); setCodeBusy(true);
+    try {
+      const { token: jwt, user } = await api.verifyCode(pendingEmail, code);
+      loginWithToken(jwt, user);
+      // Draft already in localStorage, HostApp lo cargará
+    } catch (ex) {
+      setCodeErr(ex.message || "Código incorrecto. Intenta de nuevo.");
+      setDigits(["", "", "", ""]);
+      setTimeout(() => digitRefs[0].current?.focus(), 50);
+    } finally {
+      setCodeBusy(false);
+    }
+  };
+
   const handleResend = async () => {
     setResendStatus("sending");
     try {
-      await api.resendVerification(pendingEmail);
+      await api.resendCode(pendingEmail);
       setResendStatus("sent");
+      setDigits(["", "", "", ""]);
+      setTimeout(() => digitRefs[0].current?.focus(), 50);
     } catch {
       setResendStatus("error");
     }
@@ -633,47 +668,75 @@ export default function OnboardingFlow({ onDraftReady }) {
           </form>
         )}
 
-        {/* ── PASO 6: Verificar correo ── */}
+        {/* ── PASO 6: Código de 4 dígitos ── */}
         {phase === 6 && (
           <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 56, marginBottom: 24 }}>📬</div>
-            <h2 className="tf-question">
-              Revisa tu correo
-            </h2>
-            <p className="tf-hint" style={{ maxWidth: 400, margin: "0 auto 12px" }}>
-              Enviamos un enlace de confirmación a
+            <div style={{ fontSize: 48, marginBottom: 20 }}>📩</div>
+            <h2 className="tf-question">Ingresa tu código</h2>
+            <p className="tf-hint" style={{ maxWidth: 380, margin: "0 auto 8px" }}>
+              Enviamos un código de 4 dígitos a
             </p>
-            <p style={{ fontWeight: 800, fontSize: 16, color: "#0d3b66", marginBottom: 32 }}>
+            <p style={{ fontWeight: 800, fontSize: 15, color: "#0d3b66", marginBottom: 32 }}>
               {pendingEmail}
             </p>
-            <p className="tf-hint" style={{ maxWidth: 420, margin: "0 auto 36px", fontSize: 14 }}>
-              Haz clic en el enlace del correo para confirmar tu cuenta y continuar
-              con la configuración de tu evento.
-            </p>
 
-            <div style={{ marginTop: 8 }}>
-              {resendStatus === "idle" && (
-                <button type="button" onClick={handleResend}
-                  style={{ background: "none", border: "none", color: "#0d3b66", fontWeight: 700, cursor: "pointer", fontSize: 14, textDecoration: "underline", textUnderlineOffset: 3 }}>
-                  ¿No lo recibiste? Reenviar correo
-                </button>
-              )}
-              {resendStatus === "sending" && (
-                <p style={{ fontSize: 14, color: "#8fa3b1" }}>Enviando…</p>
-              )}
-              {resendStatus === "sent" && (
-                <p style={{ fontSize: 14, color: "#16a34a", fontWeight: 700 }}>✓ Correo reenviado</p>
-              )}
-              {resendStatus === "error" && (
-                <p style={{ fontSize: 14, color: "#991b1b", fontWeight: 700 }}>
-                  Error al reenviar. Intenta más tarde.
-                </p>
-              )}
+            {/* 4 cajas de dígito */}
+            <div style={{ display: "flex", gap: 12, justifyContent: "center", marginBottom: 20 }}>
+              {digits.map((d, i) => (
+                <input
+                  key={i}
+                  ref={digitRefs[i]}
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={1}
+                  value={d}
+                  autoFocus={i === 0}
+                  onChange={(e) => handleDigitChange(i, e.target.value)}
+                  onKeyDown={(e) => handleDigitKey(i, e)}
+                  style={{
+                    width: 56, height: 64, textAlign: "center",
+                    fontSize: 28, fontWeight: 800, color: "#0d3b66",
+                    border: "2px solid #b8c5d4", borderRadius: 10,
+                    outline: "none", background: "#f8fafc",
+                    transition: "border-color 0.15s",
+                    borderColor: d ? "#0d3b66" : "#b8c5d4",
+                  }}
+                />
+              ))}
             </div>
 
+            {codeBusy && <p style={{ color: "#8fa3b1", fontSize: 14 }}>Verificando…</p>}
+            {codeErr && (
+              <p style={{ color: "#991b1b", fontWeight: 700, fontSize: 14, marginBottom: 12 }}>
+                {codeErr}
+              </p>
+            )}
+
+            <button
+              type="button"
+              className="soft-btn soft-btn-primary"
+              style={{ width: "100%", maxWidth: 280, margin: "8px auto 0", display: "block", fontSize: 15 }}
+              disabled={codeBusy || digits.some((d) => !d)}
+              onClick={() => handleVerifyCode(digits.join(""))}
+            >
+              Verificar código →
+            </button>
+
             <div style={{ marginTop: 28 }}>
+              {resendStatus === "idle" && (
+                <button type="button" onClick={handleResend}
+                  style={{ background: "none", border: "none", color: "#0d3b66", fontWeight: 700, cursor: "pointer", fontSize: 13, textDecoration: "underline", textUnderlineOffset: 3 }}>
+                  ¿No llegó? Reenviar código
+                </button>
+              )}
+              {resendStatus === "sending" && <p style={{ fontSize: 13, color: "#8fa3b1" }}>Enviando…</p>}
+              {resendStatus === "sent" && <p style={{ fontSize: 13, color: "#16a34a", fontWeight: 700 }}>✓ Código reenviado — revisa tu correo</p>}
+              {resendStatus === "error" && <p style={{ fontSize: 13, color: "#991b1b", fontWeight: 700 }}>Error al reenviar. Intenta más tarde.</p>}
+            </div>
+
+            <div style={{ marginTop: 20 }}>
               <button type="button" onClick={() => nav("/login")}
-                style={{ background: "none", border: "none", color: "#8fa3b1", fontWeight: 600, cursor: "pointer", fontSize: 13 }}>
+                style={{ background: "none", border: "none", color: "#8fa3b1", cursor: "pointer", fontSize: 12 }}>
                 Ir al inicio de sesión
               </button>
             </div>

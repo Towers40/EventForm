@@ -1,8 +1,8 @@
-import { VERDE_PASTEL_BG, NEGRO_PURO, NEGRO_MUTED_70 } from "../lib/theme.js";
+import "../styles/typeform.css";
 
-export default function ShareEventModal({ event, publicUrl, onClose }) {
-  const url = publicUrl || `${window.location.origin}/e/${event.slug}`;
-  const text = encodeURIComponent(`Inscríbete a ${event.title}`);
+export default function ShareEventModal({ event, onClose }) {
+  const url = `${window.location.origin}/e/${event.slug || event.id}`;
+  const text = encodeURIComponent(`¡Inscríbete a ${event.title}!`);
   const links = {
     whatsapp: `https://wa.me/?text=${text}%20${encodeURIComponent(url)}`,
     facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
@@ -10,75 +10,66 @@ export default function ShareEventModal({ event, publicUrl, onClose }) {
     linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
   };
 
+  const [copied, setCopied] = useState(false);
+
   const copy = async () => {
     await navigator.clipboard.writeText(url);
-    alert("Enlace copiado. Pégalo en Instagram, TikTok o donde quieras.");
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
     <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.5)",
-        zIndex: 100,
-        display: "flex",
-        alignItems: "flex-end",
-        justifyContent: "center",
-        padding: 16,
-      }}
+      style={{ position: "fixed", inset: 0, background: "rgba(13,27,42,0.55)", zIndex: 100, display: "flex", alignItems: "flex-end", justifyContent: "center", padding: "0 16px 16px" }}
       onClick={onClose}
     >
-      <div
-        className="panel-card"
-        style={{ maxWidth: 480, width: "100%", marginBottom: 0 }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="panel-card-header">
-          <h3 style={{ margin: 0, fontSize: 18, fontWeight: 900 }}>Compartir formulario</h3>
-          <p style={{ margin: "8px 0 0", fontSize: 13, color: NEGRO_MUTED_70 }}>
-            Enlace público de inscripción
-          </p>
+      <div className="panel-card" style={{ maxWidth: 480, width: "100%" }} onClick={(e) => e.stopPropagation()}>
+        <div className="panel-card-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div>
+            <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#0d1b2a" }}>Compartir formulario</h3>
+            <p style={{ margin: "4px 0 0", fontSize: 13, color: "#8fa3b1" }}>{event.title}</p>
+          </div>
+          <button type="button" onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 20, color: "#8fa3b1", padding: 0, lineHeight: 1 }}>×</button>
         </div>
+
         <div style={{ padding: 20 }}>
-          <input
-            readOnly
-            value={url}
-            style={{
-              width: "100%",
-              padding: 12,
-              border: `2px solid ${NEGRO_PURO}`,
-              borderRadius: 8,
-              fontSize: 13,
-              marginBottom: 16,
-              boxSizing: "border-box",
-            }}
-            onFocus={(e) => e.target.select()}
-          />
-          <button
-            type="button"
-            className="soft-btn soft-btn-primary"
-            style={{ width: "100%", marginBottom: 12 }}
-            onClick={copy}
-          >
-            Copiar enlace
-          </button>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            <a href={links.whatsapp} target="_blank" rel="noopener noreferrer" className="soft-btn soft-btn-secondary" style={{ textAlign: "center", textDecoration: "none" }}>
+          {/* URL display */}
+          <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+            <input
+              readOnly
+              value={url}
+              style={{ flex: 1, padding: "10px 12px", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 13, color: "#0d3b66", background: "#f8fafc", outline: "none" }}
+              onFocus={(e) => e.target.select()}
+            />
+            <button type="button" className="soft-btn soft-btn-primary" style={{ flexShrink: 0, padding: "10px 16px" }} onClick={copy}>
+              {copied ? "✓ Copiado" : "Copiar"}
+            </button>
+          </div>
+
+          {/* Social buttons */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
+            <a href={links.whatsapp} target="_blank" rel="noopener noreferrer" className="soft-btn soft-btn-secondary" style={{ textAlign: "center", textDecoration: "none", display: "block" }}>
               WhatsApp
             </a>
-            <a href={links.facebook} target="_blank" rel="noopener noreferrer" className="soft-btn soft-btn-secondary" style={{ textAlign: "center", textDecoration: "none" }}>
+            <a href={links.facebook} target="_blank" rel="noopener noreferrer" className="soft-btn soft-btn-secondary" style={{ textAlign: "center", textDecoration: "none", display: "block" }}>
               Facebook
             </a>
+            <a href={links.twitter} target="_blank" rel="noopener noreferrer" className="soft-btn soft-btn-secondary" style={{ textAlign: "center", textDecoration: "none", display: "block" }}>
+              X (Twitter)
+            </a>
+            <a href={links.linkedin} target="_blank" rel="noopener noreferrer" className="soft-btn soft-btn-secondary" style={{ textAlign: "center", textDecoration: "none", display: "block" }}>
+              LinkedIn
+            </a>
           </div>
-          <p style={{ fontSize: 11, color: NEGRO_MUTED_70, marginTop: 12, background: VERDE_PASTEL_BG, padding: 10, borderRadius: 8 }}>
-            En Instagram o TikTok: copia el enlace y pégalo en tu bio, stories o mensaje directo.
+
+          <p style={{ fontSize: 12, color: "#8fa3b1", textAlign: "center", margin: 0 }}>
+            En Instagram: copia el enlace y pégalo en tu bio o stories.
           </p>
-          <button type="button" onClick={onClose} style={{ marginTop: 12, background: "none", border: "none", fontWeight: 700, cursor: "pointer", width: "100%" }}>
-            Cerrar
-          </button>
         </div>
       </div>
     </div>
   );
 }
+
+// useState needed
+import { useState } from "react";

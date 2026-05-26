@@ -64,9 +64,13 @@ export function parseEvent(row) {
   return ev;
 }
 
-// Migración para bases de datos existentes (idempotente)
+// Migración idempotente
 try { db.exec("ALTER TABLE users ADD COLUMN email_verified INTEGER NOT NULL DEFAULT 0"); } catch {}
 try { db.exec("ALTER TABLE users ADD COLUMN verify_token TEXT"); } catch {}
+try { db.exec("ALTER TABLE users ADD COLUMN verify_code TEXT"); } catch {}
+try { db.exec("ALTER TABLE users ADD COLUMN verify_code_expires INTEGER"); } catch {}
+try { db.exec("ALTER TABLE users ADD COLUMN reset_code TEXT"); } catch {}
+try { db.exec("ALTER TABLE users ADD COLUMN reset_code_expires INTEGER"); } catch {}
 
 export function slugify(text) {
   return String(text || "evento")

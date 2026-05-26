@@ -2,15 +2,17 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import FieldInput, { FieldError } from "./components/FieldInput.jsx";
 import QrScanner from "./components/QrScanner.jsx";
 import EventHeader from "./components/EventHeader.jsx";
-import ColombiaAddressPicker, { isLocationReady } from "./components/ColombiaAddressPicker.jsx";
+import ColombiaAddressPicker from "./components/ColombiaAddressPicker.jsx";
 import HeaderImageUpload from "./components/HeaderImageUpload.jsx";
 import LocationMap from "./components/LocationMap.jsx";
 import NavigateButtons from "./components/NavigateButtons.jsx";
-import AdminPanel from "./components/AdminPanel.jsx";
 import EventCrm from "./components/EventCrm.jsx";
 import ShareEventModal from "./components/ShareEventModal.jsx";
-import SuperAdminPanel from "./components/SuperAdminPanel.jsx";
 import ConfirmTicket from "./components/ConfirmTicket.jsx";
+import InicioView from "./pages/InicioView.jsx";
+import MisEventosView from "./pages/MisEventosView.jsx";
+import DashboardView from "./pages/DashboardView.jsx";
+import MiCuentaView from "./pages/MiCuentaView.jsx";
 import { useAuth } from "./context/AuthContext.jsx";
 import { api, apiEnabled } from "./lib/api.js";
 import { loadEvents, saveEvents } from "./lib/storage.js";
@@ -107,7 +109,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
   });
 
   const _hasDraft = Boolean(initialDraft || localStorage.getItem("ef_pending_draft"));
-  const [view, setView] = useState(_hasDraft ? "builder" : "dashboard");
+  const [view, setView] = useState(_hasDraft ? "builder" : "inicio");
   const [events, setEvents] = useState(() => (apiOn ? [] : loadEvents()));
   const [adminData, setAdminData] = useState(null);
   const [shareEv, setShareEv] = useState(null);
@@ -385,19 +387,14 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
   const confirmEv = events.find((e) => e.id === evId);
   const confirmReg = confirmEv?.registrations.find((r) => r.id === regId);
 
-  const showScannerNav =
-    ["dashboard", "detail", "validate", "admin"].includes(view);
+  const showScannerNav = ["inicio", "mis_eventos", "detail", "validate"].includes(view);
 
-  const navBtn = (active) => ({
-    background: active ? NEGRO_PURO : BLANCO_CONTRASTE,
-    color: active ? BLANCO_CONTRASTE : NEGRO_PURO,
-    border: `2px solid ${NEGRO_PURO}`,
-    borderRadius: 8,
-    padding: "8px 12px",
-    fontSize: 12,
-    fontWeight: 700,
-    cursor: "pointer",
-  });
+  const NAV_ITEMS = [
+    { key: "inicio", label: "Inicio" },
+    { key: "mis_eventos", label: "Mis eventos" },
+    { key: "stats", label: "Dashboard" },
+    { key: "mi_cuenta", label: "Mi cuenta" },
+  ];
 
   return (
     <div
@@ -410,108 +407,47 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
         textAlign: "left",
       }}
     >
-      <nav
-        className="app-nav"
-        style={{
-          background: "#fff",
-          borderBottom: "1px solid #e2e8f0",
-          padding: "0 24px",
-          minHeight: 60,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          position: "sticky",
-          top: 0,
-          zIndex: 10,
-          flexWrap: "wrap",
-          gap: 8,
-          boxShadow: "0 1px 4px rgba(13,59,102,0.06)",
-        }}
-      >
-        <button
-          type="button"
-          className="app-brand"
-          onClick={() => go("dashboard")}
-          style={{
-            background: "none", border: "none", cursor: "pointer",
-            display: "flex", alignItems: "center", gap: 8,
-            fontWeight: 800, fontSize: 18, color: "#0d1b2a",
-          }}
-        >
-          <span style={{ color: VERDE_CORPORATIVO, fontSize: 22 }}>●</span> EventForm
+      {/* ── NAVEGACIÓN ── */}
+      <nav style={{ background: "#fff", borderBottom: "1px solid #e2e8f0", padding: "0 20px", minHeight: 60, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10, flexWrap: "wrap", gap: 8, boxShadow: "0 1px 4px rgba(13,59,102,0.06)" }}>
+        <button type="button" onClick={() => go("inicio")} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontWeight: 800, fontSize: 17, color: "#0d1b2a" }}>
+          <span style={{ color: VERDE_CORPORATIVO, fontSize: 20 }}>●</span> EventForm
         </button>
-        <div className="app-nav-actions" style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-          {user && (
-            <span style={{ fontSize: 12, fontWeight: 600, color: "#8fa3b1", marginRight: 4 }}>
-              {user.name || user.email}
-            </span>
-          )}
-          {isSuperAdmin && (
-            <button type="button" onClick={() => go("superadmin")} className={`soft-btn ${view === "superadmin" ? "soft-btn-primary" : "soft-btn-secondary"}`} style={{ fontSize: 12, padding: "8px 14px" }}>
-              Super admin
+        <div style={{ display: "flex", gap: 4, flexWrap: "wrap", alignItems: "center" }}>
+          {NAV_ITEMS.map(({ key, label }) => (
+            <button key={key} type="button" onClick={() => go(key)}
+              className={`soft-btn ${view === key ? "soft-btn-primary" : "soft-btn-secondary"}`}
+              style={{ fontSize: 12, padding: "8px 13px" }}>
+              {label}
             </button>
-          )}
-          <button type="button" onClick={() => go("dashboard")} className={`soft-btn ${view === "dashboard" ? "soft-btn-primary" : "soft-btn-secondary"}`} style={{ fontSize: 12, padding: "8px 14px" }}>
-            Inicio
+          ))}
+          <button type="button" onClick={startNew} className="soft-btn soft-btn-primary" style={{ fontSize: 12, padding: "8px 13px", marginLeft: 4 }}>
+            + Crear evento
           </button>
-          {events.length > 0 && (
-            <button type="button" onClick={() => go("admin")} className={`soft-btn ${view === "admin" ? "soft-btn-primary" : "soft-btn-secondary"}`} style={{ fontSize: 12, padding: "8px 14px" }}>
-              Mis eventos
-            </button>
-          )}
-          {view === "detail" && ev && !isSoldOut(ev) && (
-            <button type="button" onClick={() => tryRegister(evId)} className="soft-btn soft-btn-secondary" style={{ fontSize: 12, padding: "8px 14px" }}>
-              Inscripción
-            </button>
-          )}
-          {showScannerNav && events.length > 0 && (
-            <button
-              type="button"
-              onClick={() => openValidate(view === "detail" ? evId : null)}
-              className="soft-btn soft-btn-primary"
-              style={{ fontSize: 12, padding: "8px 14px" }}
-            >
-              Check-in (escáner QR)
-            </button>
-          )}
-          {user && (
-            <button type="button" onClick={logout} className="soft-btn soft-btn-secondary" style={{ fontSize: 12, padding: "8px 14px" }}>
-              Salir
-            </button>
-          )}
         </div>
       </nav>
 
       {shareEv && (
-        <ShareEventModal
-          event={shareEv}
-          publicUrl={publicUrl(shareEv)}
-          onClose={() => setShareEv(null)}
-        />
+        <ShareEventModal event={shareEv} onClose={() => setShareEv(null)} />
       )}
 
       <main className="app-main">
-        {view === "dashboard" && (
-          <Dashboard
-            events={events}
-            onNew={startNew}
-            onOpen={(id) => go("detail", id)}
-            onRegister={tryRegister}
-            onValidate={(id) => openValidate(id)}
-            onAdmin={() => go("admin")}
-          />
+        {view === "inicio" && (
+          <InicioView events={events} onNew={startNew} />
         )}
-        {view === "admin" && (
-          <AdminPanel
+        {view === "mis_eventos" && (
+          <MisEventosView
             events={events}
             onNew={startNew}
-            onOpen={(id) => go("detail", id)}
+            onOpen={(id) => go("crm", id)}
             onEdit={editEvent}
-            onRegister={tryRegister}
             onValidate={(id) => openValidate(id)}
             onDelete={deleteEvent}
+            onShare={(ev) => setShareEv(ev)}
+            onToggleSoldOut={toggleSoldOut}
           />
         )}
+        {view === "stats" && <DashboardView events={events} />}
+        {view === "mi_cuenta" && <MiCuentaView />}
         {view === "create_wizard" && (
           <CreateEventWizard
             draft={draft}
@@ -519,7 +455,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
             step={wizardStep}
             setStep={setWizardStep}
             onDone={generatePreliminaryForm}
-            onCancel={() => go("dashboard")}
+            onCancel={() => go("inicio")}
           />
         )}
         {view === "builder" && draft && (
@@ -535,16 +471,10 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
             onPublish={publish}
           />
         )}
-        {view === "superadmin" && isSuperAdmin && adminData && (
-          <SuperAdminPanel
-            data={adminData}
-            onOpenEvent={(id) => go("detail", id)}
-          />
-        )}
         {view === "crm" && ev && (
           <EventCrm
             event={ev}
-            onBack={() => go("detail", evId)}
+            onBack={() => go("mis_eventos")}
             onToggleSoldOut={(v) => toggleSoldOut(ev.id, v)}
             onShare={() => setShareEv(ev)}
           />
@@ -556,66 +486,33 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
             onValidate={() => openValidate(ev.id)}
             onCrm={() => go("crm", ev.id)}
             onShare={() => setShareEv(ev)}
-            publicUrl={publicUrl(ev)}
+            publicUrl={`${window.location.origin}/e/${ev.slug || ev.id}`}
           />
         )}
         {view === "register" && ev && (
           isSoldOut(ev) ? (
             <SoldOutView ev={ev} onBack={() => go("detail", evId)} />
           ) : (
-            <Register
-              ev={ev}
-              form={form}
-              setFormField={setFormField}
-              errors={errors}
-              onSubmit={submitReg}
-              onBack={() => go("detail", evId)}
-            />
+            <Register ev={ev} form={form} setFormField={setFormField} errors={errors} onSubmit={submitReg} onBack={() => go("detail", evId)} />
           )
         )}
         {view === "confirm" && confirmEv && confirmReg && (
-          <ConfirmTicket
-            ev={confirmEv}
-            reg={confirmReg}
-            onDone={() => go("detail", evId)}
-          />
+          <ConfirmTicket ev={confirmEv} reg={confirmReg} onDone={() => go("detail", evId)} />
         )}
         {view === "validate" && (
           <Validate
             event={ev}
-            scopeLabel={
-              evId && ev
-                ? `Solo entradas de: ${ev.title}`
-                : "Todos los eventos guardados"
-            }
-            code={vCode}
-            setCode={setVCode}
-            result={vResult}
-            onCheck={() => runCheckIn(vCode)}
-            onScan={handleQrScan}
-            onReset={() => {
-              setVResult(null);
-              setVCode("");
-            }}
+            scopeLabel={evId && ev ? `Solo entradas de: ${ev.title}` : "Todos los eventos"}
+            code={vCode} setCode={setVCode} result={vResult}
+            onCheck={() => runCheckIn(vCode)} onScan={handleQrScan}
+            onReset={() => { setVResult(null); setVCode(""); }}
           />
         )}
       </main>
 
       {view !== "create_wizard" && (
-        <footer
-          style={{
-            background: VERDE_PASTEL_BG,
-            borderTop: `2px solid ${NEGRO_PURO}`,
-            padding: 20,
-            textAlign: "center",
-            fontSize: 12,
-            fontWeight: 600,
-            color: NEGRO_MUTED_70,
-            marginTop: 64,
-          }}
-        >
-          EventForm © 2026 — Datos guardados en este dispositivo (listo para conectar
-          backend)
+        <footer style={{ background: "#f8fafc", borderTop: "1px solid #e2e8f0", padding: 20, textAlign: "center", fontSize: 12, color: "#8fa3b1", marginTop: 48 }}>
+          EventForm Colombia © 2026
         </footer>
       )}
     </div>

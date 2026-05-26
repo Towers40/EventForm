@@ -50,9 +50,19 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ ticketId }),
     }, token),
+  verifyCode: (email, code) =>
+    request("/api/auth/verify-code", { method: "POST", body: JSON.stringify({ email, code }) }),
+  resendCode: (email) =>
+    request("/api/auth/resend-code", { method: "POST", body: JSON.stringify({ email }) }),
+  forgotPassword: (email) =>
+    request("/api/auth/forgot-password", { method: "POST", body: JSON.stringify({ email }) }),
+  resetPassword: (email, code, newPassword) =>
+    request("/api/auth/reset-password", { method: "POST", body: JSON.stringify({ email, code, newPassword }) }),
+  updateMe: (token, name) =>
+    request("/api/auth/me", { method: "PATCH", body: JSON.stringify({ name }) }, token),
+  changePassword: (token, currentPassword, newPassword) =>
+    request("/api/auth/change-password", { method: "POST", body: JSON.stringify({ currentPassword, newPassword }) }, token),
   verifyEmail: (token) => request(`/api/auth/verify-email/${token}`),
-  resendVerification: (email) =>
-    request("/api/auth/resend-verification", { method: "POST", body: JSON.stringify({ email }) }),
   adminOverview: (token) => request("/api/admin/overview", {}, token),
   publicEvent: (slug) => request(`/api/public/events/${slug}`),
   publicRegister: (slug, body) =>

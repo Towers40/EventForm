@@ -10,7 +10,9 @@ import {
   signToken,
   verifyPassword,
 } from "./auth.js";
-import { emailEnabled, sendVerificationEmail } from "./mailer.js";
+import { emailEnabled, sendVerificationCode, sendPasswordResetCode } from "./mailer.js";
+
+function gen4() { return String(Math.floor(1000 + Math.random() * 9000)); }
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -89,53 +91,96 @@ app.post("/api/auth/register", async (req, res) => {
 
   const id = "U" + uid();
   const hash = await hashPassword(password);
-  const verifyToken = emailEnabled ? nanoid(32) : null;
+  const code = emailEnabled ? gen4() : null;
+  const expires = emailEnabled ? Date.now() + 15 * 60 * 1000 : null;
   const verified = emailEnabled ? 0 : 1;
 
   db.prepare(
-    `INSERT INTO users (id, email, password_hash, name, role, email_verified, verify_token, created_at)
-     VALUES (?, ?, ?, ?, 'host', ?, ?, ?)`
-  ).run(id, email.trim().toLowerCase(), hash, name?.trim() || "", verified, verifyToken, Date.now());
+    `INSERT INTO users (id, email, password_hash, name, role, email_verified, verify_code, verify_code_expires, created_at)
+     VALUES (?, ?, ?, ?, 'host', ?, ?, ?, ?)`
+  ).run(id, email.trim().toLowerCase(), hash, name?.trim() || "", verified, code, expires, Date.now());
 
-  if (emailEnabled && verifyToken) {
-    try {
-      await sendVerificationEmail(email.trim().toLowerCase(), name?.trim() || "", verifyToken);
-    } catch (e) {
-      console.error("Error sending verification email:", e.message);
-    }
+  if (emailEnabled && code) {
+    try { await sendVerificationCode(email.trim().toLowerCase(), name?.trim() || "", code); }
+    catch (e) { console.error("Error sending code:", e.message); }
     return res.json({ pending: true, email: email.trim().toLowerCase() });
   }
-
-  // Sin SMTP configurado: verificación automática
   const user = rowToUser(db.prepare("SELECT * FROM users WHERE id = ?").get(id));
   res.json({ token: signToken(user), user });
 });
 
-app.get("/api/auth/verify-email/:token", (req, res) => {
-  const row = db.prepare("SELECT * FROM users WHERE verify_token = ?").get(req.params.token);
-  if (!row) return res.status(400).json({ error: "Enlace inválido o ya utilizado" });
-
-  db.prepare("UPDATE users SET email_verified = 1, verify_token = NULL WHERE id = ?").run(row.id);
+app.post("/api/auth/verify-code", (req, res) => {
+  const { email, code } = req.body || {};
+  if (!email || !code) return res.status(400).json({ error: "Email y código requeridos" });
+  const row = db.prepare("SELECT * FROM users WHERE email = ?").get(email.trim().toLowerCase());
+  if (!row) return res.status(404).json({ error: "Usuario no encontrado" });
+  if (row.email_verified) {
+    const user = rowToUser(row);
+    return res.json({ token: signToken(user), user });
+  }
+  if (row.verify_code !== String(code).trim()) {
+    return res.status(400).json({ error: "Código incorrecto" });
+  }
+  if (row.verify_code_expires && Date.now() > row.verify_code_expires) {
+    return res.status(400).json({ error: "El código expiró. Solicita uno nuevo." });
+  }
+  db.prepare("UPDATE users SET email_verified = 1, verify_code = NULL, verify_code_expires = NULL WHERE id = ?").run(row.id);
   const user = rowToUser(db.prepare("SELECT * FROM users WHERE id = ?").get(row.id));
   res.json({ token: signToken(user), user });
 });
 
-app.post("/api/auth/resend-verification", async (req, res) => {
+app.post("/api/auth/resend-code", async (req, res) => {
   const { email } = req.body || {};
   if (!email) return res.status(400).json({ error: "Email requerido" });
   const row = db.prepare("SELECT * FROM users WHERE email = ?").get(email.trim().toLowerCase());
   if (!row) return res.status(404).json({ error: "Usuario no encontrado" });
-  if (row.email_verified) return res.json({ ok: true, alreadyVerified: true });
-
-  const verifyToken = nanoid(32);
-  db.prepare("UPDATE users SET verify_token = ? WHERE id = ?").run(verifyToken, row.id);
-  try {
-    await sendVerificationEmail(row.email, row.name, verifyToken);
-  } catch (e) {
-    console.error("Error resending email:", e.message);
-    return res.status(500).json({ error: "Error al enviar el correo" });
-  }
+  if (row.email_verified) return res.json({ ok: true });
+  const code = gen4();
+  const expires = Date.now() + 15 * 60 * 1000;
+  db.prepare("UPDATE users SET verify_code = ?, verify_code_expires = ? WHERE id = ?").run(code, expires, row.id);
+  try { await sendVerificationCode(row.email, row.name, code); }
+  catch (e) { return res.status(500).json({ error: "Error al enviar el correo" }); }
   res.json({ ok: true });
+});
+
+app.post("/api/auth/forgot-password", async (req, res) => {
+  const { email } = req.body || {};
+  if (!email) return res.status(400).json({ error: "Email requerido" });
+  const row = db.prepare("SELECT * FROM users WHERE email = ?").get(email.trim().toLowerCase());
+  if (!row) return res.json({ ok: true }); // No revelar si existe
+  const code = gen4();
+  const expires = Date.now() + 15 * 60 * 1000;
+  db.prepare("UPDATE users SET reset_code = ?, reset_code_expires = ? WHERE id = ?").run(code, expires, row.id);
+  try { await sendPasswordResetCode(row.email, row.name, code); }
+  catch (e) { console.error("Error sending reset code:", e.message); }
+  res.json({ ok: true });
+});
+
+app.post("/api/auth/reset-password", async (req, res) => {
+  const { email, code, newPassword } = req.body || {};
+  if (!email || !code || !newPassword) return res.status(400).json({ error: "Todos los campos son requeridos" });
+  if (newPassword.length < 8 || !/[A-Z]/.test(newPassword)) {
+    return res.status(400).json({ error: "La contraseña debe tener al menos 8 caracteres y una mayúscula" });
+  }
+  const row = db.prepare("SELECT * FROM users WHERE email = ?").get(email.trim().toLowerCase());
+  if (!row) return res.status(404).json({ error: "Usuario no encontrado" });
+  if (row.reset_code !== String(code).trim()) return res.status(400).json({ error: "Código incorrecto" });
+  if (row.reset_code_expires && Date.now() > row.reset_code_expires) {
+    return res.status(400).json({ error: "El código expiró. Solicita uno nuevo." });
+  }
+  const hash = await hashPassword(newPassword);
+  db.prepare("UPDATE users SET password_hash = ?, reset_code = NULL, reset_code_expires = NULL WHERE id = ?").run(hash, row.id);
+  const user = rowToUser(db.prepare("SELECT * FROM users WHERE id = ?").get(row.id));
+  res.json({ token: signToken(user), user });
+});
+
+// Keep legacy link-based verify for any old emails still pending
+app.get("/api/auth/verify-email/:token", (req, res) => {
+  const row = db.prepare("SELECT * FROM users WHERE verify_token = ?").get(req.params.token);
+  if (!row) return res.status(400).json({ error: "Enlace inválido o ya utilizado" });
+  db.prepare("UPDATE users SET email_verified = 1, verify_token = NULL WHERE id = ?").run(row.id);
+  const user = rowToUser(db.prepare("SELECT * FROM users WHERE id = ?").get(row.id));
+  res.json({ token: signToken(user), user });
 });
 
 app.post("/api/auth/login", async (req, res) => {
@@ -154,6 +199,30 @@ app.get("/api/auth/me", authMiddleware, (req, res) => {
   const row = db.prepare("SELECT * FROM users WHERE id = ?").get(req.user.sub);
   if (!row) return res.status(404).json({ error: "Usuario no encontrado" });
   res.json({ user: rowToUser(row) });
+});
+
+app.patch("/api/auth/me", authMiddleware, (req, res) => {
+  const { name } = req.body || {};
+  if (name?.trim()) {
+    db.prepare("UPDATE users SET name = ? WHERE id = ?").run(name.trim(), req.user.sub);
+  }
+  const row = db.prepare("SELECT * FROM users WHERE id = ?").get(req.user.sub);
+  res.json({ user: rowToUser(row) });
+});
+
+app.post("/api/auth/change-password", authMiddleware, async (req, res) => {
+  const { currentPassword, newPassword } = req.body || {};
+  if (!currentPassword || !newPassword) return res.status(400).json({ error: "Campos requeridos" });
+  if (newPassword.length < 8 || !/[A-Z]/.test(newPassword)) {
+    return res.status(400).json({ error: "La nueva contraseña debe tener al menos 8 caracteres y una mayúscula" });
+  }
+  const row = db.prepare("SELECT * FROM users WHERE id = ?").get(req.user.sub);
+  if (!row || !(await verifyPassword(currentPassword, row.password_hash))) {
+    return res.status(401).json({ error: "Contraseña actual incorrecta" });
+  }
+  const hash = await hashPassword(newPassword);
+  db.prepare("UPDATE users SET password_hash = ? WHERE id = ?").run(hash, req.user.sub);
+  res.json({ ok: true });
 });
 
 // ─── Público ────────────────────────────────────────────────────────────────
