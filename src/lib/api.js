@@ -1,4 +1,5 @@
-// En desarrollo, '' usa el proxy de Vite (/api → localhost:3001)
+// VITE_API_URL = URL del backend externo (Railway/local).
+// Si está vacío, las llamadas van a /api/* en el mismo dominio (Vercel Functions).
 const API = import.meta.env.VITE_API_URL ?? "";
 
 function headers(token) {
@@ -8,8 +9,9 @@ function headers(token) {
 }
 
 async function request(path, options = {}, token) {
-  if (!API) throw new Error("API no configurada");
-  const res = await fetch(`${API}${path}`, {
+  // Usa URL relativa cuando no hay base configurada (mismo dominio Vercel)
+  const url = API ? `${API}${path}` : path;
+  const res = await fetch(url, {
     ...options,
     headers: { ...headers(token), ...options.headers },
   });
@@ -23,16 +25,14 @@ async function request(path, options = {}, token) {
   return data;
 }
 
-export const apiEnabled = Boolean(API) || import.meta.env.DEV;
+// API activa si hay URL configurada, en producción (Vercel) o en desarrollo local
+export const apiEnabled = Boolean(API) || import.meta.env.PROD || import.meta.env.DEV;
 
 export const api = {
   login: (email, password) =>
     request("/api/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
   registerHost: (email, password, name) =>
-    request("/api/auth/register", {
-      method: "POST",
-      body: JSON.stringify({ email, password, name }),
-    }),
+    request("/api/auth/register", { method: "POST", body: JSON.stringify({ email, password, name }) }),
   me: (token) => request("/api/auth/me", {}, token),
   events: (token) => request("/api/events", {}, token),
   saveEvent: (token, event) =>
@@ -41,15 +41,9 @@ export const api = {
       : request("/api/events", { method: "POST", body: JSON.stringify(event) }, token),
   deleteEvent: (token, id) => request(`/api/events/${id}`, { method: "DELETE" }, token),
   setSoldOut: (token, id, manualSoldOut) =>
-    request(`/api/events/${id}/sold-out`, {
-      method: "PATCH",
-      body: JSON.stringify({ manualSoldOut }),
-    }, token),
+    request(`/api/events/${id}/sold-out`, { method: "PATCH", body: JSON.stringify({ manualSoldOut }) }, token),
   checkIn: (token, eventId, ticketId) =>
-    request(`/api/events/${eventId}/check-in`, {
-      method: "POST",
-      body: JSON.stringify({ ticketId }),
-    }, token),
+    request(`/api/events/${eventId}/check-in`, { method: "POST", body: JSON.stringify({ ticketId }) }, token),
   verifyCode: (email, code) =>
     request("/api/auth/verify-code", { method: "POST", body: JSON.stringify({ email, code }) }),
   resendCode: (email) =>
@@ -63,11 +57,7 @@ export const api = {
   changePassword: (token, currentPassword, newPassword) =>
     request("/api/auth/change-password", { method: "POST", body: JSON.stringify({ currentPassword, newPassword }) }, token),
   verifyEmail: (token) => request(`/api/auth/verify-email/${token}`),
-  adminOverview: (token) => request("/api/admin/overview", {}, token),
   publicEvent: (slug) => request(`/api/public/events/${slug}`),
   publicRegister: (slug, body) =>
-    request(`/api/public/events/${slug}/register`, {
-      method: "POST",
-      body: JSON.stringify(body),
-    }),
+    request(`/api/public/events/${slug}/register`, { method: "POST", body: JSON.stringify(body) }),
 };
