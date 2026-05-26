@@ -3,6 +3,16 @@ import express from "express";
 import cors from "cors";
 import { nanoid } from "nanoid";
 import { db, dbReady, initDb, parseEvent, slugify } from "./db.js";
+
+// Middleware: rechaza rutas de DB si no está configurada
+function requireDb(req, res, next) {
+  if (!dbReady || !db) {
+    return res.status(503).json({
+      error: "Base de datos no configurada. Agrega TURSO_URL en Vercel → Settings → Environment Variables y haz Redeploy."
+    });
+  }
+  next();
+}
 import {
   authMiddleware,
   hashPassword,
@@ -62,7 +72,7 @@ async function attachRegs(ev) {
 }
 
 // ─── Auth ──────────────────────────────────────────────────────────────────
-app.post("/api/auth/register", async (req, res) => {
+app.post("/api/auth/register", requireDb, async (req, res) => {
   try {
     const { email, password, name } = req.body || {};
     if (!email?.trim() || !password || password.length < 8)
@@ -93,7 +103,7 @@ app.post("/api/auth/register", async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post("/api/auth/verify-code", async (req, res) => {
+app.post("/api/auth/verify-code", requireDb, async (req, res) => {
   try {
     const { email, code } = req.body || {};
     if (!email || !code) return res.status(400).json({ error: "Email y código requeridos" });
@@ -111,7 +121,7 @@ app.post("/api/auth/verify-code", async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post("/api/auth/resend-code", async (req, res) => {
+app.post("/api/auth/resend-code", requireDb, async (req, res) => {
   try {
     const { email } = req.body || {};
     const { rows } = await db.execute({ sql: "SELECT * FROM users WHERE email = ?", args: [email?.trim().toLowerCase()] });
@@ -125,7 +135,7 @@ app.post("/api/auth/resend-code", async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post("/api/auth/login", async (req, res) => {
+app.post("/api/auth/login", requireDb, async (req, res) => {
   try {
     const { email, password } = req.body || {};
     const { rows } = await db.execute({ sql: "SELECT * FROM users WHERE email = ?", args: [email?.trim().toLowerCase()] });
@@ -137,7 +147,7 @@ app.post("/api/auth/login", async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post("/api/auth/forgot-password", async (req, res) => {
+app.post("/api/auth/forgot-password", requireDb, async (req, res) => {
   try {
     const { email } = req.body || {};
     const { rows } = await db.execute({ sql: "SELECT * FROM users WHERE email = ?", args: [email?.trim().toLowerCase()] });
@@ -151,7 +161,7 @@ app.post("/api/auth/forgot-password", async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post("/api/auth/reset-password", async (req, res) => {
+app.post("/api/auth/reset-password", requireDb, async (req, res) => {
   try {
     const { email, code, newPassword } = req.body || {};
     if (!email || !code || !newPassword) return res.status(400).json({ error: "Campos requeridos" });
@@ -171,7 +181,7 @@ app.post("/api/auth/reset-password", async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.get("/api/auth/me", authMiddleware, async (req, res) => {
+app.get("/api/auth/me", requireDb, authMiddleware, async (req, res) => {
   try {
     const { rows } = await db.execute({ sql: "SELECT * FROM users WHERE id = ?", args: [req.user.sub] });
     if (!rows[0]) return res.status(404).json({ error: "Usuario no encontrado" });
@@ -179,7 +189,7 @@ app.get("/api/auth/me", authMiddleware, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.patch("/api/auth/me", authMiddleware, async (req, res) => {
+app.patch("/api/auth/me", requireDb, authMiddleware, async (req, res) => {
   try {
     const { name } = req.body || {};
     if (name?.trim()) await db.execute({ sql: "UPDATE users SET name = ? WHERE id = ?", args: [name.trim(), req.user.sub] });
@@ -188,7 +198,7 @@ app.patch("/api/auth/me", authMiddleware, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post("/api/auth/change-password", authMiddleware, async (req, res) => {
+app.post("/api/auth/change-password", requireDb, authMiddleware, async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body || {};
     if (!currentPassword || !newPassword) return res.status(400).json({ error: "Campos requeridos" });
@@ -205,7 +215,7 @@ app.post("/api/auth/change-password", authMiddleware, async (req, res) => {
 });
 
 // Legacy email link verification
-app.get("/api/auth/verify-email/:token", async (req, res) => {
+app.get("/api/auth/verify-email/:token", requireDb, async (req, res) => {
   try {
     const { rows } = await db.execute({ sql: "SELECT * FROM users WHERE verify_token = ?", args: [req.params.token] });
     if (!rows[0]) return res.status(400).json({ error: "Enlace inválido" });
@@ -217,7 +227,7 @@ app.get("/api/auth/verify-email/:token", async (req, res) => {
 });
 
 // ─── Público ───────────────────────────────────────────────────────────────
-app.get("/api/public/events/:slug", async (req, res) => {
+app.get("/api/public/events/:slug", requireDb, async (req, res) => {
   try {
     const { rows } = await db.execute({ sql: "SELECT * FROM events WHERE slug = ?", args: [req.params.slug] });
     if (!rows[0]) return res.status(404).json({ error: "Evento no encontrado" });
@@ -230,7 +240,7 @@ app.get("/api/public/events/:slug", async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post("/api/public/events/:slug/register", async (req, res) => {
+app.post("/api/public/events/:slug/register", requireDb, async (req, res) => {
   try {
     const { rows: evRows } = await db.execute({ sql: "SELECT * FROM events WHERE slug = ?", args: [req.params.slug] });
     if (!evRows[0]) return res.status(404).json({ error: "Evento no encontrado" });
@@ -251,7 +261,7 @@ app.post("/api/public/events/:slug/register", async (req, res) => {
 });
 
 // ─── Eventos (anfitrión) ───────────────────────────────────────────────────
-app.get("/api/events", authMiddleware, async (req, res) => {
+app.get("/api/events", requireDb, authMiddleware, async (req, res) => {
   try {
     const sql = req.user.role === "super_admin"
       ? { sql: "SELECT * FROM events ORDER BY updated_at DESC", args: [] }
@@ -266,7 +276,7 @@ app.get("/api/events", authMiddleware, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post("/api/events", authMiddleware, requireRole("host", "super_admin"), async (req, res) => {
+app.post("/api/events", requireDb, authMiddleware, requireRole("host", "super_admin"), async (req, res) => {
   try {
     const payload = req.body;
     const id = payload.id || "E" + uid();
@@ -285,7 +295,7 @@ app.post("/api/events", authMiddleware, requireRole("host", "super_admin"), asyn
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.put("/api/events/:id", authMiddleware, async (req, res) => {
+app.put("/api/events/:id", requireDb, authMiddleware, async (req, res) => {
   try {
     const { rows: existing } = await db.execute({ sql: "SELECT * FROM events WHERE id = ?", args: [req.params.id] });
     const row = existing[0];
@@ -306,7 +316,7 @@ app.put("/api/events/:id", authMiddleware, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.patch("/api/events/:id/sold-out", authMiddleware, async (req, res) => {
+app.patch("/api/events/:id/sold-out", requireDb, authMiddleware, async (req, res) => {
   try {
     const { rows: existing } = await db.execute({ sql: "SELECT * FROM events WHERE id = ?", args: [req.params.id] });
     const row = existing[0];
@@ -321,7 +331,7 @@ app.patch("/api/events/:id/sold-out", authMiddleware, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.delete("/api/events/:id", authMiddleware, async (req, res) => {
+app.delete("/api/events/:id", requireDb, authMiddleware, async (req, res) => {
   try {
     const { rows: existing } = await db.execute({ sql: "SELECT * FROM events WHERE id = ?", args: [req.params.id] });
     const row = existing[0];
@@ -332,7 +342,7 @@ app.delete("/api/events/:id", authMiddleware, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post("/api/events/:id/check-in", authMiddleware, async (req, res) => {
+app.post("/api/events/:id/check-in", requireDb, authMiddleware, async (req, res) => {
   try {
     const { rows: evRows } = await db.execute({ sql: "SELECT * FROM events WHERE id = ?", args: [req.params.id] });
     if (!evRows[0]) return res.status(404).json({ error: "Evento no encontrado" });
@@ -349,7 +359,7 @@ app.post("/api/events/:id/check-in", authMiddleware, async (req, res) => {
 });
 
 app.get("/api/health", (_, res) => {
-  if (!dbReady) return res.status(503).json({ ok: false, error: "Agrega TURSO_URL en Vercel → Settings → Environment Variables" });
+  if (!dbReady) return res.status(503).json({ ok: false, needsConfig: true, error: "Agrega TURSO_URL en Vercel → Settings → Environment Variables" });
   res.json({ ok: true });
 });
 

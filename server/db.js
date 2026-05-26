@@ -4,31 +4,31 @@ import { fileURLToPath } from "url";
 import fs from "fs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-// Modo local: archivo SQLite. Modo producción: Turso cloud
 const TURSO_URL = process.env.TURSO_URL;
 const isVercel = Boolean(process.env.VERCEL);
 
-// En Vercel sin TURSO_URL: lanzar error claro en lugar de crashear
-if (isVercel && !TURSO_URL) {
-  console.error("TURSO_URL no configurada. Ve a Vercel → Settings → Environment Variables.");
-}
+export let db = null;
+export let dbReady = false;
 
-let dbConfig;
 if (TURSO_URL) {
-  dbConfig = { url: TURSO_URL, authToken: process.env.TURSO_TOKEN };
-} else {
-  // Solo para desarrollo local
-  const dataDir = process.env.DATA_DIR || path.join(__dirname, "data");
-  if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
-  dbConfig = { url: `file:${path.join(dataDir, "eventform.db")}` };
+  // Turso HTTP — pure JS, funciona en cualquier plataforma
+  db = createClient({ url: TURSO_URL, authToken: process.env.TURSO_TOKEN });
+  dbReady = true;
+} else if (!isVercel) {
+  // Solo en local: SQLite en archivo
+  try {
+    const dataDir = process.env.DATA_DIR || path.join(__dirname, "data");
+    if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+    db = createClient({ url: `file:${path.join(dataDir, "eventform.db")}` });
+    dbReady = true;
+  } catch (e) {
+    console.error("Local DB init error:", e.message);
+  }
 }
-
-export const db = createClient(dbConfig);
-export const dbReady = Boolean(TURSO_URL || !isVercel);
+// Vercel sin TURSO_URL → db = null, dbReady = false → rutas devuelven 503
 
 export async function initDb() {
-  // Tablas principales
+  if (!db) return;
   await db.batch([
     {
       sql: `CREATE TABLE IF NOT EXISTS users (
