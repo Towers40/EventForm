@@ -12,7 +12,9 @@
       "Bash(curl -s https://eventform-production.up.railway.app/api/health)",
       "Bash(curl -s -o /dev/null -w \"Vercel: %{http_code}\" https://event-form-navy.vercel.app/)",
       "Bash(timeout 5 node index.js)",
-      "Bash(node -e \"import\\('./index.js'\\).then\\(\\(\\) => { setTimeout\\(\\(\\) => process.exit\\(0\\), 2000\\) }\\)\")"
+      "Bash(node -e \"import\\('./index.js'\\).then\\(\\(\\) => { setTimeout\\(\\(\\) => process.exit\\(0\\), 2000\\) }\\)\")",
+      "Bash(npm uninstall *)",
+      "Bash(node -e \"import\\('./index.js'\\).then\\(\\(\\) => { setTimeout\\(\\(\\) => { console.log\\('OK'\\); process.exit\\(0\\); }, 2000\\) }\\).catch\\(e => { console.error\\('FAIL:', e.message\\); process.exit\\(1\\); }\\)\")"
     ]
   }
 }
