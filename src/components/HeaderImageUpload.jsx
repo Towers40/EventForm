@@ -39,16 +39,16 @@ export default function HeaderImageUpload({ image, onChange }) {
   return (
     <div
       style={{
-        border: `2px solid ${NEGRO_PURO}`,
+        border: "1px solid #b8d4f0",
         borderRadius: 12,
-        padding: 16,
-        background: VERDE_PASTEL_BG,
-        marginBottom: 20,
+        padding: 20,
+        background: "linear-gradient(135deg, #e8f4fd 0%, #f0f6fc 100%)",
+        marginBottom: 0,
       }}
     >
-      <Lbl>Imagen de encabezado (portada del evento)</Lbl>
-      <p style={{ fontSize: 12, color: NEGRO_MUTED_70, marginBottom: 12 }}>
-        Personaliza tu evento. Se mostrará en inscripción, boleto y panel admin. Recomendado: horizontal 16:9.
+      <Lbl>Imagen de encabezado</Lbl>
+      <p style={{ fontSize: 12, color: "#5c6b7a", marginBottom: 12 }}>
+        Opcional. Se mostrará en inscripción y boleto. Recomendado: formato horizontal 16:9.
       </p>
       {image && (
         <img
@@ -68,16 +68,18 @@ export default function HeaderImageUpload({ image, onChange }) {
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         <label
           style={{
-            ...inputStyle,
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
             cursor: busy ? "wait" : "pointer",
-            width: "auto",
-            flex: "1 1 160px",
-            background: NEGRO_PURO,
-            color: BLANCO_CONTRASTE,
-            fontWeight: 800,
+            padding: "10px 18px",
+            borderRadius: 8,
+            border: "none",
+            background: "#0d3b66",
+            color: "#fff",
+            fontWeight: 700,
+            fontSize: 13,
+            flex: "1 1 auto",
           }}
         >
           {busy ? "Procesando…" : image ? "Cambiar imagen" : "Subir imagen"}

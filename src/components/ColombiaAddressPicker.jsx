@@ -238,13 +238,13 @@ export default function ColombiaAddressPicker({ value, onChange }) {
                 minWidth: 140,
                 padding: "12px 16px",
                 borderRadius: 10,
-                border: `2px solid ${NEGRO_PURO}`,
-                background: VERDE_CORPORATIVO,
-                color: BLANCO_CONTRASTE,
-                fontWeight: 800,
+                border: "none",
+                background: "#0d3b66",
+                color: "#fff",
+                fontWeight: 700,
                 fontSize: 13,
                 cursor: loading ? "wait" : "pointer",
-                opacity: query.trim().length < 2 ? 0.45 : 1,
+                opacity: query.trim().length < 2 ? 0.4 : 1,
               }}
             >
               {loading ? "Buscando…" : "📍 Ubicar en mapa"}

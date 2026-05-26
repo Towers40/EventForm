@@ -162,7 +162,20 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
 
   const ev = events.find((e) => e.id === evId);
 
+  const saveDraftToEvents = (d) => {
+    if (!d?.title?.trim()) return;
+    const draftEv = { ...d, isDraft: true };
+    localStorage.setItem("ef_builder_draft", JSON.stringify(draftEv));
+    setEvents((prev) => {
+      const exists = prev.find((e) => e.id === d.id);
+      return exists
+        ? prev.map((e) => (e.id === d.id ? draftEv : e))
+        : [...prev, draftEv];
+    });
+  };
+
   const go = (v, id = null) => {
+    if (view === "builder" && draft) saveDraftToEvents(draft);
     setView(v);
     setEvId(id);
     setEditFid(null);
@@ -242,8 +255,9 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
   };
 
   const editEvent = (event) => {
-    setDraft({ ...event, fields: [...event.fields], registrations: [...event.registrations] });
+    setDraft({ ...event, fields: [...(event.fields || [])], registrations: [...(event.registrations || [])] });
     setEvId(event.id);
+    if (event.isDraft) localStorage.removeItem("ef_builder_draft");
     setView("builder");
   };
 
@@ -295,7 +309,9 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
       });
       setEvId(saved.id);
       setDraft(null);
-      setView("detail");
+      localStorage.removeItem("ef_builder_draft");
+      setEvents((p) => p.map((e) => e.id === saved.id ? { ...saved, isDraft: false } : e));
+      setView("mis_eventos");
       setShareEv(saved);
     } catch (e) {
       alert(e.message || "Error al publicar");
@@ -811,9 +827,9 @@ function CreateEventWizard({ draft, setDraft, step, setStep, onDone, onCancel })
       
       <div style={{ background: BLANCO_CONTRASTE, border: `2px solid ${NEGRO_PURO}`, borderRadius: 16, padding: "32px", width: "100%", boxSizing: "border-box" }}>
         
-        {/* Barra de progreso contenida dentro del marco */}
-        <div style={{ width: "100%", height: "6px", background: VERDE_PASTEL_BG, borderRadius: 10, marginBottom: 32, overflow: "hidden" }}>
-          <div style={{ width: `${progressPercentage}%`, height: "100%", background: VERDE_CORPORATIVO, transition: "width 0.3s ease-out" }} />
+        {/* Barra de progreso */}
+        <div style={{ width: "100%", height: "4px", background: "#e8f0fe", borderRadius: 10, marginBottom: 32, overflow: "hidden" }}>
+          <div style={{ width: `${progressPercentage}%`, height: "100%", background: "linear-gradient(90deg, #0d3b66, #1a5f8a)", transition: "width 0.3s ease-out" }} />
         </div>
 
         <div className={animClass}>
@@ -1031,13 +1047,13 @@ function CreateEventWizard({ draft, setDraft, step, setStep, onDone, onCancel })
                 <button
                   type="button"
                   onClick={handleNextStep}
-                  disabled={!dDay || !dMonth || !draft.city || !draft.address?.trim() || draft.lat == null}
+                  disabled={!dDay || !dMonth || !draft.city || !draft.address?.trim()}
                   style={{
-                    background: VERDE_CORPORATIVO, color: BLANCO_CONTRASTE, border: `2px solid ${NEGRO_PURO}`, padding: "14px 28px", borderRadius: 10, fontWeight: 800, fontSize: 14,
-                    cursor: "pointer", opacity: (!dDay || !dMonth || !draft.city || !draft.address?.trim() || draft.lat == null) ? 0.35 : 1
+                    background: "#0d3b66", color: "#fff", border: "none", padding: "14px 28px", borderRadius: 10, fontWeight: 700, fontSize: 14,
+                    cursor: "pointer", opacity: (!dDay || !dMonth || !draft.city || !draft.address?.trim()) ? 0.35 : 1
                   }}
                 >
-                  CREAR FORMULARIO PRELIMINAR ✨
+                  Continuar al formulario →
                 </button>
               </div>
             </div>
@@ -1059,18 +1075,25 @@ function CreateEventWizard({ draft, setDraft, step, setStep, onDone, onCancel })
 function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDelete, onMove, onPublish }) {
   const [showTools, setShowTools] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [dragId, setDragId] = useState(null);
+  const [dragOverId, setDragOverId] = useState(null);
   const updateOptions = (fid, options) => onUpdate(fid, { options });
+
+  const handleDrop = (targetId) => {
+    if (!dragId || dragId === targetId) return;
+    const fields = [...draft.fields];
+    const from = fields.findIndex((f) => f.id === dragId);
+    const to = fields.findIndex((f) => f.id === targetId);
+    const [moved] = fields.splice(from, 1);
+    fields.splice(to, 0, moved);
+    setDraft((p) => ({ ...p, fields }));
+    setDragId(null); setDragOverId(null);
+  };
 
   const bldLabel = {
     display: "block", fontSize: 11, fontWeight: 800, color: "#8fa3b1",
     textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8,
   };
-  const iconBtn = (danger) => ({
-    border: `1px solid ${danger ? "#fed7d7" : "#e2e8f0"}`,
-    background: "#fff", borderRadius: 6, padding: "5px 11px",
-    cursor: "pointer", fontSize: 13, color: danger ? "#e53e3e" : "#5c6b7a",
-    fontWeight: 600,
-  });
 
   return (
     <div style={{ maxWidth: 720, margin: "0 auto", paddingBottom: 80 }}>
@@ -1091,6 +1114,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
               fontSize: 24, fontWeight: 700, color: "#0d1b2a",
               background: "transparent", boxSizing: "border-box",
               fontFamily: "system-ui, -apple-system, sans-serif",
+              textAlign: "center",
             }}
           />
         </div>
@@ -1152,38 +1176,63 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
 
       {/* ── Lista de campos ── */}
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {draft.fields.map((f, i) => (
-          <div key={f.id} className="panel-card" style={{ overflow: "hidden" }}>
+        {draft.fields.map((f) => (
+          <div
+            key={f.id}
+            draggable
+            onDragStart={() => setDragId(f.id)}
+            onDragOver={(e) => { e.preventDefault(); setDragOverId(f.id); }}
+            onDrop={() => handleDrop(f.id)}
+            onDragEnd={() => { setDragId(null); setDragOverId(null); }}
+            className="panel-card"
+            style={{
+              overflow: "hidden", position: "relative",
+              opacity: dragId === f.id ? 0.4 : 1,
+              outline: dragOverId === f.id && dragId !== f.id ? "2px solid #0d3b66" : "none",
+              cursor: "grab",
+              transition: "outline 0.1s",
+            }}
+          >
+            {/* × en esquina superior derecha */}
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onDelete(f.id); }}
+              title="Eliminar campo"
+              style={{
+                position: "absolute", top: 8, right: 8,
+                width: 24, height: 24, borderRadius: "50%",
+                border: "none", background: "#fee2e2", color: "#e53e3e",
+                cursor: "pointer", fontSize: 14, fontWeight: 700,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                lineHeight: 1, zIndex: 1,
+              }}
+            >
+              ×
+            </button>
+
             {/* Fila principal del campo */}
             <div
               style={{
-                padding: "14px 20px", display: "flex", alignItems: "center",
-                justifyContent: "space-between", cursor: "pointer",
+                padding: "14px 44px 14px 20px",
+                cursor: "pointer",
                 background: editFid === f.id ? "#f0f6fc" : "#fff",
               }}
               onClick={() => setEditFid(editFid === f.id ? null : f.id)}
             >
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <span style={{ fontWeight: 700, fontSize: 15, color: "#0d1b2a", display: "block" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
+                <span style={{ color: "#b8c5d4", fontSize: 14, cursor: "grab" }}>⣿</span>
+                <span style={{ fontWeight: 700, fontSize: 15, color: "#0d1b2a" }}>
                   {f.label}
                 </span>
-                {f.description && (
-                  <span style={{ fontSize: 12, color: "#8fa3b1", display: "block", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {f.description}
-                  </span>
-                )}
-                <span style={{ fontSize: 11, color: "#b8c5d4", display: "block", marginTop: 4, textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.04em" }}>
-                  {f.type} {f.required ? "· Obligatorio" : "· Opcional"}
+              </div>
+              {f.description && (
+                <span style={{ fontSize: 12, color: "#8fa3b1", display: "block", marginLeft: 22, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {f.description}
                 </span>
-              </div>
-              <div
-                style={{ display: "flex", gap: 4, marginLeft: 12, flexShrink: 0 }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <button onClick={() => onMove(f.id, -1)} disabled={i === 0} style={iconBtn(false)} title="Subir">↑</button>
-                <button onClick={() => onMove(f.id, 1)} disabled={i === draft.fields.length - 1} style={iconBtn(false)} title="Bajar">↓</button>
-                <button onClick={() => onDelete(f.id)} style={iconBtn(true)} title="Eliminar">✕</button>
-              </div>
+              )}
+              <span style={{ fontSize: 11, color: "#b8c5d4", display: "block", marginLeft: 22, marginTop: 4, textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.04em" }}>
+                {f.type} {f.required ? "· Obligatorio" : "· Opcional"}
+              </span>
             </div>
 
             {/* Panel de edición del campo */}

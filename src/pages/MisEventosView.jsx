@@ -12,9 +12,10 @@ function statusOf(ev) {
 export default function MisEventosView({ events, onNew, onOpen, onEdit, onValidate, onDelete, onShare, onToggleSoldOut }) {
   const [tab, setTab] = useState("activos");
 
-  const activos = events.filter(e => statusOf(e) === "activo");
-  const pasados = events.filter(e => statusOf(e) === "pasado");
-  const lista = tab === "activos" ? activos : pasados;
+  const borradores = events.filter(e => e.isDraft);
+  const activos = events.filter(e => statusOf(e) === "activo" && !e.isDraft);
+  const pasados = events.filter(e => statusOf(e) === "pasado" && !e.isDraft);
+  const lista = tab === "activos" ? activos : tab === "pasados" ? pasados : borradores;
 
   return (
     <div style={{ maxWidth: 760, margin: "0 auto" }}>
@@ -30,6 +31,7 @@ export default function MisEventosView({ events, onNew, onOpen, onEdit, onValida
         {[
           { key: "activos", label: `En curso (${activos.length})` },
           { key: "pasados", label: `Pasados (${pasados.length})` },
+          { key: "borradores", label: `Borradores (${borradores.length})` },
         ].map(t => (
           <button key={t.key} type="button"
             className={`soft-btn ${tab === t.key ? "soft-btn-primary" : "soft-btn-secondary"}`}
@@ -44,7 +46,9 @@ export default function MisEventosView({ events, onNew, onOpen, onEdit, onValida
       {lista.length === 0 ? (
         <div className="panel-card" style={{ padding: "48px 24px", textAlign: "center" }}>
           <p style={{ color: "#8fa3b1", fontSize: 15, margin: 0 }}>
-            {tab === "activos" ? "No tienes eventos activos." : "No tienes eventos pasados."}
+            {tab === "activos" ? "No tienes eventos activos."
+              : tab === "pasados" ? "No tienes eventos pasados."
+              : "No hay borradores guardados."}
           </p>
           {tab === "activos" && (
             <button type="button" className="soft-btn soft-btn-primary" onClick={onNew} style={{ marginTop: 20 }}>
@@ -55,16 +59,14 @@ export default function MisEventosView({ events, onNew, onOpen, onEdit, onValida
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {lista.map(ev => (
-            <EventCard
-              key={ev.id}
-              ev={ev}
-              onOpen={() => onOpen(ev.id)}
-              onEdit={() => onEdit(ev)}
-              onValidate={() => onValidate(ev.id)}
-              onDelete={() => onDelete(ev.id)}
-              onShare={() => onShare(ev)}
-              onToggleSoldOut={(v) => onToggleSoldOut(ev.id, v)}
-            />
+            ev.isDraft
+              ? <DraftCard key={ev.id} ev={ev} onEdit={() => onEdit(ev)} onDelete={() => onDelete(ev.id)} />
+              : <EventCard
+                  key={ev.id} ev={ev}
+                  onOpen={() => onOpen(ev.id)} onEdit={() => onEdit(ev)}
+                  onValidate={() => onValidate(ev.id)} onDelete={() => onDelete(ev.id)}
+                  onShare={() => onShare(ev)} onToggleSoldOut={(v) => onToggleSoldOut(ev.id, v)}
+                />
           ))}
         </div>
       )}
@@ -181,6 +183,34 @@ function EventCard({ ev, onOpen, onEdit, onValidate, onDelete, onShare, onToggle
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+function DraftCard({ ev, onEdit, onDelete }) {
+  const fields = ev.fields || [];
+  return (
+    <div className="panel-card" style={{ overflow: "hidden" }}>
+      <div style={{ padding: "18px 20px" }}>
+        <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 100, background: "#fef3c7", color: "#92400e", display: "inline-block", marginBottom: 8 }}>
+          Borrador — sin publicar
+        </span>
+        <h3 style={{ fontSize: 16, fontWeight: 700, color: "#0d1b2a", margin: "0 0 4px" }}>
+          {ev.title || "Sin título"}
+        </h3>
+        <p style={{ fontSize: 13, color: "#8fa3b1", margin: 0 }}>
+          {fields.length} campo{fields.length !== 1 ? "s" : ""} configurado{fields.length !== 1 ? "s" : ""}
+          {ev.city ? ` · ${ev.city}` : ""}
+        </p>
+      </div>
+      <div style={{ padding: "12px 20px", borderTop: "1px solid #f0f4f8", display: "flex", gap: 8 }}>
+        <button type="button" className="soft-btn soft-btn-primary" style={{ fontSize: 13 }} onClick={onEdit}>
+          Continuar editando →
+        </button>
+        <button type="button" className="soft-btn" style={{ fontSize: 13, background: "#fff", color: "#e53e3e", border: "1px solid #fed7d7", borderRadius: 10 }} onClick={onDelete}>
+          Descartar
+        </button>
+      </div>
     </div>
   );
 }
