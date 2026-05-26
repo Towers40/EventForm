@@ -18,7 +18,8 @@
       "Bash(git config *)",
       "Bash(curl *)",
       "Bash(node -e \"import\\('./index.js'\\).then\\(\\(\\) => { setTimeout\\(\\(\\) => { console.log\\('OK'\\); process.exit\\(0\\); }, 1500\\) }\\).catch\\(e => { console.error\\('FAIL:', e.message\\); process.exit\\(1\\); }\\)\")",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(python3 -c \"import json,sys; p=json.load\\(sys.stdin\\); print\\('version:', p.get\\('version'\\)\\); exports = p.get\\('exports',{}\\); print\\('http export:', 'yes' if './http' in exports else 'NO'\\)\")"
     ]
   }
 }
