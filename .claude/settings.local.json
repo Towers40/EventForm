@@ -8,7 +8,11 @@
       "Bash(npm install *)",
       "Bash(git add *)",
       "Bash(git commit *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(curl -s https://eventform-production.up.railway.app/api/health)",
+      "Bash(curl -s -o /dev/null -w \"Vercel: %{http_code}\" https://event-form-navy.vercel.app/)",
+      "Bash(timeout 5 node index.js)",
+      "Bash(node -e \"import\\('./index.js'\\).then\\(\\(\\) => { setTimeout\\(\\(\\) => process.exit\\(0\\), 2000\\) }\\)\")"
     ]
   }
 }
