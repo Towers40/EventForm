@@ -6,17 +6,25 @@ import fs from "fs";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Modo local: archivo SQLite. Modo producción: Turso cloud
-const useLocalFile = !process.env.TURSO_URL;
+const TURSO_URL = process.env.TURSO_URL;
+const isVercel = Boolean(process.env.VERCEL);
 
-if (useLocalFile) {
-  const dataDir = process.env.DATA_DIR || path.join(__dirname, "data");
-  if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+let dbPath;
+if (!TURSO_URL) {
+  // Local o Vercel sin Turso → usar /tmp en Vercel, ./data localmente
+  dbPath = isVercel
+    ? "file:/tmp/eventform.db"
+    : `file:${path.join(process.env.DATA_DIR || path.join(__dirname, "data"), "eventform.db")}`;
+  if (!isVercel) {
+    const dataDir = process.env.DATA_DIR || path.join(__dirname, "data");
+    if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+  }
 }
 
 export const db = createClient(
-  useLocalFile
-    ? { url: `file:${path.join(process.env.DATA_DIR || path.join(__dirname, "data"), "eventform.db")}` }
-    : { url: process.env.TURSO_URL, authToken: process.env.TURSO_TOKEN }
+  TURSO_URL
+    ? { url: TURSO_URL, authToken: process.env.TURSO_TOKEN }
+    : { url: dbPath }
 );
 
 export async function initDb() {
