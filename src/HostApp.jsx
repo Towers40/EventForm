@@ -20,7 +20,6 @@ import {
   performCheckIn,
   validateRegistrationForm,
   buildParticipant,
-  daysInMonth,
 } from "./lib/tickets.js";
 import { isSoldOut, capacityLabel } from "./lib/capacity.js";
 import {
@@ -82,6 +81,15 @@ function Lbl({ children, top }) {
   );
 }
 
+const tfLabel = {
+  fontSize: 11,
+  fontWeight: 800,
+  color: "#5c6b7a",
+  marginBottom: 8,
+  textTransform: "uppercase",
+  letterSpacing: "0.08em",
+};
+
 function makeSlug(title) {
   const base = String(title || "evento")
     .normalize("NFD")
@@ -96,6 +104,32 @@ function makeSlug(title) {
 function publicUrl(ev) {
   return ev.publicUrl || `${window.location.origin}/e/${ev.slug || ev.id}`;
 }
+
+function toLocalDateTimeValue(date = "", time = "") {
+  return date && time ? `${date}T${time}` : "";
+}
+
+function splitLocalDateTime(value) {
+  const [date = "", timeWithSeconds = ""] = String(value || "").split("T");
+  return { date, time: timeWithSeconds.slice(0, 5) };
+}
+
+function formatEventSchedule(ev) {
+  if (ev?.startDate && ev?.startTime) {
+    const start = `${ev.startDate} ${ev.startTime}`;
+    const end = ev.endDate && ev.endTime ? ` → ${ev.endDate} ${ev.endTime}` : "";
+    return `${start}${end}`;
+  }
+  return ev?.date || "Sin fecha";
+}
+
+const CAPACITY_OPTIONS = [
+  { label: "Menos de 50 personas", value: "under-50" },
+  { label: "Pequeño (hasta 50 personas)", value: "0-50" },
+  { label: "Mediano (50 a 100 personas)", value: "50-100" },
+  { label: "Grande (100 a 300 personas)", value: "100-300" },
+  { label: "Masivo (más de 300 personas)", value: "300+" },
+];
 
 // ─── COMPONENTE PRINCIPAL ──────────────────────────────────────────────────────
 export default function HostApp({ initialDraft = null, onDraftConsumed }) {
@@ -238,12 +272,18 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
       eventTypeCustom: "",
       slug: "",
       date: "",
+      startDate: "",
+      startTime: "",
+      endDate: "",
+      endTime: "",
       city: "",
       location: "",
       address: "",
+      locationInstructions: "",
       lat: null,
       lng: null,
       capacity: "",
+      capacityCustom: "",
       headerImage: "",
       fields: [],
       registrations: [],
@@ -771,31 +811,29 @@ function Dashboard({ events, onNew, onOpen, onRegister, onValidate, onAdmin }) {
 
 // ─── WIZARD CORREGIDO (VALIDACIÓN DE BOTÓN FINAL CORREGIDA) ───────────────────
 function CreateEventWizard({ draft, setDraft, step, setStep, onDone, onCancel }) {
-  const totalSteps = 4;
+  const totalSteps = 6;
   const progressPercentage = (step / totalSteps) * 100;
   const [animClass, setAnimClass] = useState("animate-fade-in");
 
-  // Estados locales independientes para el constructor cronológico
-  const [dDay, setDDay] = useState("");
-  const [dMonth, setDMonth] = useState("");
-  const [dYear, setDYear] = useState("2026");
-
-  const maxDay = daysInMonth(dMonth, dYear);
-
-  useEffect(() => {
-    if (dDay && Number(dDay) > maxDay) setDDay(String(maxDay));
-  }, [dMonth, dYear, maxDay, dDay]);
-
   const updateDraft = (key, value) => setDraft((prev) => ({ ...prev, [key]: value }));
+
+  const updateStartDateTime = (value) => {
+    const next = splitLocalDateTime(value);
+    setDraft((p) => ({ ...p, startDate: next.date, startTime: next.time, date: next.date, endDate: p.endDate || next.date }));
+  };
+
+  const updateEndDateTime = (value) => {
+    const next = splitLocalDateTime(value);
+    setDraft((p) => ({ ...p, endDate: next.date, endTime: next.time }));
+  };
 
   const handleNextStep = () => {
     setAnimClass("animate-fade-out");
     setTimeout(() => {
       let updatedDate = draft.date;
       
-      // Si estamos en el último paso, armamos la string de fecha antes de guardarla en el draft final
-      if (step === 4 && dDay && dMonth && dYear) {
-        updatedDate = `${dYear}-${String(dMonth).padStart(2, '0')}-${String(dDay).padStart(2, '0')}`;
+      if (step === 4 && draft.startDate) {
+        updatedDate = draft.startDate;
       }
 
       const updatedDraft = { ...draft, date: updatedDate };
@@ -822,250 +860,213 @@ function CreateEventWizard({ draft, setDraft, step, setStep, onDone, onCancel })
     }, 250);
   };
 
+  const canProceed =
+    (step === 1 && draft.title.trim()) ||
+    (step === 2 &&
+      (draft.eventType || draft.desc) &&
+      !(draft.eventType === EVENT_TYPE_OTHER && !draft.eventTypeCustom?.trim())) ||
+    (step === 3 &&
+      draft.capacity &&
+      (draft.capacity !== "under-50" ||
+        (Number(draft.capacityCustom) > 0 && Number(draft.capacityCustom) < 50))) ||
+    (step === 4 && draft.startDate && draft.startTime && draft.endDate && draft.endTime) ||
+    (step === 5 && draft.city && draft.address?.trim()) ||
+    step === 6;
+
   return (
-    <div style={{ minHeight: "60vh", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-      
-      <div style={{ background: BLANCO_CONTRASTE, border: `2px solid ${NEGRO_PURO}`, borderRadius: 16, padding: "32px", width: "100%", boxSizing: "border-box" }}>
-        
-        {/* Barra de progreso */}
-        <div style={{ width: "100%", height: "4px", background: "#e8f0fe", borderRadius: 10, marginBottom: 32, overflow: "hidden" }}>
-          <div style={{ width: `${progressPercentage}%`, height: "100%", background: "linear-gradient(90deg, #0d3b66, #1a5f8a)", transition: "width 0.3s ease-out" }} />
-        </div>
-
-        <div className={animClass}>
-          
-          {/* PASO 1 */}
-          {step === 1 && (
-            <div style={{ textAlign: "center" }}>
-              <label style={{ fontSize: 24, fontWeight: 900, display: "block", marginBottom: 20, color: NEGRO_PURO }}>
-                ¿Qué nombre llevará tu evento? *
-              </label>
-              <input 
-                type="text"
-                style={{ width: "100%", border: "none", borderBottom: `2px solid ${NEGRO_PURO}`, padding: "10px 0", fontSize: 20, fontWeight: 700, outline: "none", color: NEGRO_PURO, textAlign: "center", marginBottom: 24, background: "transparent" }}
-                placeholder="Ej. Evento Especial de Café"
-                value={draft.title}
-                onChange={(e) => updateDraft("title", e.target.value)}
-                autoFocus
-              />
-              <button 
-                onClick={handleNextStep} 
-                disabled={!draft.title.trim()}
-                style={{ background: NEGRO_PURO, color: BLANCO_CONTRASTE, border: "none", padding: "12px 32px", borderRadius: 8, fontWeight: 800, fontSize: 14, cursor: "pointer", opacity: !draft.title.trim() ? 0.3 : 1 }}
-              >
-                SIGUIENTE →
-              </button>
-            </div>
-          )}
-
-          {/* PASO 2 */}
-          {step === 2 && (
-            <div>
-              <label style={{ fontSize: 22, fontWeight: 900, display: "block", marginBottom: 20, textAlign: "center", color: NEGRO_PURO }}>
-                ¿Qué tipo de evento vas a realizar?
-              </label>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
-                {[...EVENT_TYPE_PRESETS, "Otro (especificar)"].map((type) => {
-                  const isOtro = type === "Otro (especificar)";
-                  const isSelected = isOtro
-                    ? draft.eventType === EVENT_TYPE_OTHER
-                    : (draft.eventType || draft.desc) === type;
-                  return (
-                    <button
-                      key={type}
-                      type="button"
-                      onClick={() => {
-                        if (isOtro) {
-                          updateDraft("eventType", EVENT_TYPE_OTHER);
-                        } else {
-                          setDraft((p) => ({ ...p, eventType: type, eventTypeCustom: "" }));
-                        }
-                      }}
-                      style={{
-                        width: "100%", textAlign: "left", padding: "16px", borderRadius: 10, fontSize: 15, fontWeight: 700,
-                        border: `2px solid ${NEGRO_PURO}`,
-                        background: isSelected ? NEGRO_PURO : BLANCO_CONTRASTE,
-                        color: isSelected ? BLANCO_CONTRASTE : NEGRO_PURO,
-                        cursor: "pointer"
-                      }}
-                    >
-                      {type}
-                    </button>
-                  );
-                })}
-              </div>
-              {draft.eventType === EVENT_TYPE_OTHER && (
-                <input
-                  type="text"
-                  style={{ ...inputStyle, marginBottom: 20 }}
-                  placeholder="Describe el tipo de evento"
-                  value={draft.eventTypeCustom || ""}
-                  onChange={(e) => updateDraft("eventTypeCustom", e.target.value)}
-                />
-              )}
-              <div style={{ textAlign: "center" }}>
-                <button
-                  type="button"
-                  onClick={handleNextStep}
-                  disabled={
-                    !(draft.eventType || draft.desc) ||
-                    (draft.eventType === EVENT_TYPE_OTHER && !draft.eventTypeCustom?.trim())
-                  }
-                  style={{
-                    background: NEGRO_PURO,
-                    color: BLANCO_CONTRASTE,
-                    border: "none",
-                    padding: "12px 32px",
-                    borderRadius: 8,
-                    fontWeight: 800,
-                    fontSize: 14,
-                    cursor: "pointer",
-                    opacity:
-                      !(draft.eventType || draft.desc) ||
-                      (draft.eventType === EVENT_TYPE_OTHER && !draft.eventTypeCustom?.trim())
-                        ? 0.3
-                        : 1,
-                  }}
-                >
-                  SIGUIENTE →
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* PASO 3 */}
-          {step === 3 && (
-            <div>
-              <label style={{ fontSize: 22, fontWeight: 900, display: "block", marginBottom: 20, textAlign: "center", color: NEGRO_PURO }}>
-                ¿Cuál es el aforo aproximado de asistentes?
-              </label>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
-                {[
-                  { label: "Pequeño (0 a 50 personas)", value: "0-50" },
-                  { label: "Mediano (50 a 100 personas)", value: "50-100" },
-                  { label: "Grande (100 a 300 personas)", value: "100-300" },
-                  { label: "Masivo (Más de 300 personas)", value: "300+" }
-                ].map((opt) => {
-                  const isSelected = draft.capacity === opt.value;
-                  return (
-                    <button
-                      key={opt.value}
-                      onClick={() => updateDraft("capacity", opt.value)}
-                      style={{
-                        width: "100%", textAlign: "left", padding: "16px", borderRadius: 10, fontSize: 15, fontWeight: 700,
-                        border: `2px solid ${NEGRO_PURO}`,
-                        background: isSelected ? NEGRO_PURO : BLANCO_CONTRASTE,
-                        color: isSelected ? BLANCO_CONTRASTE : NEGRO_PURO,
-                        cursor: "pointer"
-                      }}
-                    >
-                      {opt.label}
-                    </button>
-                  );
-                })}
-              </div>
-              <div style={{ textAlign: "center" }}>
-                <button
-                  type="button"
-                  onClick={handleNextStep}
-                  disabled={!draft.capacity}
-                  style={{
-                    background: NEGRO_PURO,
-                    color: BLANCO_CONTRASTE,
-                    border: "none",
-                    padding: "12px 32px",
-                    borderRadius: 8,
-                    fontWeight: 800,
-                    fontSize: 14,
-                    cursor: "pointer",
-                    opacity: !draft.capacity ? 0.3 : 1,
-                  }}
-                >
-                  SIGUIENTE →
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* PASO 4 */}
-          {step === 4 && (
-            <div>
-              <label style={{ fontSize: 22, fontWeight: 900, display: "block", marginBottom: 12, textAlign: "center", color: NEGRO_PURO }}>
-                Logística del evento
-              </label>
-              <p style={{ fontSize: 13, color: NEGRO_MUTED_70, textAlign: "center", marginBottom: 20, lineHeight: 1.45 }}>
-                Elige la ciudad, escribe el nombre del lugar y confirma en el mapa (lista de sugerencias o botón «Ubicar en mapa»).
-              </p>
-              <div style={{ display: "flex", flexDirection: "column", gap: 16, marginBottom: 28 }}>
-                
-                <div>
-                  <Lbl>Fecha del Evento (Día / Mes / Año)</Lbl>
-                  <div className="date-row" style={{ display: "flex", gap: 10 }}>
-                    <select value={dDay} onChange={(e) => setDDay(e.target.value)} style={{ flex: 1, padding: "12px", border: `2px solid ${NEGRO_PURO}`, borderRadius: 8, fontSize: 14, fontWeight: 600, color: NEGRO_PURO, background: BLANCO_CONTRASTE }}>
-                      <option value="">Día</option>
-                      {Array.from({ length: maxDay }, (_, i) => (
-                        <option key={i+1} value={i+1}>{i+1}</option>
-                      ))}
-                    </select>
-
-                    <select value={dMonth} onChange={(e) => setDMonth(e.target.value)} style={{ flex: 1, padding: "12px", border: `2px solid ${NEGRO_PURO}`, borderRadius: 8, fontSize: 14, fontWeight: 600, color: NEGRO_PURO, background: BLANCO_CONTRASTE }}>
-                      <option value="">Mes</option>
-                      {Array.from({ length: 12 }, (_, i) => (
-                        <option key={i+1} value={i+1}>{i+1}</option>
-                      ))}
-                    </select>
-
-                    <select value={dYear} onChange={(e) => setDYear(e.target.value)} style={{ flex: 1, padding: "12px", border: `2px solid ${NEGRO_PURO}`, borderRadius: 8, fontSize: 14, fontWeight: 600, color: NEGRO_PURO, background: BLANCO_CONTRASTE }}>
-                      {["2026", "2027", "2028"].map(y => (
-                        <option key={y} value={y}>{y}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <ColombiaAddressPicker
-                  value={{
-                    city: draft.city,
-                    address: draft.address,
-                    lat: draft.lat,
-                    lng: draft.lng,
-                  }}
-                  onChange={(loc) =>
-                    setDraft((p) => ({
-                      ...p,
-                      city: loc.city,
-                      address: loc.address,
-                      location: loc.location,
-                      lat: loc.lat,
-                      lng: loc.lng,
-                    }))
-                  }
-                />
-              </div>
-
-              <div style={{ textAlign: "center" }}>
-                <button
-                  type="button"
-                  onClick={handleNextStep}
-                  disabled={!dDay || !dMonth || !draft.city || !draft.address?.trim()}
-                  style={{
-                    background: "#0d3b66", color: "#fff", border: "none", padding: "14px 28px", borderRadius: 10, fontWeight: 700, fontSize: 14,
-                    cursor: "pointer", opacity: (!dDay || !dMonth || !draft.city || !draft.address?.trim()) ? 0.35 : 1
-                  }}
-                >
-                  Continuar al formulario →
-                </button>
-              </div>
-            </div>
-          )}
-
-        </div>
+    <div className="host-tf-wizard">
+      <div className="tf-progress host-tf-progress">
+        <div className="tf-progress-fill" style={{ width: `${progressPercentage}%` }} />
       </div>
 
-      <div style={{ textAlign: "left", marginTop: 16, paddingLeft: 8 }}>
-        <button onClick={handleBackStep} style={{ background: "none", border: "none", fontWeight: 800, fontSize: 13, cursor: "pointer", color: NEGRO_MUTED_70 }}>
-          {step === 1 ? "← CANCELAR" : "← ATRÁS"}
+      <div className={`host-tf-body ${animClass}`}>
+        {step === 1 && (
+          <>
+            <div className="tf-step-num">1</div>
+            <h2 className="tf-question">¿Qué nombre llevará tu evento?</h2>
+            <p className="tf-hint">Elige un nombre memorable para tus asistentes.</p>
+            <input
+              className="tf-input-line"
+              type="text"
+              placeholder="Ej. Congreso de Innovación 2026"
+              value={draft.title}
+              onChange={(e) => updateDraft("title", e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && canProceed && handleNextStep()}
+              autoFocus
+            />
+          </>
+        )}
+
+        {step === 2 && (
+          <>
+            <div className="tf-step-num">2</div>
+            <h2 className="tf-question">¿Qué tipo de evento vas a realizar?</h2>
+            <p className="tf-hint">Selecciona la categoría que mejor lo describe.</p>
+            {[...EVENT_TYPE_PRESETS, "Otro (especificar)"].map((type) => {
+              const isOtro = type === "Otro (especificar)";
+              const isSelected = isOtro
+                ? draft.eventType === EVENT_TYPE_OTHER
+                : (draft.eventType || draft.desc) === type;
+              return (
+                <button
+                  key={type}
+                  type="button"
+                  className={`tf-choice${isSelected ? " selected" : ""}`}
+                  onClick={() => {
+                    if (isOtro) updateDraft("eventType", EVENT_TYPE_OTHER);
+                    else setDraft((p) => ({ ...p, eventType: type, eventTypeCustom: "" }));
+                  }}
+                >
+                  {type}
+                </button>
+              );
+            })}
+            {draft.eventType === EVENT_TYPE_OTHER && (
+              <input
+                className="tf-input-line"
+                style={{ marginTop: 16 }}
+                placeholder="Describe el tipo de evento"
+                value={draft.eventTypeCustom || ""}
+                onChange={(e) => updateDraft("eventTypeCustom", e.target.value)}
+                autoFocus
+              />
+            )}
+          </>
+        )}
+
+        {step === 3 && (
+          <>
+            <div className="tf-step-num">3</div>
+            <h2 className="tf-question">¿Cuál es el aforo aproximado?</h2>
+            <p className="tf-hint">Esto nos ayuda a preparar el formulario adecuado para tu evento.</p>
+            {CAPACITY_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                className={`tf-choice${draft.capacity === opt.value ? " selected" : ""}`}
+                onClick={() =>
+                  setDraft((p) => ({
+                    ...p,
+                    capacity: opt.value,
+                    capacityCustom: opt.value === "under-50" ? p.capacityCustom : "",
+                  }))
+                }
+              >
+                {opt.label}
+              </button>
+            ))}
+            <input
+              className="tf-input-line"
+              type="number"
+              min="1"
+              max="49"
+              inputMode="numeric"
+              placeholder="Cantidad exacta de asistentes"
+              value={draft.capacityCustom || ""}
+              disabled={draft.capacity !== "under-50"}
+              onChange={(e) => updateDraft("capacityCustom", e.target.value)}
+              style={{ marginTop: 12, opacity: draft.capacity === "under-50" ? 1 : 0.35 }}
+            />
+            {draft.capacity === "under-50" && (
+              <p className="tf-hint" style={{ marginTop: 10, fontSize: 13 }}>
+                Escribe un número entre 1 y 49.
+              </p>
+            )}
+          </>
+        )}
+
+        {step === 4 && (
+          <>
+            <div className="tf-step-num">4</div>
+            <h2 className="tf-question">¿Cuándo será tu evento?</h2>
+            <p className="tf-hint">Define fecha y hora de inicio, y también fecha y hora de finalización.</p>
+            <div style={{ display: "grid", gap: 22 }}>
+              <div>
+                <p style={tfLabel}>Inicio del evento</p>
+                <input
+                  className="tf-input-line"
+                  type="datetime-local"
+                  value={toLocalDateTimeValue(draft.startDate, draft.startTime)}
+                  onInput={(e) => updateStartDateTime(e.target.value)}
+                  onChange={(e) => updateStartDateTime(e.target.value)}
+                />
+              </div>
+              <div>
+                <p style={tfLabel}>Fin del evento</p>
+                <input
+                  className="tf-input-line"
+                  type="datetime-local"
+                  value={toLocalDateTimeValue(draft.endDate, draft.endTime)}
+                  onInput={(e) => updateEndDateTime(e.target.value)}
+                  onChange={(e) => updateEndDateTime(e.target.value)}
+                />
+              </div>
+            </div>
+          </>
+        )}
+
+        {step === 5 && (
+          <>
+            <div className="tf-step-num">5</div>
+            <h2 className="tf-question">¿Dónde será el evento?</h2>
+            <p className="tf-hint">Selecciona ciudad, lugar o dirección. Puedes añadir instrucciones si la llegada necesita más contexto.</p>
+            <div className="host-tf-location">
+              <ColombiaAddressPicker
+                value={{
+                  city: draft.city,
+                  address: draft.address,
+                  lat: draft.lat,
+                  lng: draft.lng,
+                }}
+                onChange={(loc) =>
+                  setDraft((p) => ({
+                    ...p,
+                    city: loc.city,
+                    address: loc.address,
+                    location: loc.location,
+                    lat: loc.lat,
+                    lng: loc.lng,
+                  }))
+                }
+              />
+            </div>
+            <div style={{ marginTop: 28 }}>
+              <p style={tfLabel}>Instrucciones adicionales opcionales</p>
+              <textarea
+                className="tf-input-line"
+                rows={3}
+                placeholder="Ej. Entrada por la portería norte, preguntar por recepción…"
+                value={draft.locationInstructions || ""}
+                onChange={(e) => updateDraft("locationInstructions", e.target.value)}
+                style={{ resize: "vertical", minHeight: 92, lineHeight: 1.4 }}
+              />
+            </div>
+          </>
+        )}
+
+        {step === 6 && (
+          <>
+            <div className="tf-step-num">6</div>
+            <h2 className="tf-question">Agrega una imagen para tu evento</h2>
+            <p className="tf-hint">Será la portada del enlace público y del pase QR. Puedes continuar sin imagen si aún no la tienes.</p>
+            <HeaderImageUpload
+              image={draft.headerImage}
+              onChange={(headerImage) => updateDraft("headerImage", headerImage)}
+            />
+          </>
+        )}
+      </div>
+
+      <div className="host-tf-footer">
+        <button type="button" className="tf-btn-back" onClick={handleBackStep} aria-label={step === 1 ? "Cancelar" : "Atrás"}>
+          ↑
         </button>
+        <button type="button" className="tf-btn-ok" onClick={handleNextStep} disabled={!canProceed}>
+          {step === totalSteps ? "Continuar" : "OK ✓"}
+        </button>
+        <span style={{ fontSize: 12, color: "#9B9B9B", userSelect: "none" }}>
+          Presiona Enter ↵
+        </span>
       </div>
     </div>
   );
@@ -1149,11 +1150,58 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
             Ubicación y configuración del evento
           </button>
           {showSettings && (
-            <div style={{ padding: "0 24px 20px" }}>
+            <div style={{ padding: "0 24px 20px", display: "grid", gap: 16 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div>
+                  <label style={bldLabel}>Inicio</label>
+                  <input
+                    type="datetime-local"
+                    value={toLocalDateTimeValue(draft.startDate, draft.startTime)}
+                    onInput={(e) => {
+                      const next = splitLocalDateTime(e.target.value);
+                      setDraft((p) => ({ ...p, startDate: next.date, startTime: next.time, date: next.date, endDate: p.endDate || next.date }));
+                    }}
+                    onChange={(e) => {
+                      const next = splitLocalDateTime(e.target.value);
+                      setDraft((p) => ({ ...p, startDate: next.date, startTime: next.time, date: next.date, endDate: p.endDate || next.date }));
+                    }}
+                    className="tf-input-line"
+                    style={{ fontSize: 14 }}
+                  />
+                </div>
+                <div>
+                  <label style={bldLabel}>Fin</label>
+                  <input
+                    type="datetime-local"
+                    value={toLocalDateTimeValue(draft.endDate, draft.endTime)}
+                    onInput={(e) => {
+                      const next = splitLocalDateTime(e.target.value);
+                      setDraft((p) => ({ ...p, endDate: next.date, endTime: next.time }));
+                    }}
+                    onChange={(e) => {
+                      const next = splitLocalDateTime(e.target.value);
+                      setDraft((p) => ({ ...p, endDate: next.date, endTime: next.time }));
+                    }}
+                    className="tf-input-line"
+                    style={{ fontSize: 14 }}
+                  />
+                </div>
+              </div>
               <ColombiaAddressPicker
                 value={{ city: draft.city, address: draft.address, lat: draft.lat, lng: draft.lng }}
                 onChange={(loc) => setDraft((p) => ({ ...p, city: loc.city, address: loc.address, location: loc.location, lat: loc.lat, lng: loc.lng }))}
               />
+              <div>
+                <label style={bldLabel}>Instrucciones de llegada (opcional)</label>
+                <textarea
+                  className="tf-input-line"
+                  rows={3}
+                  placeholder="Ej. Entrada por la portería norte, preguntar por recepción…"
+                  value={draft.locationInstructions || ""}
+                  onChange={(e) => setDraft((p) => ({ ...p, locationInstructions: e.target.value }))}
+                  style={{ fontSize: 14, resize: "vertical", minHeight: 84 }}
+                />
+              </div>
             </div>
           )}
         </div>
@@ -1201,7 +1249,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
               style={{
                 position: "absolute", top: 8, right: 8,
                 width: 24, height: 24, borderRadius: "50%",
-                border: "none", background: "#fee2e2", color: "#e53e3e",
+                border: "none", background: "#dbeafe", color: "#0d3b66",
                 cursor: "pointer", fontSize: 14, fontWeight: 700,
                 display: "flex", alignItems: "center", justifyContent: "center",
                 lineHeight: 1, zIndex: 1,
@@ -1326,6 +1374,24 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
   );
 }
 
+function iconBtn() {
+  return {
+    width: 30,
+    height: 30,
+    borderRadius: "50%",
+    border: "none",
+    background: "#dbeafe",
+    color: "#0d3b66",
+    cursor: "pointer",
+    fontSize: 14,
+    fontWeight: 900,
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flex: "0 0 auto",
+  };
+}
+
 // ─── DETALLE DEL EVENTO ────────────────────────────────────────────────────────
 function Detail({ ev, onEdit, onValidate, onCrm, onShare, publicUrl: pubUrl }) {
   return (
@@ -1341,10 +1407,15 @@ function Detail({ ev, onEdit, onValidate, onCrm, onShare, publicUrl: pubUrl }) {
         {ev.eventDescription && (
           <p style={{ fontSize: 14, color: NEGRO_MUTED_70, background: BLANCO_CONTRASTE, padding: 12, borderRadius: 8, border: `1px solid ${NEGRO_PURO}`, marginBottom: 12 }}>{ev.eventDescription}</p>
         )}
-        <p style={{ margin: "0 0 4px", color: NEGRO_PURO, fontSize: 15, fontWeight: 600 }}>📅 {ev.date || "Sin fecha"}</p>
+        <p style={{ margin: "0 0 4px", color: NEGRO_PURO, fontSize: 15, fontWeight: 600 }}>📅 {formatEventSchedule(ev)}</p>
         <p style={{ margin: "0 0 4px", color: NEGRO_PURO, fontSize: 15, fontWeight: 600 }}>
           📍 {ev.city ? `${ev.city} — ` : ""}{ev.location || ev.address || "Sin ubicación"}
         </p>
+        {ev.locationInstructions && (
+          <p style={{ margin: "0 0 8px", color: NEGRO_MUTED_70, fontSize: 13, fontWeight: 600 }}>
+            Indicaciones: {ev.locationInstructions}
+          </p>
+        )}
         <p style={{ margin: 0, fontSize: 14, fontWeight: 800 }}>{capacityLabel(ev)}</p>
         {ev.lat != null && <LocationMap lat={ev.lat} lng={ev.lng} height={200} />}
         <div className="admin-actions" style={{ display: "flex", gap: 8, marginTop: 16, flexWrap: "wrap" }}>

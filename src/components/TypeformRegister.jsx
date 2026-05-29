@@ -16,10 +16,7 @@ export default function TypeformRegister({ event, onSubmit, onDone }) {
   const soldOut = isSoldOut(event);
 
   const steps = useMemo(() => {
-    const s = [];
-    if (event.eventDescription) {
-      s.push({ type: "intro", id: "intro" });
-    }
+    const s = [{ type: "intro", id: "intro" }];
     for (const f of event.fields || []) {
       s.push({ type: "field", field: f, id: f.id });
     }
@@ -96,27 +93,41 @@ export default function TypeformRegister({ event, onSubmit, onDone }) {
 
   return (
     <div className="tf-screen">
-      {event.headerImage && (
-        <img src={event.headerImage} alt="" className="tf-header-img" />
-      )}
       <div className="tf-progress">
         <div className="tf-progress-fill" style={{ width: `${progress}%` }} />
       </div>
 
-      <div className="tf-body tf-fade" key={step}>
-        <div className="tf-step-num">{step + 1}</div>
-
+      <div className={`tf-body tf-fade${current?.type === "intro" ? " tf-body-cover" : ""}`} key={step}>
         {current?.type === "intro" && (
-          <>
-            <h1 className="tf-question">
-              Te damos la bienvenida a <strong>{event.title}</strong>
-            </h1>
-            <p className="tf-hint">{event.eventDescription}</p>
-          </>
+          <div className="tf-event-cover">
+            <div className="tf-event-cover-media">
+              {event.headerImage ? (
+                <img src={event.headerImage} alt={event.title} />
+              ) : (
+                <div className="tf-event-cover-placeholder">{event.title?.slice(0, 1) || "E"}</div>
+              )}
+            </div>
+            <div className="tf-event-cover-content">
+              <p className="tf-event-cover-kicker">Evento privado</p>
+              <h1>{event.title}</h1>
+              {event.eventDescription && <p className="tf-event-cover-desc">{event.eventDescription}</p>}
+              <div className="tf-event-cover-meta">
+                <span>{event.startDate && event.startTime ? `${event.startDate} · ${event.startTime}` : event.date || "Fecha por confirmar"}</span>
+                <span>{event.city ? `${event.city} · ` : ""}{event.location || event.address || "Lugar por confirmar"}</span>
+              </div>
+              {event.locationInstructions && (
+                <p className="tf-event-cover-instructions">{event.locationInstructions}</p>
+              )}
+              <button type="button" className="tf-event-cover-btn" onClick={next}>
+                Reservar
+              </button>
+            </div>
+          </div>
         )}
 
         {current?.type === "field" && (
           <>
+            <div className="tf-step-num">{step + 1}</div>
             <h1 className="tf-question">
               {current.field.label}
               {current.field.required && " *"}
@@ -158,6 +169,7 @@ export default function TypeformRegister({ event, onSubmit, onDone }) {
 
         {current?.type === "consent" && (
           <>
+            <div className="tf-step-num">{step + 1}</div>
             <h1 className="tf-question">Último paso: tu consentimiento</h1>
             <p className="tf-hint">
               Tratamos tus datos según nuestra política de privacidad (Ley 1581 de 2012 — Colombia).
@@ -193,7 +205,7 @@ export default function TypeformRegister({ event, onSubmit, onDone }) {
         )}
       </div>
 
-      <div className="tf-footer">
+      {current?.type !== "intro" && <div className="tf-footer">
         {step > 0 && (
           <button type="button" className="tf-btn-back" onClick={back} aria-label="Atrás">
             ↑
@@ -207,7 +219,7 @@ export default function TypeformRegister({ event, onSubmit, onDone }) {
         >
           {submitting ? "…" : step === total - 1 ? "ENVIAR" : "OK"}
         </button>
-      </div>
+      </div>}
     </div>
   );
 }

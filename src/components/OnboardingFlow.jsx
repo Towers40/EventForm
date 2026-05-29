@@ -4,7 +4,6 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { COLOMBIA_CITIES } from "../lib/colombia.js";
 import { EVENT_TYPE_OTHER, EVENT_TYPE_PRESETS } from "../lib/colombia.js";
 import { searchPlacesInColombia } from "../lib/geocoding.js";
-import { daysInMonth } from "../lib/tickets.js";
 import { VERDE_CORPORATIVO } from "../lib/theme.js";
 import { api } from "../lib/api.js";
 import "../styles/typeform.css";
@@ -35,13 +34,12 @@ function buildBaseFields(capacity) {
 }
 
 const CAPACITY_OPTS = [
+  { label: "Menos de 50 personas", value: "under-50" },
   { label: "Pequeño — hasta 50 personas", value: "0-50" },
   { label: "Mediano — 50 a 100 personas", value: "50-100" },
   { label: "Grande — 100 a 300 personas", value: "100-300" },
   { label: "Masivo — más de 300 personas", value: "300+" },
 ];
-
-const MONTHS = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 
 // ─── PICKER DE UBICACIÓN estilo Typeform ─────────────────────────────────────
 function TFLocationPicker({ value, onChange }) {
@@ -273,7 +271,16 @@ function PasswordStrength({ password }) {
 }
 
 // ─── ONBOARDING FLOW PRINCIPAL ────────────────────────────────────────────────
-// phase: 0=bienvenida, 1–4=wizard, 5=crear cuenta, 6=verificar correo
+function toLocalDateTimeValue(date = "", time = "") {
+  return date && time ? `${date}T${time}` : "";
+}
+
+function splitLocalDateTime(value) {
+  const [date = "", timeWithSeconds = ""] = String(value || "").split("T");
+  return { date, time: timeWithSeconds.slice(0, 5) };
+}
+
+// phase: 0=bienvenida, 1–6=wizard, 7=crear cuenta, 8=verificar correo
 export default function OnboardingFlow({ onDraftReady }) {
   const { register, loginWithToken } = useAuth();
   const nav = useNavigate();
@@ -288,21 +295,23 @@ export default function OnboardingFlow({ onDraftReady }) {
     eventTypeCustom: "",
     slug: "",
     date: "",
+    startDate: "",
+    startTime: "",
+    endDate: "",
+    endTime: "",
     city: "",
     location: "",
     address: "",
+    locationInstructions: "",
     lat: null,
     lng: null,
     capacity: "",
+    capacityCustom: "",
     headerImage: "",
     fields: [],
     registrations: [],
     eventDescription: "",
   });
-
-  const [dDay, setDDay] = useState("");
-  const [dMonth, setDMonth] = useState("");
-  const [dYear, setDYear] = useState("2026");
 
   const [acName, setAcName] = useState("");
   const [acEmail, setAcEmail] = useState("");
@@ -316,17 +325,28 @@ export default function OnboardingFlow({ onDraftReady }) {
   const [resendStatus, setResendStatus] = useState("idle");
   const digitRefs = [useRef(), useRef(), useRef(), useRef()];
 
-  const maxDay = daysInMonth(dMonth, dYear);
-  useEffect(() => {
-    if (dDay && Number(dDay) > maxDay) setDDay(String(maxDay));
-  }, [dMonth, dYear, maxDay, dDay]);
-
   const go = (next) => {
     setAnimClass("tf-fade-out");
     setTimeout(() => {
       setPhase(next);
       setAnimClass("tf-fade");
     }, 220);
+  };
+
+  const updateStartDateTime = (value) => {
+    const next = splitLocalDateTime(value);
+    setDraft((p) => ({
+      ...p,
+      startDate: next.date,
+      startTime: next.time,
+      date: next.date,
+      endDate: p.endDate || next.date,
+    }));
+  };
+
+  const updateEndDateTime = (value) => {
+    const next = splitLocalDateTime(value);
+    setDraft((p) => ({ ...p, endDate: next.date, endTime: next.time }));
   };
 
   const canNext = () => {
@@ -336,16 +356,23 @@ export default function OnboardingFlow({ onDraftReady }) {
         !!(draft.eventType || draft.desc) &&
         !(draft.eventType === EVENT_TYPE_OTHER && !draft.eventTypeCustom?.trim())
       );
-    if (phase === 3) return !!draft.capacity;
+    if (phase === 3) {
+      if (draft.capacity !== "under-50") return !!draft.capacity;
+      const custom = Number(draft.capacityCustom);
+      return custom > 0 && custom < 50;
+    }
     if (phase === 4)
-      return !!(dDay && dMonth && draft.city && draft.address?.trim());
+      return !!(draft.startDate && draft.startTime && draft.endDate && draft.endTime);
+    if (phase === 5)
+      return !!(draft.city && draft.address?.trim());
+    if (phase === 6) return true;
     return false;
   };
 
   const next = () => {
     if (!canNext()) return;
-    if (phase === 4) {
-      const date = `${dYear}-${String(dMonth).padStart(2, "0")}-${String(dDay).padStart(2, "0")}`;
+    if (phase === 6) {
+      const date = draft.startDate || draft.date;
       const fields = buildBaseFields(draft.capacity);
       setDraft((prev) => ({ ...prev, date, fields, slug: makeSlug(prev.title) }));
     }
@@ -364,7 +391,7 @@ export default function OnboardingFlow({ onDraftReady }) {
     setBusy(true);
 
     // Guardar draft en localStorage para recuperarlo después de verificar
-    const date = draft.date || `${dYear}-${String(dMonth).padStart(2, "0")}-${String(dDay).padStart(2, "0")}`;
+    const date = draft.startDate || draft.date;
     const finalDraft = { ...draft, date };
     localStorage.setItem("ef_pending_draft", JSON.stringify(finalDraft));
 
@@ -374,7 +401,7 @@ export default function OnboardingFlow({ onDraftReady }) {
       if (result?.pending) {
         // Email de verificación enviado
         setPendingEmail(acEmail.trim());
-        go(6);
+        go(8);
         return;
       }
 
@@ -430,7 +457,7 @@ export default function OnboardingFlow({ onDraftReady }) {
   };
 
   const progressPct =
-    phase === 0 ? 0 : phase >= 5 ? 95 : Math.round((phase / 4) * 85);
+    phase === 0 ? 0 : phase >= 7 ? 95 : Math.round((phase / 6) * 85);
 
   return (
     <div className="tf-screen">
@@ -525,65 +552,69 @@ export default function OnboardingFlow({ onDraftReady }) {
             <div>
               {CAPACITY_OPTS.map((opt) => (
                 <button key={opt.value} type="button" className={`tf-choice${draft.capacity === opt.value ? " selected" : ""}`}
-                  onClick={() => setDraft((p) => ({ ...p, capacity: opt.value }))}>
+                  onClick={() => setDraft((p) => ({ ...p, capacity: opt.value, capacityCustom: opt.value === "under-50" ? p.capacityCustom : "" }))}>
                   {opt.label}
                 </button>
               ))}
             </div>
+            <input
+              className="tf-input-line"
+              type="number"
+              min="1"
+              max="49"
+              inputMode="numeric"
+              placeholder="Cantidad exacta de asistentes"
+              value={draft.capacityCustom || ""}
+              disabled={draft.capacity !== "under-50"}
+              onChange={(e) => setDraft((p) => ({ ...p, capacityCustom: e.target.value }))}
+              style={{ marginTop: 12, opacity: draft.capacity === "under-50" ? 1 : 0.35 }}
+            />
+            {draft.capacity === "under-50" && (
+              <p className="tf-hint" style={{ marginTop: 10, fontSize: 13 }}>
+                Escribe un número entre 1 y 49. Esta casilla solo se habilita para esta opción.
+              </p>
+            )}
           </>
         )}
 
-        {/* ── PASO 4: Fecha y lugar ── */}
+        {/* ── PASO 4: Fecha y hora ── */}
         {phase === 4 && (
           <>
             <div className="tf-step-num">4</div>
-            <h2 className="tf-question">¿Cuándo y dónde será tu evento?</h2>
-            <p className="tf-hint">Fecha y lugar del evento en Colombia.</p>
+            <h2 className="tf-question">¿Cuándo será tu evento?</h2>
+            <p className="tf-hint">Define fecha y hora de inicio, y también fecha y hora de finalización.</p>
 
-            {/* Fecha — grid compacto */}
-            <div style={{ marginBottom: 32 }}>
-              <p style={tfLabel}>Fecha del evento</p>
-              <div style={{ display: "grid", gridTemplateColumns: "80px 1fr 1fr", gap: 12, maxWidth: 340 }}>
-                <div>
-                  <p style={{ ...tfLabel, marginBottom: 6 }}>Día</p>
-                  <select
-                    value={dDay}
-                    onChange={(e) => setDDay(e.target.value)}
-                    style={dateSelectStyle}
-                  >
-                    <option value="">—</option>
-                    {Array.from({ length: maxDay }, (_, i) => (
-                      <option key={i + 1} value={i + 1}>{i + 1}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <p style={{ ...tfLabel, marginBottom: 6 }}>Mes</p>
-                  <select
-                    value={dMonth}
-                    onChange={(e) => setDMonth(e.target.value)}
-                    style={dateSelectStyle}
-                  >
-                    <option value="">—</option>
-                    {MONTHS.map((m, i) => (
-                      <option key={i + 1} value={i + 1}>{m}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <p style={{ ...tfLabel, marginBottom: 6 }}>Año</p>
-                  <select
-                    value={dYear}
-                    onChange={(e) => setDYear(e.target.value)}
-                    style={dateSelectStyle}
-                  >
-                    {["2026", "2027", "2028"].map((y) => (
-                      <option key={y} value={y}>{y}</option>
-                    ))}
-                  </select>
-                </div>
+            <div style={{ display: "grid", gap: 22 }}>
+              <div>
+                <p style={tfLabel}>Inicio del evento</p>
+                <input
+                  className="tf-input-line"
+                  type="datetime-local"
+                  value={toLocalDateTimeValue(draft.startDate, draft.startTime)}
+                  onInput={(e) => updateStartDateTime(e.target.value)}
+                  onChange={(e) => updateStartDateTime(e.target.value)}
+                />
+              </div>
+              <div>
+                <p style={tfLabel}>Fin del evento</p>
+                <input
+                  className="tf-input-line"
+                  type="datetime-local"
+                  value={toLocalDateTimeValue(draft.endDate, draft.endTime)}
+                  onInput={(e) => updateEndDateTime(e.target.value)}
+                  onChange={(e) => updateEndDateTime(e.target.value)}
+                />
               </div>
             </div>
+          </>
+        )}
+
+        {/* ── PASO 5: Lugar ── */}
+        {phase === 5 && (
+          <>
+            <div className="tf-step-num">5</div>
+            <h2 className="tf-question">¿Dónde será el evento?</h2>
+            <p className="tf-hint">Selecciona ciudad, lugar o dirección. Puedes añadir instrucciones si la llegada necesita más contexto.</p>
 
             {/* Ubicación typeform */}
             <TFLocationPicker
@@ -599,11 +630,63 @@ export default function OnboardingFlow({ onDraftReady }) {
                 }))
               }
             />
+            <div style={{ marginTop: 28 }}>
+              <p style={tfLabel}>Instrucciones adicionales opcionales</p>
+              <textarea
+                className="tf-input-line"
+                rows={3}
+                placeholder="Ej. Entrada por la portería norte, preguntar por recepción…"
+                value={draft.locationInstructions || ""}
+                onChange={(e) => setDraft((p) => ({ ...p, locationInstructions: e.target.value }))}
+                style={{ resize: "vertical", minHeight: 92, lineHeight: 1.4 }}
+              />
+            </div>
           </>
         )}
 
-        {/* ── PASO 5: Crear cuenta ── */}
-        {phase === 5 && (
+        {/* ── PASO 6: Imagen ── */}
+        {phase === 6 && (
+          <>
+            <div className="tf-step-num">6</div>
+            <h2 className="tf-question">Agrega una imagen para tu evento</h2>
+            <p className="tf-hint">Será la portada del enlace público y del pase QR. Puedes continuar sin imagen si aún no la tienes.</p>
+            <div className="tf-upload-card">
+              <label className="tf-upload-drop">
+                {draft.headerImage ? (
+                  <img src={draft.headerImage} alt="Vista previa del evento" className="tf-upload-preview" />
+                ) : (
+                  <span>Subir imagen del evento</span>
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = () => setDraft((p) => ({ ...p, headerImage: reader.result || "" }));
+                    reader.readAsDataURL(file);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+              {draft.headerImage && (
+                <button
+                  type="button"
+                  className="soft-btn soft-btn-secondary"
+                  style={{ marginTop: 12, width: "100%" }}
+                  onClick={() => setDraft((p) => ({ ...p, headerImage: "" }))}
+                >
+                  Quitar imagen
+                </button>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* ── PASO 7: Crear cuenta ── */}
+        {phase === 7 && (
           <form onSubmit={handleRegister}>
             <div className="tf-step-num" style={{ background: VERDE_CORPORATIVO, fontSize: 16 }}>✓</div>
             <h2 className="tf-question">
@@ -660,7 +743,7 @@ export default function OnboardingFlow({ onDraftReady }) {
               </button>
             </div>
             <div style={{ marginTop: 16, textAlign: "center" }}>
-              <button type="button" onClick={() => go(4)}
+              <button type="button" onClick={() => go(6)}
                 style={{ background: "none", border: "none", color: "#8fa3b1", fontWeight: 600, cursor: "pointer", fontSize: 13 }}>
                 ← Volver al paso anterior
               </button>
@@ -668,8 +751,8 @@ export default function OnboardingFlow({ onDraftReady }) {
           </form>
         )}
 
-        {/* ── PASO 6: Código de 4 dígitos ── */}
-        {phase === 6 && (
+        {/* ── PASO 8: Código de 4 dígitos ── */}
+        {phase === 8 && (
           <div style={{ textAlign: "center" }}>
             <div style={{ fontSize: 48, marginBottom: 20 }}>📩</div>
             <h2 className="tf-question">Ingresa tu código</h2>
@@ -745,11 +828,11 @@ export default function OnboardingFlow({ onDraftReady }) {
       </div>
 
       {/* Footer navegación (pasos 1–4) */}
-      {phase >= 1 && phase <= 4 && (
+      {phase >= 1 && phase <= 6 && (
         <div className="tf-footer">
           <button type="button" className="tf-btn-back" onClick={back} title="Atrás">↑</button>
           <button type="button" className="tf-btn-ok" onClick={next} disabled={!canNext()}>
-            {phase === 4 ? "Continuar" : "OK ✓"}
+            {phase === 6 ? "Continuar" : phase >= 4 ? "OK ✓" : "OK ✓"}
           </button>
           <span style={{ fontSize: 12, color: "#9B9B9B", userSelect: "none" }}>
             Presiona Enter ↵
@@ -759,18 +842,3 @@ export default function OnboardingFlow({ onDraftReady }) {
     </div>
   );
 }
-
-const dateSelectStyle = {
-  width: "100%",
-  padding: "10px 8px",
-  border: "none",
-  borderBottom: "2px solid #b8c5d4",
-  borderRadius: 0,
-  fontSize: 16,
-  fontWeight: 600,
-  color: "#0d3b66",
-  background: "transparent",
-  outline: "none",
-  cursor: "pointer",
-  appearance: "none",
-};

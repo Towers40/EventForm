@@ -30,6 +30,12 @@
   box-sizing: border-box;
 }
 
+.tf-body-cover {
+  max-width: 1080px;
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
 .tf-step-num {
   display: inline-flex;
   align-items: center;
@@ -160,6 +166,203 @@
   border-radius: 0;
 }
 
+.tf-event-cover {
+  width: min(100%, 920px);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(240px, 380px) 1fr;
+  gap: 36px;
+  align-items: start;
+  background: #082f12;
+  color: #fff;
+  padding: clamp(20px, 4vw, 38px);
+  border-radius: 18px;
+}
+
+.tf-event-cover-media {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.tf-event-cover-media img,
+.tf-event-cover-placeholder {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tf-event-cover-placeholder {
+  color: #0d3b66;
+  font-size: 96px;
+  font-weight: 900;
+}
+
+.tf-event-cover-content {
+  min-width: 0;
+}
+
+.tf-event-cover-kicker {
+  display: inline-flex;
+  margin: 0 0 14px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: rgba(190, 242, 100, 0.18);
+  color: #d9f99d;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tf-event-cover h1 {
+  margin: 0 0 14px;
+  font-size: clamp(32px, 6vw, 56px);
+  line-height: 1;
+  font-weight: 900;
+  color: #fff;
+}
+
+.tf-event-cover-desc {
+  margin: 0 0 22px;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+.tf-event-cover-meta {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 18px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.tf-event-cover-instructions {
+  margin: 0 0 22px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.tf-event-cover-btn {
+  width: 100%;
+  border: none;
+  border-radius: 6px;
+  background: #0d3b66;
+  color: #fff;
+  padding: 14px 20px;
+  font-size: 16px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.tf-upload-card {
+  padding: 18px;
+  border: 1px solid #b8d4f0;
+  border-radius: 14px;
+  background: #e8f4fd;
+}
+
+.tf-upload-drop {
+  width: 100%;
+  min-height: 220px;
+  border: 2px dashed #0d3b66;
+  border-radius: 12px;
+  background: #fff;
+  color: #0d3b66;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.tf-upload-preview {
+  width: 100%;
+  height: 100%;
+  min-height: 220px;
+  object-fit: cover;
+  display: block;
+}
+
+.host-tf-wizard {
+  min-height: calc(100dvh - 100px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 28px 0 96px;
+}
+
+.host-tf-progress {
+  max-width: 720px;
+  margin: 0 auto 34px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: #e8edf2;
+}
+
+.host-tf-body {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.host-tf-body .tf-question {
+  font-size: clamp(24px, 4.5vw, 32px);
+  font-weight: 400;
+  color: #1a1a1a;
+}
+
+.host-tf-body .tf-choice {
+  border-color: #e2e8f0;
+  color: #0d1b2a;
+  font-weight: 500;
+}
+
+.host-tf-body .tf-choice.selected,
+.host-tf-body .tf-choice:hover {
+  border-color: #0d3b66;
+  background: #f0f6fc;
+  color: #0d1b2a;
+}
+
+.host-tf-location {
+  color: #0d1b2a;
+}
+
+.host-tf-location label,
+.host-tf-location div {
+  letter-spacing: 0;
+}
+
+.host-tf-footer {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(720px, 100%);
+  padding: 16px 20px 24px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(transparent, #fff 24%);
+  box-sizing: border-box;
+  z-index: 9;
+}
+
 .tf-consent {
   font-size: 14px;
   line-height: 1.5;
@@ -241,4 +444,17 @@
   background: #fff;
   color: #0d3b66;
   border: 2px solid #0d3b66;
+}
+
+@media (max-width: 760px) {
+  .tf-event-cover {
+    grid-template-columns: 1fr;
+    gap: 22px;
+    border-radius: 0;
+    min-height: calc(100dvh - 4px);
+  }
+
+  .tf-event-cover-media {
+    max-width: 360px;
+  }
 }

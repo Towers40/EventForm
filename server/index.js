@@ -248,8 +248,9 @@ app.post("/api/public/events/:slug/register", requireDb, async (req, res) => {
     if (ev.manualSoldOut) return res.status(403).json({ error: "sold_out" });
     const { form, consentPrivacy, consentMarketing } = req.body || {};
     if (!consentPrivacy) return res.status(400).json({ error: "Debes aceptar la política de privacidad" });
-    const maxMap = { "0-50": 50, "50-100": 100, "100-300": 300, "300+": 10000 };
-    const max = maxMap[ev.capacity];
+    const maxMap = { "under-50": 49, "0-50": 50, "50-100": 100, "100-300": 300, "300+": 10000 };
+    const customMax = ev.capacity === "under-50" ? Number(ev.capacityCustom) : null;
+    const max = customMax > 0 && customMax < 50 ? customMax : maxMap[ev.capacity];
     if (max != null && ev.registrations.length >= max) return res.status(403).json({ error: "sold_out" });
     const ticketId = "TICKET-" + uid();
     await db.execute({
