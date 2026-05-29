@@ -26,19 +26,34 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const APP_URL = process.env.APP_URL || "http://localhost:5173";
 
-const configuredOrigins = (process.env.CORS_ORIGIN || "http://localhost:4173,http://localhost:5173")
-  .split(",")
-  .map((origin) => origin.trim())
-  .filter(Boolean);
+const configuredOrigins = new Set(
+  (process.env.CORS_ORIGIN || "http://localhost:4173,http://localhost:5173")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean)
+);
+
+const vercelProductionUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL;
+if (vercelProductionUrl) configuredOrigins.add(`https://${vercelProductionUrl}`);
+if (APP_URL) configuredOrigins.add(APP_URL);
+
+const isAllowedOrigin = (origin) => {
+  if (!origin) return true;
+  if (configuredOrigins.has(origin)) return true;
+  if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) return true;
+  try {
+    const { hostname } = new URL(origin);
+    return hostname.endsWith(".vercel.app") || hostname.endsWith(".railway.app");
+  } catch {
+    return false;
+  }
+};
 
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
-    if (configuredOrigins.includes(origin)) return callback(null, origin);
-    if (/^https?:\/\/localhost(:\d+)?$/.test(origin) || /^https?:\/\/127\.0\.0\.1(:\d+)?$/.test(origin)) {
-      return callback(null, origin);
-    }
-    return callback(new Error("Origen no permitido por CORS"), false);
+    if (isAllowedOrigin(origin)) return callback(null, origin);
+    return callback(null, false);
   },
   credentials: true,
 }));
