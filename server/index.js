@@ -26,7 +26,22 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const APP_URL = process.env.APP_URL || "http://localhost:5173";
 
-app.use(cors({ origin: process.env.CORS_ORIGIN?.split(",") || true, credentials: true }));
+const configuredOrigins = (process.env.CORS_ORIGIN || "http://localhost:4173,http://localhost:5173")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (configuredOrigins.includes(origin)) return callback(null, origin);
+    if (/^https?:\/\/localhost(:\d+)?$/.test(origin) || /^https?:\/\/127\.0\.0\.1(:\d+)?$/.test(origin)) {
+      return callback(null, origin);
+    }
+    return callback(new Error("Origen no permitido por CORS"), false);
+  },
+  credentials: true,
+}));
 app.use(express.json({ limit: "6mb" }));
 
 function uid() { return nanoid(10).toUpperCase(); }
