@@ -101,6 +101,17 @@ export default function FieldInput({ field, value, onChange, error }) {
           ? "number"
           : "text";
 
+  const autoComplete =
+    field.type === "email"
+      ? "email"
+      : field.type === "phone"
+        ? "tel"
+        : field.label?.toLowerCase().includes("nombre")
+          ? "name"
+          : field.label?.toLowerCase().includes("dirección") || field.label?.toLowerCase().includes("direccion")
+            ? "street-address"
+            : "off";
+
   return (
     <input
       type={inputType}
@@ -110,6 +121,7 @@ export default function FieldInput({ field, value, onChange, error }) {
       placeholder={field.placeholder || ""}
       min={field.type === "age" ? 1 : undefined}
       max={field.type === "age" ? 120 : undefined}
+      autoComplete={autoComplete}
     />
   );
 }

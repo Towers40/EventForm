@@ -29,7 +29,7 @@ export default function MisEventosView({ events, onNew, onOpen, onEdit, onValida
       {/* Tabs */}
       <div style={{ display: "flex", gap: 8, marginBottom: 24 }}>
         {[
-          { key: "activos", label: `En curso (${activos.length})` },
+          { key: "activos", label: `Próximos (${activos.length})` },
           { key: "pasados", label: `Pasados (${pasados.length})` },
           { key: "borradores", label: `Borradores (${borradores.length})` },
         ].map(t => (
@@ -46,7 +46,7 @@ export default function MisEventosView({ events, onNew, onOpen, onEdit, onValida
       {lista.length === 0 ? (
         <div className="panel-card" style={{ padding: "48px 24px", textAlign: "center" }}>
           <p style={{ color: "#8fa3b1", fontSize: 15, margin: 0 }}>
-            {tab === "activos" ? "No tienes eventos activos."
+            {tab === "activos" ? "No tienes eventos próximos."
               : tab === "pasados" ? "No tienes eventos pasados."
               : "No hay borradores guardados."}
           </p>

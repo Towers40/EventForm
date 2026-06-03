@@ -323,6 +323,7 @@ export default function OnboardingFlow({ onDraftReady }) {
   const [codeErr, setCodeErr] = useState("");
   const [codeBusy, setCodeBusy] = useState(false);
   const [resendStatus, setResendStatus] = useState("idle");
+  const [dateErr, setDateErr] = useState("");
   const digitRefs = [useRef(), useRef(), useRef(), useRef()];
 
   const go = (next) => {
@@ -335,6 +336,13 @@ export default function OnboardingFlow({ onDraftReady }) {
 
   const updateStartDateTime = (value) => {
     const next = splitLocalDateTime(value);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString().split("T")[0];
+    if (next.date && next.date < today) {
+      setDateErr("No puedes crear un evento en una fecha pasada.");
+      return;
+    }
+    setDateErr("");
     setDraft((p) => ({
       ...p,
       startDate: next.date,
@@ -346,7 +354,18 @@ export default function OnboardingFlow({ onDraftReady }) {
 
   const updateEndDateTime = (value) => {
     const next = splitLocalDateTime(value);
-    setDraft((p) => ({ ...p, endDate: next.date, endTime: next.time }));
+    setDraft((p) => {
+      if (next.date && p.startDate && next.date < p.startDate) {
+        setDateErr("La fecha de fin no puede ser anterior a la fecha de inicio.");
+        return p;
+      }
+      if (next.date === p.startDate && next.time <= p.startTime) {
+        setDateErr("La hora de fin debe ser posterior a la hora de inicio del mismo día.");
+        return p;
+      }
+      setDateErr("");
+      return { ...p, endDate: next.date, endTime: next.time };
+    });
   };
 
   const canNext = () => {
@@ -361,8 +380,17 @@ export default function OnboardingFlow({ onDraftReady }) {
       const custom = Number(draft.capacityCustom);
       return custom > 0 && custom < 50;
     }
-    if (phase === 4)
-      return !!(draft.startDate && draft.startTime && draft.endDate && draft.endTime);
+    if (phase === 4) {
+      if (!draft.startDate || !draft.startTime || !draft.endDate || !draft.endTime) return false;
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString().split("T")[0];
+      // No permitir fechas en el pasado
+      if (draft.startDate < today) return false;
+      if (draft.endDate < draft.startDate) return false;
+      // Si es el mismo día, validar que endTime > startTime
+      if (draft.endDate === draft.startDate && draft.endTime <= draft.startTime) return false;
+      return true;
+    }
     if (phase === 5)
       return !!(draft.city && draft.address?.trim());
     if (phase === 6) return true;
@@ -606,6 +634,11 @@ export default function OnboardingFlow({ onDraftReady }) {
                 />
               </div>
             </div>
+            {dateErr && (
+              <p style={{ color: "#991b1b", fontWeight: 700, marginTop: 16, fontSize: 14 }}>
+                ⚠️ {dateErr}
+              </p>
+            )}
           </>
         )}
 
@@ -704,6 +737,7 @@ export default function OnboardingFlow({ onDraftReady }) {
               onChange={(e) => setAcName(e.target.value)}
               style={{ marginBottom: 28 }}
               autoFocus
+              autoComplete="name"
             />
             <input
               className="tf-input-line"
@@ -712,6 +746,7 @@ export default function OnboardingFlow({ onDraftReady }) {
               value={acEmail}
               onChange={(e) => setAcEmail(e.target.value)}
               style={{ marginBottom: 28 }}
+              autoComplete="email"
             />
 
             {/* Contraseña con visibilidad */}
@@ -776,6 +811,7 @@ export default function OnboardingFlow({ onDraftReady }) {
                   autoFocus={i === 0}
                   onChange={(e) => handleDigitChange(i, e.target.value)}
                   onKeyDown={(e) => handleDigitKey(i, e)}
+                  autoComplete={i === 0 ? "one-time-code" : "off"}
                   style={{
                     width: 56, height: 64, textAlign: "center",
                     fontSize: 28, fontWeight: 800, color: "#0d3b66",

@@ -16,6 +16,11 @@ export default function MiCuentaView() {
   const [pwBusy, setPwBusy] = useState(false);
   const [showPw, setShowPw] = useState(false);
 
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteErr, setDeleteErr] = useState("");
+
   const saveName = async (e) => {
     e.preventDefault();
     if (!name.trim()) return;
@@ -47,6 +52,22 @@ export default function MiCuentaView() {
       setPwMsg({ text: ex.message || "Error al cambiar contraseña", ok: false });
     } finally {
       setPwBusy(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText.toLowerCase() !== "eliminar mi cuenta") {
+      setDeleteErr("Debes escribir 'eliminar mi cuenta' para confirmar");
+      return;
+    }
+    setDeleteErr("");
+    setDeleteBusy(true);
+    try {
+      await api.deleteAccount(token);
+      logout();
+    } catch (ex) {
+      setDeleteErr(ex.message || "Error al eliminar la cuenta");
+      setDeleteBusy(false);
     }
   };
 
@@ -136,7 +157,7 @@ export default function MiCuentaView() {
       </div>
 
       {/* Cerrar sesión */}
-      <div className="panel-card" style={{ padding: 20, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div className="panel-card" style={{ padding: 20, display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
         <div>
           <p style={{ margin: 0, fontWeight: 600, color: "#0d1b2a", fontSize: 14 }}>Cerrar sesión</p>
           <p style={{ margin: "2px 0 0", fontSize: 12, color: "#8fa3b1" }}>Salir de tu cuenta en este dispositivo</p>
@@ -145,6 +166,93 @@ export default function MiCuentaView() {
           Cerrar sesión
         </button>
       </div>
+
+      {/* Eliminar cuenta */}
+      <div className="panel-card" style={{ padding: 20, borderColor: "#fed7d7", borderWidth: 2 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+          <div>
+            <p style={{ margin: 0, fontWeight: 600, color: "#991b1b", fontSize: 14 }}>Zona de peligro: Eliminar cuenta</p>
+            <p style={{ margin: "4px 0 0", fontSize: 12, color: "#8fa3b1" }}>
+              Esta acción eliminará permanentemente tu cuenta, todos tus eventos y registros. No se puede deshacer.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="soft-btn"
+            style={{ background: "#fee2e2", color: "#991b1b", border: "1px solid #fecaca", borderRadius: 10, fontSize: 13, padding: "10px 18px", whiteSpace: "nowrap" }}
+            onClick={() => { setDeleteModalOpen(true); setDeleteConfirmText(""); setDeleteErr(""); }}
+          >
+            Eliminar cuenta
+          </button>
+        </div>
+      </div>
+
+      {/* Modal de confirmación */}
+      {deleteModalOpen && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+          background: "rgba(0, 0, 0, 0.5)", display: "flex", alignItems: "center", justifyContent: "center",
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: "#fff", borderRadius: 12, padding: 28, maxWidth: 380,
+            boxShadow: "0 20px 60px rgba(0, 0, 0, 0.2)"
+          }}>
+            <h3 style={{ margin: "0 0 12px", fontSize: 18, fontWeight: 700, color: "#991b1b" }}>
+              ¿Estás seguro?
+            </h3>
+            <p style={{ margin: "0 0 20px", fontSize: 14, color: "#5c6b7a", lineHeight: 1.6 }}>
+              Esta acción eliminará:
+            </p>
+            <ul style={{ margin: "0 0 20px", paddingLeft: 20, fontSize: 13, color: "#5c6b7a" }}>
+              <li>Tu cuenta de anfitrión</li>
+              <li>Todos tus eventos</li>
+              <li>Todos los registros e inscripciones</li>
+            </ul>
+            <p style={{ margin: "0 0 16px", fontSize: 13, fontWeight: 600, color: "#0d1b2a" }}>
+              Escribe "eliminar mi cuenta" para continuar:
+            </p>
+            <input
+              type="text"
+              value={deleteConfirmText}
+              onChange={(e) => { setDeleteConfirmText(e.target.value); setDeleteErr(""); }}
+              placeholder="eliminar mi cuenta"
+              className="tf-input-line"
+              style={{ marginBottom: 12, fontSize: 14 }}
+            />
+            {deleteErr && (
+              <p style={{ color: "#991b1b", fontWeight: 700, fontSize: 13, margin: "0 0 12px" }}>
+                ⚠️ {deleteErr}
+              </p>
+            )}
+            <div style={{ display: "flex", gap: 12 }}>
+              <button
+                type="button"
+                onClick={() => setDeleteModalOpen(false)}
+                style={{
+                  flex: 1, padding: "10px 16px", background: "#f0f4f8",
+                  border: "none", borderRadius: 8, cursor: "pointer", fontSize: 13,
+                  fontWeight: 600, color: "#0d3b66"
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteAccount}
+                disabled={deleteBusy || deleteConfirmText.toLowerCase() !== "eliminar mi cuenta"}
+                style={{
+                  flex: 1, padding: "10px 16px", background: "#fee2e2",
+                  border: "1px solid #fecaca", borderRadius: 8, cursor: deleteConfirmText.toLowerCase() === "eliminar mi cuenta" ? "pointer" : "not-allowed",
+                  fontSize: 13, fontWeight: 600, color: "#991b1b", opacity: deleteConfirmText.toLowerCase() === "eliminar mi cuenta" ? 1 : 0.5
+                }}
+              >
+                {deleteBusy ? "Eliminando..." : "Eliminar permanentemente"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

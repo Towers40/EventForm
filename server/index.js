@@ -244,6 +244,26 @@ app.post("/api/auth/change-password", requireDb, authMiddleware, async (req, res
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+app.delete("/api/auth/me", requireDb, authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.sub;
+    // Obtener todos los eventos del usuario
+    const { rows: events } = await db.execute({ sql: "SELECT id FROM events WHERE host_id = ?", args: [userId] });
+    const eventIds = events.map(e => e.id);
+    // Eliminar todas las registraciones de esos eventos
+    if (eventIds.length > 0) {
+      for (const eventId of eventIds) {
+        await db.execute({ sql: "DELETE FROM registrations WHERE event_id = ?", args: [eventId] });
+      }
+      // Eliminar todos los eventos
+      await db.execute({ sql: "DELETE FROM events WHERE host_id = ?", args: [userId] });
+    }
+    // Eliminar al usuario
+    await db.execute({ sql: "DELETE FROM users WHERE id = ?", args: [userId] });
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // Legacy email link verification
 app.get("/api/auth/verify-email/:token", requireDb, async (req, res) => {
   try {

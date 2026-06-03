@@ -97,5 +97,7 @@ export const EVENT_TYPE_PRESETS = [
   "Corporativo / Workshop",
   "Social / Fiesta Privada",
   "Concierto / Evento Masivo",
-  "Conferencia Académica",
+  "Deporte",
+  "Comida & Bebida",
+  "Bienestar",
 ];

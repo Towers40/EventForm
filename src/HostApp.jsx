@@ -1159,10 +1159,16 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
                     value={toLocalDateTimeValue(draft.startDate, draft.startTime)}
                     onInput={(e) => {
                       const next = splitLocalDateTime(e.target.value);
+                      const now = new Date();
+                      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString().split("T")[0];
+                      if (next.date && next.date < today) return;
                       setDraft((p) => ({ ...p, startDate: next.date, startTime: next.time, date: next.date, endDate: p.endDate || next.date }));
                     }}
                     onChange={(e) => {
                       const next = splitLocalDateTime(e.target.value);
+                      const now = new Date();
+                      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString().split("T")[0];
+                      if (next.date && next.date < today) return;
                       setDraft((p) => ({ ...p, startDate: next.date, startTime: next.time, date: next.date, endDate: p.endDate || next.date }));
                     }}
                     className="tf-input-line"
@@ -1176,10 +1182,14 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
                     value={toLocalDateTimeValue(draft.endDate, draft.endTime)}
                     onInput={(e) => {
                       const next = splitLocalDateTime(e.target.value);
+                      if (next.date && draft.startDate && next.date < draft.startDate) return;
+                      if (next.date === draft.startDate && next.time <= draft.startTime) return;
                       setDraft((p) => ({ ...p, endDate: next.date, endTime: next.time }));
                     }}
                     onChange={(e) => {
                       const next = splitLocalDateTime(e.target.value);
+                      if (next.date && draft.startDate && next.date < draft.startDate) return;
+                      if (next.date === draft.startDate && next.time <= draft.startTime) return;
                       setDraft((p) => ({ ...p, endDate: next.date, endTime: next.time }));
                     }}
                     className="tf-input-line"

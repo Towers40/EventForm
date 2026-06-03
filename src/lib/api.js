@@ -56,6 +56,8 @@ export const api = {
     request("/api/auth/me", { method: "PATCH", body: JSON.stringify({ name }) }, token),
   changePassword: (token, currentPassword, newPassword) =>
     request("/api/auth/change-password", { method: "POST", body: JSON.stringify({ currentPassword, newPassword }) }, token),
+  deleteAccount: (token) =>
+    request("/api/auth/me", { method: "DELETE" }, token),
   verifyEmail: (token) => request(`/api/auth/verify-email/${token}`),
   publicEvent: (slug) => request(`/api/public/events/${slug}`),
   publicRegister: (slug, body) =>
