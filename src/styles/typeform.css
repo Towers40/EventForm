@@ -450,11 +450,36 @@
   .tf-event-cover {
     grid-template-columns: 1fr;
     gap: 22px;
-    border-radius: 0;
-    min-height: calc(100dvh - 4px);
+    border-radius: 20px;
+    min-height: auto;
+    padding: clamp(24px, 5vw, 40px);
+    margin: 12px auto;
+    box-shadow: 0 10px 40px rgba(13, 27, 42, 0.15);
   }
 
   .tf-event-cover-media {
-    max-width: 360px;
+    max-width: 100%;
+    margin: 0 auto;
+    border-radius: 16px;
+  }
+
+  .tf-event-cover-content {
+    text-align: center;
+  }
+
+  .tf-event-cover-kicker {
+    justify-content: center;
+  }
+
+  .tf-event-cover h1 {
+    font-size: clamp(24px, 5vw, 36px);
+  }
+
+  .tf-event-cover-meta {
+    justify-content: center;
+  }
+
+  .tf-event-cover-btn {
+    width: 100%;
   }
 }

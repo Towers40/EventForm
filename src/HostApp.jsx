@@ -986,6 +986,7 @@ function CreateEventWizard({ draft, setDraft, step, setStep, onDone, onCancel })
                 <input
                   className="tf-input-line"
                   type="datetime-local"
+                  min={new Date().toISOString().slice(0, 16)}
                   value={toLocalDateTimeValue(draft.startDate, draft.startTime)}
                   onInput={(e) => updateStartDateTime(e.target.value)}
                   onChange={(e) => updateStartDateTime(e.target.value)}
@@ -996,6 +997,7 @@ function CreateEventWizard({ draft, setDraft, step, setStep, onDone, onCancel })
                 <input
                   className="tf-input-line"
                   type="datetime-local"
+                  min={new Date().toISOString().slice(0, 16)}
                   value={toLocalDateTimeValue(draft.endDate, draft.endTime)}
                   onInput={(e) => updateEndDateTime(e.target.value)}
                   onChange={(e) => updateEndDateTime(e.target.value)}
@@ -1156,6 +1158,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
                   <label style={bldLabel}>Inicio</label>
                   <input
                     type="datetime-local"
+                    min={new Date().toISOString().slice(0, 16)}
                     value={toLocalDateTimeValue(draft.startDate, draft.startTime)}
                     onInput={(e) => {
                       const next = splitLocalDateTime(e.target.value);
@@ -1179,6 +1182,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
                   <label style={bldLabel}>Fin</label>
                   <input
                     type="datetime-local"
+                    min={new Date().toISOString().slice(0, 16)}
                     value={toLocalDateTimeValue(draft.endDate, draft.endTime)}
                     onInput={(e) => {
                       const next = splitLocalDateTime(e.target.value);

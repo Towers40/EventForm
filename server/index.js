@@ -330,41 +330,76 @@ app.get("/api/events", requireDb, authMiddleware, async (req, res) => {
 app.post("/api/events", requireDb, authMiddleware, requireRole("host", "super_admin"), async (req, res) => {
   try {
     const payload = req.body;
+    
+    // Validar payload
+    if (!payload || typeof payload !== "object") {
+      return res.status(400).json({ error: "Datos inválidos. Envía un objeto de evento." });
+    }
+    if (!payload.title || !String(payload.title).trim()) {
+      return res.status(400).json({ error: "El evento debe tener un título." });
+    }
+
     const id = payload.id || "E" + uid();
     const slug = payload.slug || await uniqueSlug(payload.title, id);
     const hostId = req.user.role === "super_admin" && payload.hostId ? payload.hostId : req.user.sub;
     const now = Date.now();
     const data = { ...payload, id, slug, registrations: payload.registrations || [] };
+    
+    // Ejecutar INSERT
     await db.execute({
       sql: `INSERT INTO events (id, host_id, slug, payload, manual_sold_out, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
       args: [id, hostId, slug, JSON.stringify(data), payload.manualSoldOut ? 1 : 0, now, now],
     });
+    
+    // Recuperar el evento creado
     const { rows } = await db.execute({ sql: "SELECT * FROM events WHERE id = ?", args: [id] });
+    if (!rows[0]) {
+      return res.status(500).json({ error: "El evento se creó pero no se pudo recuperar. Por favor, recarga la página." });
+    }
+    
     const ev = await attachRegs(parseEvent(rows[0]));
     ev.publicUrl = `${APP_URL}/e/${ev.slug}`;
     res.status(201).json({ event: ev });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { 
+    console.error("[POST /api/events] Error:", e.message);
+    res.status(500).json({ error: e.message || "Error al crear el evento. Intenta de nuevo." }); 
+  }
 });
 
 app.put("/api/events/:id", requireDb, authMiddleware, async (req, res) => {
   try {
-    const { rows: existing } = await db.execute({ sql: "SELECT * FROM events WHERE id = ?", args: [req.params.id] });
+    const eventId = req.params.id?.trim();
+    if (!eventId) {
+      return res.status(400).json({ error: "ID de evento inválido." });
+    }
+
+    const { rows: existing } = await db.execute({ sql: "SELECT * FROM events WHERE id = ?", args: [eventId] });
     const row = existing[0];
-    if (!row) return res.status(404).json({ error: "No encontrado" });
-    if (req.user.role !== "super_admin" && row.host_id !== req.user.sub) return res.status(403).json({ error: "Sin permiso" });
+    if (!row) return res.status(404).json({ error: "Evento no encontrado" });
+    if (req.user.role !== "super_admin" && row.host_id !== req.user.sub) return res.status(403).json({ error: "Sin permiso para editar este evento" });
+    
     const payload = req.body;
+    if (!payload || typeof payload !== "object") {
+      return res.status(400).json({ error: "Datos inválidos." });
+    }
+
     const slug = payload.slug || row.slug;
     const regs = await getRegsForEvent(row.id);
     const data = { ...JSON.parse(row.payload), ...payload, id: row.id, slug, registrations: regs };
+    
     await db.execute({
       sql: `UPDATE events SET slug = ?, payload = ?, manual_sold_out = ?, updated_at = ? WHERE id = ?`,
       args: [slug, JSON.stringify(data), payload.manualSoldOut ? 1 : 0, Date.now(), row.id],
     });
+    
     const { rows } = await db.execute({ sql: "SELECT * FROM events WHERE id = ?", args: [row.id] });
     const ev = await attachRegs(parseEvent(rows[0]));
     ev.publicUrl = `${APP_URL}/e/${ev.slug}`;
     res.json({ event: ev });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { 
+    console.error("[PUT /api/events/:id] Error:", e.message);
+    res.status(500).json({ error: e.message || "Error al actualizar el evento." }); 
+  }
 });
 
 app.patch("/api/events/:id/sold-out", requireDb, authMiddleware, async (req, res) => {

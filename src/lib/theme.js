@@ -6,6 +6,12 @@ export const NEGRO_MUTED_50 = "#7A7A7A";
 export const BLANCO_CONTRASTE = "#FFFFFF";
 export const ROJO_SUAVE = "#FEE2E2";
 
+// Tonalidades azules para ticket y navegación
+export const AZUL_OSCURO = "#1A3E6F";
+export const AZUL_MEDIO = "#0D3B66";
+export const AZUL_CLARO_BG = "#E0EBF5";
+export const AZUL_CLARO_MEDIO = "#2B5A9F";
+
 export const inputStyle = {
   width: "100%",
   padding: "12px",

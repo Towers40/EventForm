@@ -618,6 +618,7 @@ export default function OnboardingFlow({ onDraftReady }) {
                 <input
                   className="tf-input-line"
                   type="datetime-local"
+                  min={new Date().toISOString().slice(0, 16)}
                   value={toLocalDateTimeValue(draft.startDate, draft.startTime)}
                   onInput={(e) => updateStartDateTime(e.target.value)}
                   onChange={(e) => updateStartDateTime(e.target.value)}
@@ -628,6 +629,7 @@ export default function OnboardingFlow({ onDraftReady }) {
                 <input
                   className="tf-input-line"
                   type="datetime-local"
+                  min={new Date().toISOString().slice(0, 16)}
                   value={toLocalDateTimeValue(draft.endDate, draft.endTime)}
                   onInput={(e) => updateEndDateTime(e.target.value)}
                   onChange={(e) => updateEndDateTime(e.target.value)}

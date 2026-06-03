@@ -1,6 +1,6 @@
 import NavigateButtons from "./NavigateButtons.jsx";
 import LocationMap from "./LocationMap.jsx";
-import { NEGRO_PURO, VERDE_PASTEL_BG, VERDE_CORPORATIVO, BLANCO_CONTRASTE } from "../lib/theme.js";
+import { NEGRO_PURO, AZUL_CLARO_BG, VERDE_CORPORATIVO, BLANCO_CONTRASTE } from "../lib/theme.js";
 
 export default function ConfirmTicket({ ev, reg, onDone, standalone }) {
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(reg.id)}&margin=10`;
@@ -14,8 +14,8 @@ export default function ConfirmTicket({ ev, reg, onDone, standalone }) {
         <div style={{ fontSize: 11, fontWeight: 800, color: VERDE_CORPORATIVO }}>PASE DIGITAL</div>
         <h2 style={{ fontSize: 22, fontWeight: 900, margin: "4px 0 0" }}>{ev.title}</h2>
       </div>
-      <div style={{ padding: 28, background: VERDE_PASTEL_BG, textAlign: "center" }}>
-        <img src={qrUrl} alt="QR" style={{ width: 160, height: 160, borderRadius: 12, border: `2px solid ${NEGRO_PURO}` }} />
+      <div style={{ padding: 28, background: AZUL_CLARO_BG, textAlign: "center" }}>
+        <img src={qrUrl} alt="QR" style={{ width: 180, height: 180, borderRadius: 12, border: `2px solid ${NEGRO_PURO}` }} />
         <p style={{ fontFamily: "monospace", fontWeight: 800, marginTop: 12 }}>{reg.id}</p>
         <p style={{ fontSize: 13, color: "#4a5568", margin: "16px 0" }}>
           Guarda este QR. Solo permite un ingreso.
