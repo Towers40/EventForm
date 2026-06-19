@@ -335,11 +335,24 @@ app.get("/api/public/events/:slug", requireDb, async (req, res) => {
     const { rows } = await db.execute({ sql: "SELECT * FROM events WHERE slug = ?", args: [req.params.slug] });
     if (!rows[0]) return res.status(404).json({ error: "Evento no encontrado" });
     const ev = parseEvent(rows[0]);
-    const { rows: cnt } = await db.execute({ sql: "SELECT COUNT(*) as c FROM registrations WHERE event_id = ?", args: [ev.id] });
+    const { rows: cnt } = await db.execute({ sql: "SELECT COUNT(*) as c FROM registrations WHERE event_id = ? AND cancelled = 0", args: [ev.id] });
     ev.registrationCount = Number(cnt[0]?.c || 0);
     ev.registrations = undefined;
     ev.publicUrl = `${APP_URL}/e/${ev.slug}`;
+    const { rows: hostRows } = await db.execute({ sql: "SELECT name, email FROM users WHERE id = ?", args: [ev.hostId] });
+    ev.hostName = hostRows[0]?.name || "";
+    ev.hostEmail = hostRows[0]?.email || "";
     res.json({ event: ev });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.patch("/api/public/registrations/:ticketId/cancel", requireDb, async (req, res) => {
+  try {
+    const { rows } = await db.execute({ sql: "SELECT id, cancelled FROM registrations WHERE ticket_id = ?", args: [req.params.ticketId] });
+    if (!rows[0]) return res.status(404).json({ error: "Registro no encontrado" });
+    if (rows[0].cancelled) return res.json({ ok: true, already: true });
+    await db.execute({ sql: "UPDATE registrations SET cancelled = 1 WHERE ticket_id = ?", args: [req.params.ticketId] });
+    res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -490,6 +503,7 @@ app.post("/api/events/:id/check-in", requireDb, authMiddleware, async (req, res)
     const { rows: regRows } = await db.execute({ sql: "SELECT * FROM registrations WHERE ticket_id = ? AND event_id = ?", args: [ticketId?.trim().toUpperCase(), req.params.id] });
     const regRow = regRows[0];
     if (!regRow) return res.json({ status: "nf" });
+    if (regRow.cancelled) return res.json({ status: "cancelled" });
     if (regRow.used) return res.json({ status: "used", reg: { id: regRow.ticket_id, data: JSON.parse(regRow.payload), checkedInAt: regRow.checked_in_at } });
     const checkedInAt = Date.now();
     await db.execute({ sql: "UPDATE registrations SET used = 1, checked_in_at = ? WHERE id = ?", args: [checkedInAt, regRow.id] });

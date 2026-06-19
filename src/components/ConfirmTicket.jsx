@@ -1,48 +1,123 @@
 import NavigateButtons from "./NavigateButtons.jsx";
 import LocationMap from "./LocationMap.jsx";
-import { NEGRO_PURO, AZUL_CLARO_BG, VERDE_CORPORATIVO, BLANCO_CONTRASTE } from "../lib/theme.js";
+import "../styles/typeform.css";
 
-export default function ConfirmTicket({ ev, reg, onDone, standalone }) {
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(reg.id)}&margin=10`;
+export default function ConfirmTicket({ ev, reg, onDone, standalone, onCancel, cancelling }) {
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(reg.id)}&bgcolor=1a1c1e&color=e8eaf0&margin=10`;
 
   const inner = (
-    <>
+    <div style={{ maxWidth: 520, margin: "0 auto", padding: "24px 16px 80px" }}>
+
+      {/* Event cover */}
       {ev.headerImage && (
-        <img src={ev.headerImage} alt="" style={{ width: "100%", height: 120, objectFit: "cover" }} />
-      )}
-      <div style={{ background: NEGRO_PURO, color: BLANCO_CONTRASTE, padding: 20, textAlign: "center" }}>
-        <div style={{ fontSize: 11, fontWeight: 800, color: VERDE_CORPORATIVO }}>PASE DIGITAL</div>
-        <h2 style={{ fontSize: 22, fontWeight: 900, margin: "4px 0 0" }}>{ev.title}</h2>
-      </div>
-      <div style={{ padding: 28, background: AZUL_CLARO_BG, textAlign: "center" }}>
-        <img src={qrUrl} alt="QR" style={{ width: 180, height: 180, borderRadius: 12, border: `2px solid ${NEGRO_PURO}` }} />
-        <p style={{ fontFamily: "monospace", fontWeight: 800, marginTop: 12 }}>{reg.id}</p>
-        <p style={{ fontSize: 13, color: "#4a5568", margin: "16px 0" }}>
-          Guarda este QR. Solo permite un ingreso.
-        </p>
-        {ev.lat != null && <LocationMap lat={ev.lat} lng={ev.lng} height={140} />}
-        <NavigateButtons lat={ev.lat} lng={ev.lng} label={ev.address || ev.location} />
-        {onDone && (
-          <button type="button" className="soft-btn soft-btn-primary" style={{ width: "100%", marginTop: 20 }} onClick={onDone}>
-            Volver
-          </button>
-        )}
-        <div style={{ marginTop: 28, padding: "20px", borderRadius: 14, background: "rgba(107,159,212,0.1)", border: "1px solid rgba(107,159,212,0.25)" }}>
-          <p style={{ fontSize: 14, color: "#8fa3b1", margin: "0 0 12px" }}>¿Quieres organizar tus propios eventos?</p>
-          <a href="/app" style={{ display: "inline-block", padding: "12px 24px", background: "#1a5f8a", color: "#fff", borderRadius: 10, fontWeight: 700, fontSize: 14, textDecoration: "none" }}>
-            Crear cuenta de organizador →
-          </a>
+        <div style={{
+          width: "100%", aspectRatio: "2 / 1", borderRadius: 16,
+          overflow: "hidden", marginBottom: 20,
+          boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
+        }}>
+          <img src={ev.headerImage} alt={ev.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
         </div>
+      )}
+
+      {/* Ticket header */}
+      <div style={{ textAlign: "center", marginBottom: 24 }}>
+        <div style={{ fontSize: 11, fontWeight: 800, color: "#4ade80", letterSpacing: 2, marginBottom: 6 }}>
+          ✓ INSCRIPCIÓN CONFIRMADA
+        </div>
+        <h2 style={{ fontSize: 22, fontWeight: 800, color: "#e8eaf0", margin: 0 }}>{ev.title}</h2>
       </div>
-    </>
+
+      {/* QR card */}
+      <div style={{
+        background: "#1a1c1e",
+        border: "1px solid rgba(255,255,255,0.1)",
+        borderRadius: 20, padding: "28px 20px",
+        textAlign: "center",
+        marginBottom: 24,
+        boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
+      }}>
+        <img
+          src={qrUrl}
+          alt="QR de acceso"
+          style={{ width: 180, height: 180, borderRadius: 12, display: "block", margin: "0 auto" }}
+        />
+        <p style={{
+          fontFamily: "monospace", fontWeight: 700, marginTop: 16,
+          fontSize: 13, color: "#6b9fd4", letterSpacing: 1,
+        }}>
+          {reg.id}
+        </p>
+        <p style={{ fontSize: 12, color: "#8fa3b1", margin: "8px 0 0", lineHeight: 1.5 }}>
+          Presenta este QR en la entrada.<br />Solo permite un ingreso.
+        </p>
+      </div>
+
+      {/* Map */}
+      {ev.lat != null && ev.lng != null && (
+        <>
+          <div style={{ borderRadius: 16, overflow: "hidden", marginBottom: 12, border: "1px solid rgba(255,255,255,0.08)" }}>
+            <LocationMap lat={ev.lat} lng={ev.lng} height={180} />
+          </div>
+          <NavigateButtons lat={ev.lat} lng={ev.lng} label={ev.address || ev.location} />
+        </>
+      )}
+
+      {/* Back button (for embedded use) */}
+      {onDone && (
+        <button type="button" className="soft-btn soft-btn-primary" style={{ width: "100%", marginTop: 20 }} onClick={onDone}>
+          Volver
+        </button>
+      )}
+
+      {/* Organizer CTA */}
+      <div style={{
+        marginTop: 28, padding: "18px 20px", borderRadius: 14,
+        background: "rgba(107,159,212,0.08)",
+        border: "1px solid rgba(107,159,212,0.2)",
+        textAlign: "center",
+      }}>
+        <p style={{ fontSize: 13, color: "#8fa3b1", margin: "0 0 12px" }}>¿Quieres organizar tus propios eventos?</p>
+        <a href="/app" style={{
+          display: "inline-block", padding: "11px 22px",
+          background: "#1a5f8a", color: "#fff",
+          borderRadius: 10, fontWeight: 700, fontSize: 14, textDecoration: "none",
+        }}>
+          Crear cuenta de organizador →
+        </a>
+      </div>
+
+      {/* Cancel attendance */}
+      {onCancel && (
+        <div style={{ marginTop: 24, textAlign: "center" }}>
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={cancelling}
+            style={{
+              background: "none", border: "none",
+              color: cancelling ? "#6b7a8d" : "#f87171",
+              fontSize: 13, cursor: cancelling ? "not-allowed" : "pointer",
+              fontWeight: 600, textDecoration: "underline",
+              textUnderlineOffset: 3,
+            }}
+          >
+            {cancelling ? "Cancelando…" : "Cancelar mi asistencia"}
+          </button>
+        </div>
+      )}
+    </div>
   );
 
   if (standalone) {
-    return <div className="tf-screen" style={{ display: "block" }}>{inner}</div>;
+    return (
+      <div className="tf-screen" style={{ display: "block", overflowY: "auto" }}>
+        {inner}
+      </div>
+    );
   }
 
   return (
-    <div style={{ border: `2px solid ${NEGRO_PURO}`, borderRadius: 20, overflow: "hidden" }}>
+    <div style={{ borderRadius: 20, overflow: "hidden", border: "1px solid rgba(255,255,255,0.08)" }}>
       {inner}
     </div>
   );

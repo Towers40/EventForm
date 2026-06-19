@@ -62,6 +62,8 @@ export const api = {
   publicEvent: (slug) => request(`/api/public/events/${slug}`),
   publicRegister: (slug, body) =>
     request(`/api/public/events/${slug}/register`, { method: "POST", body: JSON.stringify(body) }),
+  cancelRegistration: (ticketId) =>
+    request(`/api/public/registrations/${ticketId}/cancel`, { method: "PATCH" }),
   adminOverview: (token) => request("/api/admin/overview", {}, token),
   discoverEvents: (params = {}) => {
     const qs = new URLSearchParams(params).toString();
