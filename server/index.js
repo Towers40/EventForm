@@ -110,25 +110,54 @@ app.post("/api/auth/register", requireDb, async (req, res) => {
     if (!/[A-Z]/.test(password))
       return res.status(400).json({ error: "La contraseña debe contener al menos una letra mayúscula" });
 
-    const { rows: existing } = await db.execute({ sql: "SELECT id FROM users WHERE email = ?", args: [email.trim().toLowerCase()] });
-    if (existing[0]) return res.status(409).json({ error: "Email ya registrado" });
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanName  = name?.trim() || "";
 
-    const id = "U" + uid();
-    const hash = await hashPassword(password);
-    const code = emailEnabled ? gen4() : null;
-    const expires = emailEnabled ? Date.now() + 15 * 60 * 1000 : null;
-    const verified = emailEnabled ? 0 : 1;
+    const { rows: existing } = await db.execute({ sql: "SELECT * FROM users WHERE email = ?", args: [cleanEmail] });
+    const existingUser = existing[0];
 
-    await db.execute({
-      sql: `INSERT INTO users (id, email, password_hash, name, role, email_verified, verify_code, verify_code_expires, created_at) VALUES (?, ?, ?, ?, 'host', ?, ?, ?, ?)`,
-      args: [id, email.trim().toLowerCase(), hash, name?.trim() || "", verified, code, expires, Date.now()],
-    });
-
-    if (emailEnabled && code) {
-      try { await sendVerificationCode(email.trim().toLowerCase(), name?.trim() || "", code); } catch (e) { console.error(e); }
-      return res.json({ pending: true, email: email.trim().toLowerCase() });
+    // Email already registered AND verified → block
+    if (existingUser && existingUser.email_verified) {
+      return res.status(409).json({ error: "Este correo ya tiene una cuenta. Usa 'Iniciar sesión'." });
     }
-    const { rows } = await db.execute({ sql: "SELECT * FROM users WHERE id = ?", args: [id] });
+
+    const hash = await hashPassword(password);
+
+    let userId;
+    if (existingUser) {
+      // Unverified account → update password + name so user can verify fresh
+      userId = existingUser.id;
+      await db.execute({
+        sql: "UPDATE users SET password_hash = ?, name = ? WHERE id = ?",
+        args: [hash, cleanName, userId],
+      });
+    } else {
+      userId = "U" + uid();
+      await db.execute({
+        sql: `INSERT INTO users (id, email, password_hash, name, role, email_verified, created_at) VALUES (?, ?, ?, ?, 'host', 0, ?)`,
+        args: [userId, cleanEmail, hash, cleanName, Date.now()],
+      });
+    }
+
+    // Try to send verification email
+    if (emailEnabled) {
+      const code = gen4();
+      const expires = Date.now() + 15 * 60 * 1000;
+      await db.execute({
+        sql: "UPDATE users SET verify_code = ?, verify_code_expires = ? WHERE id = ?",
+        args: [code, expires, userId],
+      });
+      let sent = false;
+      try { await sendVerificationCode(cleanEmail, cleanName, code); sent = true; } catch (e) { console.error("Email send failed:", e.message); }
+      if (sent) {
+        return res.json({ pending: true, email: cleanEmail });
+      }
+      // Email failed → fall through to auto-verify below
+    }
+
+    // No email configured or email failed → auto-verify and log in directly
+    await db.execute({ sql: "UPDATE users SET email_verified = 1, verify_code = NULL, verify_code_expires = NULL WHERE id = ?", args: [userId] });
+    const { rows } = await db.execute({ sql: "SELECT * FROM users WHERE id = ?", args: [userId] });
     res.json({ token: signToken(rowToUser(rows[0])), user: rowToUser(rows[0]) });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -157,10 +186,25 @@ app.post("/api/auth/resend-code", requireDb, async (req, res) => {
     const { rows } = await db.execute({ sql: "SELECT * FROM users WHERE email = ?", args: [email?.trim().toLowerCase()] });
     const row = rows[0];
     if (!row) return res.status(404).json({ error: "Usuario no encontrado" });
-    if (row.email_verified) return res.json({ ok: true });
+    if (row.email_verified) { const u = rowToUser(row); return res.json({ ok: true, token: signToken(u), user: u }); }
+    if (!emailEnabled) {
+      // No email configured → auto-verify
+      await db.execute({ sql: "UPDATE users SET email_verified = 1, verify_code = NULL WHERE id = ?", args: [row.id] });
+      const { rows: updated } = await db.execute({ sql: "SELECT * FROM users WHERE id = ?", args: [row.id] });
+      const u = rowToUser(updated[0]);
+      return res.json({ ok: true, token: signToken(u), user: u });
+    }
     const code = gen4(); const expires = Date.now() + 15 * 60 * 1000;
     await db.execute({ sql: "UPDATE users SET verify_code = ?, verify_code_expires = ? WHERE id = ?", args: [code, expires, row.id] });
-    try { await sendVerificationCode(row.email, row.name, code); } catch (e) { return res.status(500).json({ error: "Error al enviar" }); }
+    let sent = false;
+    try { await sendVerificationCode(row.email, row.name, code); sent = true; } catch {}
+    if (!sent) {
+      // Email failed → auto-verify
+      await db.execute({ sql: "UPDATE users SET email_verified = 1, verify_code = NULL WHERE id = ?", args: [row.id] });
+      const { rows: updated } = await db.execute({ sql: "SELECT * FROM users WHERE id = ?", args: [row.id] });
+      const u = rowToUser(updated[0]);
+      return res.json({ ok: true, token: signToken(u), user: u });
+    }
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });

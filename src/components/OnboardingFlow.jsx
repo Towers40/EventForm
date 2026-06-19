@@ -476,7 +476,12 @@ export default function OnboardingFlow({ onDraftReady }) {
   const handleResend = async () => {
     setResendStatus("sending");
     try {
-      await api.resendCode(pendingEmail);
+      const res = await api.resendCode(pendingEmail);
+      // If server auto-verified (no email configured or email failed) → log in directly
+      if (res.token) {
+        loginWithToken(res.token, res.user);
+        return;
+      }
       setResendStatus("sent");
       setDigits(["", "", "", ""]);
       setTimeout(() => digitRefs[0].current?.focus(), 50);

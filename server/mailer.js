@@ -35,7 +35,7 @@ export async function sendVerificationCode(email, name, code) {
   if (!emailEnabled) return;
   const firstName = (name || "anfitrión").split(" ")[0];
   await transporter.sendMail({
-    from: EMAIL_FROM || `EventForm <${SMTP_USER}>`,
+    from: `EventForm Colombia <${SMTP_USER}>`,
     to: email,
     subject: "Tu código de verificación — EventForm",
     html: emailLayout(`
@@ -58,7 +58,7 @@ export async function sendPasswordResetCode(email, name, code) {
   if (!emailEnabled) return;
   const firstName = (name || "usuario").split(" ")[0];
   await transporter.sendMail({
-    from: EMAIL_FROM || `EventForm <${SMTP_USER}>`,
+    from: `EventForm Colombia <${SMTP_USER}>`,
     to: email,
     subject: "Código para restablecer tu contraseña — EventForm",
     html: emailLayout(`
