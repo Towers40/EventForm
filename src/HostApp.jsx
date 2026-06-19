@@ -9,6 +9,7 @@ import NavigateButtons from "./components/NavigateButtons.jsx";
 import EventCrm from "./components/EventCrm.jsx";
 import ShareEventModal from "./components/ShareEventModal.jsx";
 import ConfirmTicket from "./components/ConfirmTicket.jsx";
+import DateTimePicker from "./components/DateTimePicker.jsx";
 import InicioView from "./pages/InicioView.jsx";
 import MisEventosView from "./pages/MisEventosView.jsx";
 import DashboardView from "./pages/DashboardView.jsx";
@@ -103,15 +104,6 @@ function makeSlug(title) {
 
 function publicUrl(ev) {
   return ev.publicUrl || `${window.location.origin}/e/${ev.slug || ev.id}`;
-}
-
-function toLocalDateTimeValue(date = "", time = "") {
-  return date && time ? `${date}T${time}` : "";
-}
-
-function splitLocalDateTime(value) {
-  const [date = "", timeWithSeconds = ""] = String(value || "").split("T");
-  return { date, time: timeWithSeconds.slice(0, 5) };
 }
 
 function formatEventSchedule(ev) {
@@ -812,16 +804,6 @@ function CreateEventWizard({ draft, setDraft, step, setStep, onDone, onCancel })
 
   const updateDraft = (key, value) => setDraft((prev) => ({ ...prev, [key]: value }));
 
-  const updateStartDateTime = (value) => {
-    const next = splitLocalDateTime(value);
-    setDraft((p) => ({ ...p, startDate: next.date, startTime: next.time, date: next.date, endDate: p.endDate || next.date }));
-  };
-
-  const updateEndDateTime = (value) => {
-    const next = splitLocalDateTime(value);
-    setDraft((p) => ({ ...p, endDate: next.date, endTime: next.time }));
-  };
-
   const handleNextStep = () => {
     setAnimClass("animate-fade-out");
     setTimeout(() => {
@@ -974,28 +956,28 @@ function CreateEventWizard({ draft, setDraft, step, setStep, onDone, onCancel })
           <>
             <div className="tf-step-num">4</div>
             <h2 className="tf-question">¿Cuándo será tu evento?</h2>
-            <p className="tf-hint">Define fecha y hora de inicio, y también fecha y hora de finalización.</p>
-            <div style={{ display: "grid", gap: 22 }}>
+            <p className="tf-hint">Selecciona fecha y hora de inicio y de finalización.</p>
+            <div style={{ display: "grid", gap: 28 }}>
               <div>
-                <p style={tfLabel}>Inicio del evento</p>
-                <input
-                  className="tf-input-line"
-                  type="datetime-local"
-                  min={new Date().toISOString().slice(0, 16)}
-                  value={toLocalDateTimeValue(draft.startDate, draft.startTime)}
-                  onInput={(e) => updateStartDateTime(e.target.value)}
-                  onChange={(e) => updateStartDateTime(e.target.value)}
+                <DateTimePicker
+                  label="Inicio del evento"
+                  date={draft.startDate}
+                  time={draft.startTime}
+                  minDate={new Date().toISOString().split("T")[0]}
+                  onChange={({ date, time }) =>
+                    setDraft(p => ({ ...p, startDate: date, startTime: time, date: date, endDate: p.endDate || date }))
+                  }
                 />
               </div>
               <div>
-                <p style={tfLabel}>Fin del evento</p>
-                <input
-                  className="tf-input-line"
-                  type="datetime-local"
-                  min={new Date().toISOString().slice(0, 16)}
-                  value={toLocalDateTimeValue(draft.endDate, draft.endTime)}
-                  onInput={(e) => updateEndDateTime(e.target.value)}
-                  onChange={(e) => updateEndDateTime(e.target.value)}
+                <DateTimePicker
+                  label="Fin del evento"
+                  date={draft.endDate}
+                  time={draft.endTime}
+                  minDate={draft.startDate || new Date().toISOString().split("T")[0]}
+                  onChange={({ date, time }) =>
+                    setDraft(p => ({ ...p, endDate: date, endTime: time }))
+                  }
                 />
               </div>
             </div>
@@ -1148,51 +1130,31 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
           </button>
           {showSettings && (
             <div style={{ padding: "0 24px 20px", display: "grid", gap: 16 }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
                 <div>
-                  <label style={bldLabel}>Inicio</label>
-                  <input
-                    type="datetime-local"
-                    min={new Date().toISOString().slice(0, 16)}
-                    value={toLocalDateTimeValue(draft.startDate, draft.startTime)}
-                    onInput={(e) => {
-                      const next = splitLocalDateTime(e.target.value);
-                      const now = new Date();
-                      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString().split("T")[0];
-                      if (next.date && next.date < today) return;
-                      setDraft((p) => ({ ...p, startDate: next.date, startTime: next.time, date: next.date, endDate: p.endDate || next.date }));
+                  <DateTimePicker
+                    label="Inicio"
+                    date={draft.startDate}
+                    time={draft.startTime}
+                    minDate={new Date().toISOString().split("T")[0]}
+                    onChange={({ date, time }) => {
+                      const today = new Date().toISOString().split("T")[0];
+                      if (date && date < today) return;
+                      setDraft(p => ({ ...p, startDate: date, startTime: time, date: date, endDate: p.endDate || date }));
                     }}
-                    onChange={(e) => {
-                      const next = splitLocalDateTime(e.target.value);
-                      const now = new Date();
-                      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString().split("T")[0];
-                      if (next.date && next.date < today) return;
-                      setDraft((p) => ({ ...p, startDate: next.date, startTime: next.time, date: next.date, endDate: p.endDate || next.date }));
-                    }}
-                    className="tf-input-line"
-                    style={{ fontSize: 14 }}
                   />
                 </div>
                 <div>
-                  <label style={bldLabel}>Fin</label>
-                  <input
-                    type="datetime-local"
-                    min={new Date().toISOString().slice(0, 16)}
-                    value={toLocalDateTimeValue(draft.endDate, draft.endTime)}
-                    onInput={(e) => {
-                      const next = splitLocalDateTime(e.target.value);
-                      if (next.date && draft.startDate && next.date < draft.startDate) return;
-                      if (next.date === draft.startDate && next.time <= draft.startTime) return;
-                      setDraft((p) => ({ ...p, endDate: next.date, endTime: next.time }));
+                  <DateTimePicker
+                    label="Fin"
+                    date={draft.endDate}
+                    time={draft.endTime}
+                    minDate={draft.startDate || new Date().toISOString().split("T")[0]}
+                    onChange={({ date, time }) => {
+                      if (date && draft.startDate && date < draft.startDate) return;
+                      if (date === draft.startDate && time && draft.startTime && time <= draft.startTime) return;
+                      setDraft(p => ({ ...p, endDate: date, endTime: time }));
                     }}
-                    onChange={(e) => {
-                      const next = splitLocalDateTime(e.target.value);
-                      if (next.date && draft.startDate && next.date < draft.startDate) return;
-                      if (next.date === draft.startDate && next.time <= draft.startTime) return;
-                      setDraft((p) => ({ ...p, endDate: next.date, endTime: next.time }));
-                    }}
-                    className="tf-input-line"
-                    style={{ fontSize: 14 }}
                   />
                 </div>
               </div>
