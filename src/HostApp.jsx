@@ -28,6 +28,7 @@ import {
   EVENT_TYPE_PRESETS,
   formatEventType,
 } from "./lib/colombia.js";
+import { DISCOVER_CATEGORIES } from "./lib/categories.js";
 import {
   VERDE_PASTEL_BG,
   VERDE_CORPORATIVO,
@@ -463,6 +464,9 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
               {label}
             </button>
           ))}
+          <a href="/discover" className="soft-btn soft-btn-secondary" style={{ fontSize: 12, padding: "8px 13px", textDecoration: "none" }}>
+            Descubrir
+          </a>
           <button type="button" onClick={startNew} className="soft-btn soft-btn-primary" style={{ fontSize: 12, padding: "8px 13px", marginLeft: 4 }}>
             + Crear evento
           </button>
@@ -1341,6 +1345,97 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
           </div>
         </div>
       )}
+
+      {/* ── Publicación ── */}
+      <div className="panel-card" style={{ marginTop: 20, padding: "20px 24px" }}>
+        <h3 style={{ fontSize: 13, fontWeight: 800, color: "#5c6b7a", marginBottom: 20, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+          Publicación
+        </h3>
+
+        {/* Visibility */}
+        <div style={{ marginBottom: 20 }}>
+          <label style={bldLabel}>Visibilidad</label>
+          <div style={{ display: "flex", gap: 8 }}>
+            {[
+              { value: "public",   label: "🌐 Público",       title: "Aparece en Discover" },
+              { value: "unlisted", label: "🔗 Solo enlace",   title: "No aparece en Discover" },
+              { value: "private",  label: "🔒 Privado",       title: "Solo tú puedes verlo" },
+            ].map(opt => (
+              <button
+                key={opt.value}
+                type="button"
+                title={opt.title}
+                onClick={() => setDraft(p => ({ ...p, visibility: opt.value }))}
+                className={`soft-btn ${(draft.visibility || "public") === opt.value ? "soft-btn-primary" : "soft-btn-secondary"}`}
+                style={{ fontSize: 11, flex: 1, padding: "10px 6px" }}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Category */}
+        <div style={{ marginBottom: 20 }}>
+          <label style={bldLabel}>Categoría</label>
+          <select
+            value={draft.category || ""}
+            onChange={e => setDraft(p => ({ ...p, category: e.target.value || null }))}
+            style={{
+              width: "100%", border: "2px solid #e2e8f0", borderRadius: 10,
+              padding: "11px 14px", fontSize: 14, color: "#0d1b2a",
+              background: "#fff", outline: "none", cursor: "pointer",
+              fontFamily: "inherit",
+            }}
+          >
+            <option value="">Sin categoría</option>
+            {DISCOVER_CATEGORIES.map(c => (
+              <option key={c.slug} value={c.slug}>{c.emoji} {c.label}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Price */}
+        <div>
+          <label style={bldLabel}>Precio de entrada</label>
+          <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+            <button
+              type="button"
+              className={`soft-btn ${!draft.isPaid ? "soft-btn-primary" : "soft-btn-secondary"}`}
+              style={{ fontSize: 13, flex: 1 }}
+              onClick={() => setDraft(p => ({ ...p, isPaid: false, price: null }))}
+            >
+              Gratis
+            </button>
+            <button
+              type="button"
+              className={`soft-btn ${draft.isPaid ? "soft-btn-primary" : "soft-btn-secondary"}`}
+              style={{ fontSize: 13, flex: 1 }}
+              onClick={() => setDraft(p => ({ ...p, isPaid: true }))}
+            >
+              De pago
+            </button>
+          </div>
+          {draft.isPaid && (
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ fontSize: 14, fontWeight: 700, color: "#5c6b7a", whiteSpace: "nowrap" }}>COP</span>
+              <input
+                type="number"
+                min="0"
+                step="1000"
+                placeholder="Precio de entrada"
+                value={draft.price || ""}
+                onChange={e => setDraft(p => ({ ...p, price: e.target.value ? Number(e.target.value) : null }))}
+                style={{
+                  flex: 1, border: "2px solid #e2e8f0", borderRadius: 10,
+                  padding: "11px 14px", fontSize: 14, color: "#0d1b2a",
+                  background: "#fff", outline: "none", fontFamily: "inherit",
+                }}
+              />
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

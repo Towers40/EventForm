@@ -7,6 +7,7 @@ import PublicEventPage from "./pages/PublicEventPage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 import PrivacyPage from "./pages/PrivacyPage.jsx";
 import VerifyEmailPage from "./pages/VerifyEmailPage.jsx";
+import DiscoverPage from "./pages/DiscoverPage.jsx";
 import { apiEnabled } from "./lib/api.js";
 
 function AppGate() {
@@ -33,6 +34,7 @@ export default function AppRouter() {
           <Route path="/privacidad" element={<PrivacyPage />} />
           <Route path="/verify-email" element={<VerifyEmailPage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/discover" element={<DiscoverPage />} />
           <Route path="/app" element={<AppGate />} />
           <Route path="/" element={<Navigate to="/app" replace />} />
         </Routes>

@@ -347,8 +347,8 @@ app.post("/api/events", requireDb, authMiddleware, requireRole("host", "super_ad
     
     // Ejecutar INSERT
     await db.execute({
-      sql: `INSERT INTO events (id, host_id, slug, payload, manual_sold_out, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      args: [id, hostId, slug, JSON.stringify(data), payload.manualSoldOut ? 1 : 0, now, now],
+      sql: `INSERT INTO events (id, host_id, slug, payload, manual_sold_out, visibility, category, is_paid, price, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [id, hostId, slug, JSON.stringify(data), payload.manualSoldOut ? 1 : 0, payload.visibility || "public", payload.category || null, payload.isPaid ? 1 : 0, payload.isPaid && payload.price ? Number(payload.price) : null, now, now],
     });
     
     // Recuperar el evento creado
@@ -388,8 +388,8 @@ app.put("/api/events/:id", requireDb, authMiddleware, async (req, res) => {
     const data = { ...JSON.parse(row.payload), ...payload, id: row.id, slug, registrations: regs };
     
     await db.execute({
-      sql: `UPDATE events SET slug = ?, payload = ?, manual_sold_out = ?, updated_at = ? WHERE id = ?`,
-      args: [slug, JSON.stringify(data), payload.manualSoldOut ? 1 : 0, Date.now(), row.id],
+      sql: `UPDATE events SET slug = ?, payload = ?, manual_sold_out = ?, visibility = ?, category = ?, is_paid = ?, price = ?, updated_at = ? WHERE id = ?`,
+      args: [slug, JSON.stringify(data), payload.manualSoldOut ? 1 : 0, payload.visibility || "public", payload.category || null, payload.isPaid ? 1 : 0, payload.isPaid && payload.price ? Number(payload.price) : null, Date.now(), row.id],
     });
     
     const { rows } = await db.execute({ sql: "SELECT * FROM events WHERE id = ?", args: [row.id] });
@@ -456,6 +456,69 @@ app.get("/api/admin/overview", requireDb, authMiddleware, requireRole("super_adm
       latestUsers: latestUsers.map(u => ({ id: u.id, email: u.email, name: u.name, role: u.role, createdAt: u.created_at })),
       latestEvents: latestEvents.map(e => ({ id: e.id, slug: e.slug, hostId: e.host_id, createdAt: e.created_at })),
     });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ─── Discover (público) ────────────────────────────────────────────────────
+app.get("/api/public/events", requireDb, async (req, res) => {
+  try {
+    const { q, category, city, page = 1, limit = 12 } = req.query;
+    const offset = (Number(page) - 1) * Number(limit);
+    const today = new Date().toISOString().split("T")[0];
+
+    const conditions = [
+      "visibility = 'public'",
+      `(json_extract(payload, '$.endDate') >= ?
+        OR (json_extract(payload, '$.endDate') IS NULL AND json_extract(payload, '$.startDate') >= ?)
+        OR (json_extract(payload, '$.endDate') = '' AND json_extract(payload, '$.startDate') >= ?))`,
+    ];
+    const args = [today, today, today];
+
+    if (category) { conditions.push("category = ?"); args.push(category); }
+    if (city) { conditions.push("json_extract(payload, '$.city') = ?"); args.push(city); }
+    if (q) {
+      conditions.push("(json_extract(payload, '$.title') LIKE ? OR json_extract(payload, '$.city') LIKE ?)");
+      args.push(`%${q}%`, `%${q}%`);
+    }
+
+    const where = "WHERE " + conditions.join(" AND ");
+
+    const { rows: countRows } = await db.execute({ sql: `SELECT COUNT(*) as total FROM events ${where}`, args });
+    const total = Number(countRows[0]?.total || 0);
+
+    const { rows } = await db.execute({
+      sql: `SELECT *, (SELECT COUNT(*) FROM registrations r WHERE r.event_id = events.id) as reg_count
+            FROM events ${where}
+            ORDER BY COALESCE(json_extract(payload, '$.startDate'), '9999-99-99') ASC
+            LIMIT ? OFFSET ?`,
+      args: [...args, Number(limit), offset],
+    });
+
+    const events = rows.map(r => {
+      const ev = parseEvent(r);
+      ev.regCount = Number(r.reg_count || 0);
+      ev.registrations = undefined;
+      ev.fields = undefined;
+      return ev;
+    });
+
+    res.json({ events, total, page: Number(page), limit: Number(limit) });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get("/api/public/categories", requireDb, async (req, res) => {
+  try {
+    const today = new Date().toISOString().split("T")[0];
+    const { rows } = await db.execute({
+      sql: `SELECT category, COUNT(*) as count FROM events
+            WHERE visibility = 'public' AND category IS NOT NULL AND category != ''
+            AND (json_extract(payload, '$.endDate') >= ?
+              OR (json_extract(payload, '$.endDate') IS NULL AND json_extract(payload, '$.startDate') >= ?)
+              OR (json_extract(payload, '$.endDate') = '' AND json_extract(payload, '$.startDate') >= ?))
+            GROUP BY category ORDER BY count DESC`,
+      args: [today, today, today],
+    });
+    res.json({ categories: rows.map(r => ({ slug: r.category, count: Number(r.count) })) });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

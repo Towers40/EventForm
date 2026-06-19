@@ -76,6 +76,21 @@ export async function initDb() {
     { sql: `CREATE INDEX IF NOT EXISTS idx_events_slug ON events(slug)` },
     { sql: `CREATE INDEX IF NOT EXISTS idx_reg_event ON registrations(event_id)` },
   ], "deferred");
+
+  // Migrations — ALTER TABLE fails silently if column already exists
+  const migrations = [
+    "ALTER TABLE events ADD COLUMN visibility TEXT NOT NULL DEFAULT 'public'",
+    "ALTER TABLE events ADD COLUMN category TEXT",
+    "ALTER TABLE events ADD COLUMN is_paid INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE events ADD COLUMN price REAL",
+  ];
+  for (const sql of migrations) {
+    try {
+      await db.execute({ sql, args: [] });
+    } catch (e) {
+      if (!e.message?.includes("duplicate column") && !e.message?.includes("already exists")) throw e;
+    }
+  }
 }
 
 export function parseEvent(row) {
@@ -85,6 +100,10 @@ export function parseEvent(row) {
   ev.slug = row.slug;
   ev.hostId = row.host_id;
   ev.manualSoldOut = Boolean(row.manual_sold_out);
+  ev.visibility = row.visibility || "public";
+  ev.category = row.category || null;
+  ev.isPaid = Boolean(row.is_paid);
+  ev.price = row.price != null ? Number(row.price) : null;
   return ev;
 }
 
