@@ -4,6 +4,7 @@ const MONTHS_SHORT = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct
 const MONTHS_LONG  = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 const DAYS_SHORT   = ["Do","Lu","Ma","Mi","Ju","Vi","Sá"];
 
+// 30-min intervals, 12:00 AM → 11:30 PM
 const TIME_OPTIONS = (() => {
   const opts = [];
   for (let h = 0; h < 24; h++) {
@@ -11,8 +12,8 @@ const TIME_OPTIONS = (() => {
       const ampm = h < 12 ? "AM" : "PM";
       const h12  = h % 12 || 12;
       opts.push({
-        label: `${h12}:${String(m).padStart(2,"0")} ${ampm}`,
-        value: `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`,
+        label: `${h12}:${String(m).padStart(2, "0")} ${ampm}`,
+        value: `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`,
       });
     }
   }
@@ -32,46 +33,31 @@ function formatTime12(time24) {
   if (isNaN(h) || isNaN(m)) return null;
   const ampm = h < 12 ? "AM" : "PM";
   const h12  = h % 12 || 12;
-  return `${h12}:${String(m).padStart(2,"0")} ${ampm}`;
+  return `${h12}:${String(m).padStart(2, "0")} ${ampm}`;
 }
 
 function daysInMonth(year, month) { return new Date(year, month, 0).getDate(); }
 function firstWeekday(year, month) { return new Date(year, month - 1, 1).getDay(); }
 
 export default function DateTimePicker({ date, time, onChange, minDate, label }) {
-  const today    = new Date();
-  const parts    = parseDateParts(date);
-  const timeFmt  = formatTime12(time);
+  const today   = new Date();
+  const parts   = parseDateParts(date);
+  const timeFmt = formatTime12(time);
 
-  const initYear  = parts?.year  || today.getFullYear();
-  const initMonth = parts?.month || today.getMonth() + 1;
-
-  const [showCal,  setShowCal]  = useState(false);
-  const [showTime, setShowTime] = useState(false);
-  const [calYear,  setCalYear]  = useState(initYear);
-  const [calMonth, setCalMonth] = useState(initMonth);
+  const [showCal, setShowCal] = useState(false);
+  const [calYear,  setCalYear]  = useState(parts?.year  || today.getFullYear());
+  const [calMonth, setCalMonth] = useState(parts?.month || today.getMonth() + 1);
   const [calPos,   setCalPos]   = useState(null);
-  const [timePos,  setTimePos]  = useState(null);
 
-  const dateBtnRef  = useRef(null);
-  const timeBtnRef  = useRef(null);
-  const timeListRef = useRef(null);
+  const dateBtnRef = useRef(null);
 
-  // Scroll selected time into view when dropdown opens
-  useEffect(() => {
-    if (!showTime) return;
-    const timer = setTimeout(() => {
-      const el = timeListRef.current?.querySelector("[data-sel='true']");
-      el?.scrollIntoView({ block: "center" });
-    }, 30);
-    return () => clearTimeout(timer);
-  }, [showTime]);
-
-  // Close on outside click
+  // Close calendar when clicking outside
   useEffect(() => {
     function onDown(e) {
-      if (!dateBtnRef.current?.contains(e.target) && !e.target.closest("[data-dtp-cal]")) setShowCal(false);
-      if (!timeBtnRef.current?.contains(e.target) && !e.target.closest("[data-dtp-time]")) setShowTime(false);
+      if (
+        !dateBtnRef.current?.contains(e.target) &&
+        !e.target.closest("[data-dtp-cal]")
+      ) setShowCal(false);
     }
     document.addEventListener("mousedown", onDown);
     return () => document.removeEventListener("mousedown", onDown);
@@ -80,25 +66,14 @@ export default function DateTimePicker({ date, time, onChange, minDate, label })
   function openCal() {
     const rect = dateBtnRef.current?.getBoundingClientRect();
     if (!rect) return;
+    const CAL_W = 480;
     let left = rect.left;
-    if (left + 348 > window.innerWidth - 12) left = window.innerWidth - 348 - 12;
-    let top  = rect.bottom + 8;
-    if (top + 380 > window.innerHeight - 12) top = rect.top - 380 - 8;
+    if (left + CAL_W > window.innerWidth - 12) left = window.innerWidth - CAL_W - 12;
+    if (left < 8) left = 8;
+    let top = rect.bottom + 10;
+    if (top + 430 > window.innerHeight - 12) top = rect.top - 430 - 10;
     setCalPos({ top, left });
     setShowCal(s => !s);
-    setShowTime(false);
-  }
-
-  function openTime() {
-    const rect = timeBtnRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    let left = rect.left;
-    if (left + 152 > window.innerWidth - 12) left = window.innerWidth - 152 - 12;
-    let top  = rect.bottom + 8;
-    if (top + 304 > window.innerHeight - 12) top = rect.top - 304 - 8;
-    setTimePos({ top, left });
-    setShowTime(s => !s);
-    setShowCal(false);
   }
 
   function prevMonth() {
@@ -111,14 +86,14 @@ export default function DateTimePicker({ date, time, onChange, minDate, label })
   }
 
   function selectDay(day) {
-    const newDate = `${calYear}-${String(calMonth).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+    const newDate = `${calYear}-${String(calMonth).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
     onChange({ date: newDate, time });
     setShowCal(false);
   }
 
   function isDisabled(day) {
     if (!minDate) return false;
-    const d = `${calYear}-${String(calMonth).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+    const d = `${calYear}-${String(calMonth).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
     return d < minDate;
   }
 
@@ -131,110 +106,156 @@ export default function DateTimePicker({ date, time, onChange, minDate, label })
   return (
     <>
       {label && (
-        <p style={{ fontSize: 11, fontWeight: 800, color: "#5c6b7a", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>
+        <p style={{
+          fontSize: 11, fontWeight: 800, color: "#5c6b7a",
+          textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10,
+        }}>
           {label}
         </p>
       )}
 
-      <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-        {/* ── Date button ── */}
+      <div style={{ display: "flex", gap: 10, alignItems: "stretch" }}>
+
+        {/* ── Date trigger button — shows "15 / Ene" (no year) ── */}
         <button
           ref={dateBtnRef}
           type="button"
           onClick={openCal}
           style={{
-            display: "flex", flexDirection: "column", alignItems: "center",
-            justifyContent: "center", width: 82, height: 72,
+            display: "flex", flexDirection: "column",
+            alignItems: "center", justifyContent: "center",
+            width: 84, minHeight: 72, flexShrink: 0,
             border: "2px solid #0d3b66", borderRadius: 14,
             background: parts ? "#0d3b66" : "#f0f6fc",
-            cursor: "pointer", padding: 0, flexShrink: 0,
+            cursor: "pointer", padding: "10px 0",
           }}
         >
           {parts ? (
             <>
-              <span style={{ fontSize: 28, fontWeight: 800, color: "#fff", lineHeight: 1 }}>
+              <span style={{ fontSize: 30, fontWeight: 800, color: "#fff", lineHeight: 1 }}>
                 {parts.day}
               </span>
-              <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.72)", textTransform: "uppercase", letterSpacing: "0.04em", marginTop: 4 }}>
+              <span style={{
+                fontSize: 13, fontWeight: 700, lineHeight: 1,
+                color: "rgba(255,255,255,0.75)",
+                textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 5,
+              }}>
                 {MONTHS_SHORT[parts.month - 1]}
               </span>
             </>
           ) : (
-            <span style={{ fontSize: 12, fontWeight: 700, color: "#0d3b66" }}>Fecha</span>
+            <>
+              <span style={{ fontSize: 22, color: "#b8c5d4" }}>📅</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: "#0d3b66", marginTop: 4 }}>Fecha</span>
+            </>
           )}
         </button>
 
-        {/* ── Time button ── */}
-        <button
-          ref={timeBtnRef}
-          type="button"
-          onClick={openTime}
-          style={{
-            display: "flex", alignItems: "center", justifyContent: "center",
-            height: 72, minWidth: 122, border: "2px solid #0d3b66", borderRadius: 14,
+        {/* ── Time — native <select> behind a styled label ── */}
+        <div style={{ position: "relative", flexShrink: 0 }}>
+          {/* Visible styled surface (pointer-events: none so clicks pass through) */}
+          <div style={{
+            height: "100%", minWidth: 148, minHeight: 72,
+            border: "2px solid #0d3b66", borderRadius: 14,
             background: timeFmt ? "#0d3b66" : "#f0f6fc",
-            cursor: "pointer", padding: "0 18px", flexShrink: 0,
-          }}
-        >
-          <span style={{ fontSize: 17, fontWeight: 800, color: timeFmt ? "#fff" : "#0d3b66", whiteSpace: "nowrap" }}>
-            {timeFmt || "Hora"}
-          </span>
-        </button>
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "0 14px 0 18px", boxSizing: "border-box",
+            pointerEvents: "none",
+          }}>
+            <span style={{
+              fontSize: 17, fontWeight: 800, whiteSpace: "nowrap",
+              color: timeFmt ? "#fff" : "#0d3b66",
+            }}>
+              {timeFmt || "Hora"}
+            </span>
+            <span style={{
+              fontSize: 11, marginLeft: 8,
+              color: timeFmt ? "rgba(255,255,255,0.65)" : "#8fa3b1",
+            }}>
+              ▾
+            </span>
+          </div>
+
+          {/* Invisible native <select> positioned on top — native dropdown on all devices */}
+          <select
+            value={time || ""}
+            onChange={e => onChange({ date, time: e.target.value })}
+            style={{
+              position: "absolute", inset: 0,
+              width: "100%", height: "100%",
+              opacity: 0, cursor: "pointer",
+            }}
+          >
+            <option value="" disabled>Hora</option>
+            {TIME_OPTIONS.map(opt => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
-      {/* ── Calendar overlay (fixed) ── */}
+      {/* ── Calendar overlay — fixed position, BIG (480px) ── */}
       {showCal && calPos && (
         <div
           data-dtp-cal="true"
           style={{
-            position: "fixed", top: calPos.top, left: calPos.left, zIndex: 9999,
-            background: "#fff", border: "2px solid #0d3b66", borderRadius: 20,
-            padding: 24, boxShadow: "0 16px 56px rgba(13,59,102,0.22)", width: 348,
+            position: "fixed", top: calPos.top, left: calPos.left,
+            zIndex: 9999, width: 480,
+            background: "#fff",
+            border: "2px solid #0d3b66", borderRadius: 22,
+            padding: "26px 28px 28px",
+            boxShadow: "0 20px 64px rgba(13,59,102,0.22)",
           }}
         >
-          {/* Month navigation */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-            <button type="button" onClick={prevMonth} style={navBtn()}>‹</button>
-            <span style={{ fontWeight: 800, fontSize: 17, color: "#0d1b2a" }}>
+          {/* Month / year navigation */}
+          <div style={{
+            display: "flex", alignItems: "center",
+            justifyContent: "space-between", marginBottom: 22,
+          }}>
+            <button type="button" onClick={prevMonth} style={navBtnStyle()}>‹</button>
+            <span style={{ fontWeight: 800, fontSize: 19, color: "#0d1b2a" }}>
               {MONTHS_LONG[calMonth - 1]} {calYear}
             </span>
-            <button type="button" onClick={nextMonth} style={navBtn()}>›</button>
+            <button type="button" onClick={nextMonth} style={navBtnStyle()}>›</button>
           </div>
 
           {/* Weekday headers */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 2, marginBottom: 8 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 4, marginBottom: 8 }}>
             {DAYS_SHORT.map(d => (
-              <div key={d} style={{ textAlign: "center", fontSize: 11, fontWeight: 800, color: "#8fa3b1", paddingBottom: 6, textTransform: "uppercase" }}>
+              <div key={d} style={{
+                textAlign: "center", fontSize: 12, fontWeight: 800,
+                color: "#8fa3b1", paddingBottom: 10, textTransform: "uppercase",
+              }}>
                 {d}
               </div>
             ))}
           </div>
 
           {/* Day grid */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 3 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 5 }}>
             {Array.from({ length: firstWd }).map((_, i) => <div key={`e${i}`} />)}
             {Array.from({ length: totalDays }, (_, i) => i + 1).map(day => {
-              const isSel     = parts?.day === day && parts?.month === calMonth && parts?.year === calYear;
-              const disabled  = isDisabled(day);
-              const isToday   = day === todayD && calMonth === todayM && calYear === todayY;
+              const isSel    = parts?.day === day && parts?.month === calMonth && parts?.year === calYear;
+              const disabled = isDisabled(day);
+              const isToday  = day === todayD && calMonth === todayM && calYear === todayY;
               return (
                 <button
                   key={day}
                   type="button"
                   disabled={disabled}
                   onClick={() => selectDay(day)}
+                  onMouseEnter={e => { if (!isSel && !disabled) e.currentTarget.style.background = "#dbeafe"; }}
+                  onMouseLeave={e => { if (!isSel) e.currentTarget.style.background = "transparent"; }}
                   style={{
-                    height: 44, borderRadius: 10,
+                    height: 52, borderRadius: 12, fontSize: 16,
                     border: isToday && !isSel ? "2px solid #0d3b66" : "2px solid transparent",
                     background: isSel ? "#0d3b66" : "transparent",
                     color: isSel ? "#fff" : disabled ? "#ccc" : "#0d1b2a",
                     fontWeight: isSel ? 800 : 500,
-                    fontSize: 15, cursor: disabled ? "not-allowed" : "pointer",
+                    cursor: disabled ? "not-allowed" : "pointer",
                     opacity: disabled ? 0.3 : 1,
-                    transition: "background 0.12s",
+                    transition: "background 0.1s",
                   }}
-                  onMouseEnter={e => { if (!isSel && !disabled) e.currentTarget.style.background = "#e8f4fd"; }}
-                  onMouseLeave={e => { if (!isSel) e.currentTarget.style.background = "transparent"; }}
                 >
                   {day}
                 </button>
@@ -243,54 +264,15 @@ export default function DateTimePicker({ date, time, onChange, minDate, label })
           </div>
         </div>
       )}
-
-      {/* ── Time dropdown (fixed) ── */}
-      {showTime && timePos && (
-        <div
-          ref={timeListRef}
-          data-dtp-time="true"
-          style={{
-            position: "fixed", top: timePos.top, left: timePos.left, zIndex: 9999,
-            background: "#fff", border: "2px solid #0d3b66", borderRadius: 14,
-            boxShadow: "0 16px 56px rgba(13,59,102,0.22)",
-            maxHeight: 304, overflowY: "auto", width: 152,
-          }}
-        >
-          {TIME_OPTIONS.map(opt => {
-            const isSel = time === opt.value;
-            return (
-              <button
-                key={opt.value}
-                type="button"
-                data-sel={isSel ? "true" : "false"}
-                onClick={() => { onChange({ date, time: opt.value }); setShowTime(false); }}
-                style={{
-                  display: "block", width: "100%", textAlign: "center",
-                  padding: "11px 12px", border: "none",
-                  background: isSel ? "#0d3b66" : "transparent",
-                  color: isSel ? "#fff" : "#0d1b2a",
-                  fontWeight: isSel ? 800 : 500,
-                  fontSize: 14, cursor: "pointer",
-                  borderBottom: "1px solid #f0f4f8",
-                }}
-                onMouseEnter={e => { if (!isSel) e.currentTarget.style.background = "#f0f6fc"; }}
-                onMouseLeave={e => { if (!isSel) e.currentTarget.style.background = "transparent"; }}
-              >
-                {opt.label}
-              </button>
-            );
-          })}
-        </div>
-      )}
     </>
   );
 }
 
-function navBtn() {
+function navBtnStyle() {
   return {
-    width: 38, height: 38, borderRadius: 10,
+    width: 42, height: 42, borderRadius: 10,
     border: "2px solid #0d3b66", background: "#f0f6fc",
-    cursor: "pointer", fontSize: 20, fontWeight: 800, color: "#0d3b66",
+    cursor: "pointer", fontSize: 22, fontWeight: 800, color: "#0d3b66",
     display: "flex", alignItems: "center", justifyContent: "center",
   };
 }
