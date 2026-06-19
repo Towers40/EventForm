@@ -147,6 +147,11 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
   const [vCode, setVCode] = useState("");
   const [vResult, setVResult] = useState(null);
   const [wizardStep, setWizardStep] = useState(1);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState(() => {
+    try { return localStorage.getItem("ef_avatar") || null; } catch { return null; }
+  });
+  const avatarInputRef = useRef(null);
 
   useEffect(() => {
     localStorage.removeItem("ef_pending_draft");
@@ -434,11 +439,27 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
   const showScannerNav = ["inicio", "mis_eventos", "detail", "validate"].includes(view);
 
   const NAV_ITEMS = [
-    { key: "inicio", label: "Inicio" },
-    { key: "mis_eventos", label: "Mis eventos" },
-    { key: "stats", label: "Dashboard" },
-    { key: "mi_cuenta", label: "Mi cuenta" },
+    { key: "inicio", label: "Inicio", icon: "🏠" },
+    { key: "mis_eventos", label: "Mis eventos", icon: "📅" },
+    { key: "stats", label: "Dashboard", icon: "📊" },
+    { key: "mi_cuenta", label: "Mi cuenta", icon: "⚙️" },
   ];
+
+  const initials = user?.name
+    ? user.name.split(" ").slice(0, 2).map(w => w[0]).join("").toUpperCase()
+    : "?";
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const url = ev.target.result;
+      setAvatarUrl(url);
+      try { localStorage.setItem("ef_avatar", url); } catch {}
+    };
+    reader.readAsDataURL(file);
+  };
 
   return (
     <div
@@ -451,26 +472,167 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
         textAlign: "left",
       }}
     >
-      {/* ── NAVEGACIÓN ── */}
-      <nav style={{ background: "#0d0f10", borderBottom: "1px solid rgba(255,255,255,0.08)", padding: "0 20px", minHeight: 60, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10, flexWrap: "wrap", gap: 8, boxShadow: "0 1px 8px rgba(0,0,0,0.4)" }}>
+      {/* ── SIDEBAR OVERLAY ── */}
+      {sidebarOpen && (
+        <div
+          onClick={() => setSidebarOpen(false)}
+          style={{
+            position: "fixed", inset: 0, zIndex: 40,
+            background: "rgba(0,0,0,0.55)", backdropFilter: "blur(2px)",
+          }}
+        />
+      )}
+
+      {/* ── SIDEBAR ── */}
+      <div style={{
+        position: "fixed", top: 0, left: 0, bottom: 0, zIndex: 50,
+        width: 280, background: "#111315",
+        borderRight: "1px solid rgba(255,255,255,0.08)",
+        transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)",
+        transition: "transform 0.28s cubic-bezier(.4,0,.2,1)",
+        display: "flex", flexDirection: "column",
+        overflowY: "auto",
+      }}>
+        {/* Close button */}
+        <button
+          type="button"
+          onClick={() => setSidebarOpen(false)}
+          style={{ position: "absolute", top: 14, right: 14, background: "rgba(255,255,255,0.06)", border: "none", borderRadius: "50%", width: 32, height: 32, cursor: "pointer", color: "#8fa3b1", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center" }}
+        >
+          ×
+        </button>
+
+        {/* Profile section */}
+        <div style={{ padding: "40px 24px 28px", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+          <div style={{ position: "relative", width: 72, height: 72, marginBottom: 14 }}>
+            <div
+              onClick={() => avatarInputRef.current?.click()}
+              title="Cambiar foto de perfil"
+              style={{
+                width: 72, height: 72, borderRadius: "50%",
+                background: avatarUrl ? "transparent" : "linear-gradient(135deg, #0d3b66, #1a5f8a)",
+                border: "3px solid rgba(107,159,212,0.4)",
+                cursor: "pointer", overflow: "hidden",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 26, fontWeight: 800, color: "#fff",
+                boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
+              }}
+            >
+              {avatarUrl
+                ? <img src={avatarUrl} alt="avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                : initials
+              }
+            </div>
+            <div
+              onClick={() => avatarInputRef.current?.click()}
+              style={{
+                position: "absolute", bottom: 0, right: 0,
+                width: 22, height: 22, borderRadius: "50%",
+                background: "#1a5f8a", border: "2px solid #111315",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                cursor: "pointer", fontSize: 11,
+              }}
+            >
+              ✏️
+            </div>
+            <input ref={avatarInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleAvatarChange} />
+          </div>
+          <div style={{ fontWeight: 700, fontSize: 16, color: "#e8eaf0", marginBottom: 2 }}>
+            {user?.name || "Usuario"}
+          </div>
+          <div style={{ fontSize: 12, color: "#6b9fd4" }}>{user?.email || ""}</div>
+        </div>
+
+        {/* Nav items */}
+        <nav style={{ padding: "16px 12px", flex: 1 }}>
+          {NAV_ITEMS.map(({ key, label, icon }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => { go(key); setSidebarOpen(false); }}
+              style={{
+                width: "100%", textAlign: "left",
+                padding: "12px 16px", borderRadius: 12,
+                background: view === key ? "rgba(107,159,212,0.12)" : "transparent",
+                border: "none", cursor: "pointer",
+                color: view === key ? "#6b9fd4" : "#c4cad6",
+                fontWeight: view === key ? 700 : 500, fontSize: 15,
+                display: "flex", alignItems: "center", gap: 12,
+                marginBottom: 4,
+                borderLeft: view === key ? "3px solid #1a5f8a" : "3px solid transparent",
+              }}
+            >
+              <span>{icon}</span> {label}
+            </button>
+          ))}
+          <a
+            href="/discover"
+            onClick={() => setSidebarOpen(false)}
+            style={{
+              display: "flex", alignItems: "center", gap: 12,
+              padding: "12px 16px", borderRadius: 12, marginBottom: 4,
+              color: "#c4cad6", fontWeight: 500, fontSize: 15, textDecoration: "none",
+              borderLeft: "3px solid transparent",
+            }}
+          >
+            <span>🔍</span> Descubrir eventos
+          </a>
+          <button
+            type="button"
+            onClick={() => { startNew(); setSidebarOpen(false); }}
+            style={{
+              width: "100%", textAlign: "left",
+              padding: "12px 16px", borderRadius: 12,
+              background: "rgba(26,95,138,0.2)",
+              border: "1px solid rgba(107,159,212,0.2)",
+              cursor: "pointer", color: "#6b9fd4",
+              fontWeight: 700, fontSize: 15,
+              display: "flex", alignItems: "center", gap: 12,
+              marginTop: 8,
+            }}
+          >
+            <span>＋</span> Crear evento
+          </button>
+        </nav>
+
+        {/* Logout */}
+        <div style={{ padding: "16px 24px", borderTop: "1px solid rgba(255,255,255,0.07)" }}>
+          <button
+            type="button"
+            onClick={() => { logout(); setSidebarOpen(false); }}
+            style={{ background: "none", border: "none", color: "#8fa3b1", cursor: "pointer", fontSize: 13, fontWeight: 600, padding: 0, display: "flex", alignItems: "center", gap: 8 }}
+          >
+            ← Cerrar sesión
+          </button>
+        </div>
+      </div>
+
+      {/* ── NAVEGACIÓN COMPACTA ── */}
+      <nav style={{ background: "#0d0f10", borderBottom: "1px solid rgba(255,255,255,0.08)", padding: "0 20px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10, boxShadow: "0 1px 8px rgba(0,0,0,0.4)" }}>
         <button type="button" onClick={() => go("inicio")} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontWeight: 800, fontSize: 17, color: "#e8eaf0" }}>
           <span style={{ color: VERDE_CORPORATIVO, fontSize: 20 }}>●</span> EventForm
         </button>
-        <div style={{ display: "flex", gap: 4, flexWrap: "wrap", alignItems: "center" }}>
-          {NAV_ITEMS.map(({ key, label }) => (
-            <button key={key} type="button" onClick={() => go(key)}
-              className={`soft-btn ${view === key ? "soft-btn-primary" : "soft-btn-secondary"}`}
-              style={{ fontSize: 12, padding: "8px 13px" }}>
-              {label}
-            </button>
-          ))}
-          <a href="/discover" className="soft-btn soft-btn-secondary" style={{ fontSize: 12, padding: "8px 13px", textDecoration: "none" }}>
-            Descubrir
-          </a>
-          <button type="button" onClick={startNew} className="soft-btn soft-btn-primary" style={{ fontSize: 12, padding: "8px 13px", marginLeft: 4 }}>
-            + Crear evento
-          </button>
-        </div>
+        {/* Profile circle */}
+        <button
+          type="button"
+          onClick={() => setSidebarOpen(true)}
+          style={{
+            width: 42, height: 42, borderRadius: "50%",
+            background: avatarUrl ? "transparent" : "linear-gradient(135deg, #0d3b66, #1a5f8a)",
+            border: "2px solid rgba(107,159,212,0.35)",
+            cursor: "pointer", overflow: "hidden",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 15, fontWeight: 800, color: "#fff",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+            flexShrink: 0,
+          }}
+          title="Menú de perfil"
+        >
+          {avatarUrl
+            ? <img src={avatarUrl} alt="perfil" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            : initials
+          }
+        </button>
       </nav>
 
       {shareEv && (

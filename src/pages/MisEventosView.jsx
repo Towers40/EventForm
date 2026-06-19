@@ -74,40 +74,65 @@ export default function MisEventosView({ events, onNew, onOpen, onEdit, onValida
   );
 }
 
+function fmtDate(dateStr) {
+  if (!dateStr) return null;
+  try {
+    const [y, m, d] = dateStr.split("-");
+    return new Date(Number(y), Number(m) - 1, Number(d)).toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" });
+  } catch { return dateStr; }
+}
+
 function EventCard({ ev, onOpen, onEdit, onValidate, onDelete, onShare, onToggleSoldOut }) {
   const [expanded, setExpanded] = useState(false);
   const regs = ev.registrations || [];
   const checkins = regs.filter(r => r.used).length;
   const sold = isSoldOut(ev);
 
+  const startLabel = fmtDate(ev.startDate);
+  const endLabel = ev.endDate && ev.endDate !== ev.startDate ? fmtDate(ev.endDate) : null;
+  const dateLabel = startLabel
+    ? (endLabel ? `${startLabel} → ${endLabel}` : startLabel)
+    : (ev.date || null);
+
   return (
     <div className="panel-card" style={{ overflow: "hidden" }}>
+      {/* Cover image */}
+      {ev.headerImage ? (
+        <div style={{ width: "100%", aspectRatio: "16/7", overflow: "hidden", cursor: "pointer" }} onClick={() => setExpanded(e => !e)}>
+          <img src={ev.headerImage} alt={ev.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+        </div>
+      ) : (
+        <div style={{ width: "100%", height: 6, background: "linear-gradient(90deg, #0d3b66, #1a5f8a)" }} />
+      )}
+
       {/* Header del evento */}
-      <div style={{ padding: "18px 20px", cursor: "pointer" }} onClick={() => setExpanded(e => !e)}>
+      <div style={{ padding: "16px 20px", cursor: "pointer" }} onClick={() => setExpanded(e => !e)}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
               <span style={{
                 fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 100,
                 background: sold ? "#fee2e2" : "#f0fdf4", color: sold ? "#991b1b" : "#16a34a",
               }}>
                 {sold ? "Sold out" : "Activo"}
               </span>
-              {ev.date && <span style={{ fontSize: 12, color: "#8fa3b1" }}>{ev.date}</span>}
             </div>
-            <h3 style={{ fontSize: 16, fontWeight: 700, color: "#0d1b2a", margin: "0 0 4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            <h3 style={{ fontSize: 17, fontWeight: 700, color: "#0d1b2a", margin: "0 0 4px", lineHeight: 1.3 }}>
               {ev.title}
             </h3>
-            {ev.city && <p style={{ fontSize: 13, color: "#8fa3b1", margin: 0 }}>{ev.city}</p>}
+            {dateLabel && (
+              <p style={{ fontSize: 12, color: "#6b9fd4", margin: "0 0 2px", fontWeight: 600 }}>📅 {dateLabel}</p>
+            )}
+            {ev.city && <p style={{ fontSize: 12, color: "#8fa3b1", margin: 0 }}>📍 {ev.city}</p>}
           </div>
           <div style={{ textAlign: "right", flexShrink: 0 }}>
-            <div style={{ fontSize: 24, fontWeight: 800, color: "#0d3b66" }}>{regs.length}</div>
+            <div style={{ fontSize: 26, fontWeight: 800, color: "#0d3b66" }}>{regs.length}</div>
             <div style={{ fontSize: 11, color: "#8fa3b1", fontWeight: 700 }}>inscritos</div>
           </div>
         </div>
 
         {/* Mini stats */}
-        <div style={{ display: "flex", gap: 20, marginTop: 12 }}>
+        <div style={{ display: "flex", gap: 20, marginTop: 10 }}>
           <span style={{ fontSize: 12, color: "#5c6b7a" }}>✓ {checkins} check-ins</span>
           <span style={{ fontSize: 12, color: "#5c6b7a" }}>{capacityLabel(ev)}</span>
         </div>
@@ -126,8 +151,8 @@ function EventCard({ ev, onOpen, onEdit, onValidate, onDelete, onShare, onToggle
         );
       })()}
 
-      {/* Acciones */}
-      <div style={{ padding: "12px 20px", borderTop: "1px solid #f0f4f8", display: "flex", gap: 8, flexWrap: "wrap" }}>
+      {/* Acciones — centradas */}
+      <div style={{ padding: "14px 16px", borderTop: "1px solid #f0f4f8", display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
         <button type="button" className="soft-btn soft-btn-primary" style={{ fontSize: 12, padding: "8px 14px" }} onClick={onOpen}>
           Ver inscritos
         </button>

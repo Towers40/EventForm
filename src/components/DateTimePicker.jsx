@@ -82,13 +82,15 @@ export default function DateTimePicker({ date, time, onChange, minDate, label })
   function openCal() {
     const rect = dateBtnRef.current?.getBoundingClientRect();
     if (!rect) return;
-    const CAL_W = 480;
-    let left = rect.left;
-    if (left + CAL_W > window.innerWidth - 12) left = window.innerWidth - CAL_W - 12;
-    if (left < 8) left = 8;
+    const CAL_W = Math.min(480, window.innerWidth - 16);
+    const small = CAL_W < 380;
+    const CAL_H = small ? 300 : 430;
+    let left = small
+      ? Math.max(8, (window.innerWidth - CAL_W) / 2)
+      : Math.min(Math.max(8, rect.left), window.innerWidth - CAL_W - 8);
     let top = rect.bottom + 10;
-    if (top + 430 > window.innerHeight - 12) top = rect.top - 430 - 10;
-    setCalPos({ top, left });
+    if (top + CAL_H > window.innerHeight - 12) top = Math.max(8, rect.top - CAL_H - 10);
+    setCalPos({ top, left, width: CAL_W });
     setShowCal(s => !s);
     setShowTime(false);
   }
@@ -257,85 +259,87 @@ export default function DateTimePicker({ date, time, onChange, minDate, label })
         </div>
       )}
 
-      {/* ── Calendar overlay — fixed position, BIG (480px) ── */}
-      {showCal && calPos && (
-        <div
-          data-dtp-cal="true"
-          style={{
-            position: "fixed", top: calPos.top, left: calPos.left,
-            zIndex: 9999, width: 480,
-            background: "#1a1c1e",
-            border: "2px solid #1a5f8a", borderRadius: 22,
-            padding: "26px 28px 28px",
-            boxShadow: "0 20px 64px rgba(0,0,0,0.5)",
-          }}
-        >
-          {/* Month / year navigation */}
-          <div style={{
-            display: "flex", alignItems: "center",
-            justifyContent: "space-between", marginBottom: 22,
-          }}>
-            <button type="button" onClick={prevMonth} style={navBtnStyle()}>‹</button>
-            <span style={{ fontWeight: 800, fontSize: 19, color: "#e8eaf0" }}>
-              {MONTHS_LONG[calMonth - 1]} {calYear}
-            </span>
-            <button type="button" onClick={nextMonth} style={navBtnStyle()}>›</button>
-          </div>
+      {/* ── Calendar overlay — responsive fixed position ── */}
+      {showCal && calPos && (() => {
+        const w = calPos.width;
+        const small = w < 380;
+        const cellH = small ? 34 : 52;
+        const cellFs = small ? 12 : 16;
+        const pad = small ? "14px 12px 16px" : "26px 28px 28px";
+        const gap = small ? 3 : 5;
+        return (
+          <div
+            data-dtp-cal="true"
+            style={{
+              position: "fixed", top: calPos.top, left: calPos.left,
+              zIndex: 9999, width: w,
+              background: "#1a1c1e",
+              border: "2px solid #1a5f8a", borderRadius: 20,
+              padding: pad,
+              boxShadow: "0 20px 64px rgba(0,0,0,0.5)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: small ? 14 : 22 }}>
+              <button type="button" onClick={prevMonth} style={navBtnStyle(small)}>‹</button>
+              <span style={{ fontWeight: 800, fontSize: small ? 15 : 19, color: "#e8eaf0" }}>
+                {MONTHS_LONG[calMonth - 1]} {calYear}
+              </span>
+              <button type="button" onClick={nextMonth} style={navBtnStyle(small)}>›</button>
+            </div>
 
-          {/* Weekday headers */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 4, marginBottom: 8 }}>
-            {DAYS_SHORT.map(d => (
-              <div key={d} style={{
-                textAlign: "center", fontSize: 12, fontWeight: 800,
-                color: "#6b9fd4", paddingBottom: 10, textTransform: "uppercase",
-              }}>
-                {d}
-              </div>
-            ))}
-          </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap, marginBottom: small ? 4 : 8 }}>
+              {DAYS_SHORT.map(d => (
+                <div key={d} style={{
+                  textAlign: "center", fontSize: small ? 10 : 12, fontWeight: 800,
+                  color: "#6b9fd4", paddingBottom: small ? 6 : 10, textTransform: "uppercase",
+                }}>
+                  {d}
+                </div>
+              ))}
+            </div>
 
-          {/* Day grid */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 5 }}>
-            {Array.from({ length: firstWd }).map((_, i) => <div key={`e${i}`} />)}
-            {Array.from({ length: totalDays }, (_, i) => i + 1).map(day => {
-              const isSel    = parts?.day === day && parts?.month === calMonth && parts?.year === calYear;
-              const disabled = isDisabled(day);
-              const isToday  = day === todayD && calMonth === todayM && calYear === todayY;
-              return (
-                <button
-                  key={day}
-                  type="button"
-                  disabled={disabled}
-                  onClick={() => selectDay(day)}
-                  onMouseEnter={e => { if (!isSel && !disabled) e.currentTarget.style.background = "rgba(107,159,212,0.18)"; }}
-                  onMouseLeave={e => { if (!isSel) e.currentTarget.style.background = "transparent"; }}
-                  style={{
-                    height: 52, borderRadius: 12, fontSize: 16,
-                    border: isToday && !isSel ? "2px solid #1a5f8a" : "2px solid transparent",
-                    background: isSel ? "#1a5f8a" : "transparent",
-                    color: isSel ? "#fff" : disabled ? "#444" : "#e8eaf0",
-                    fontWeight: isSel ? 800 : 500,
-                    cursor: disabled ? "not-allowed" : "pointer",
-                    opacity: disabled ? 0.3 : 1,
-                    transition: "background 0.1s",
-                  }}
-                >
-                  {day}
-                </button>
-              );
-            })}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap }}>
+              {Array.from({ length: firstWd }).map((_, i) => <div key={`e${i}`} />)}
+              {Array.from({ length: totalDays }, (_, i) => i + 1).map(day => {
+                const isSel    = parts?.day === day && parts?.month === calMonth && parts?.year === calYear;
+                const disabled = isDisabled(day);
+                const isToday  = day === todayD && calMonth === todayM && calYear === todayY;
+                return (
+                  <button
+                    key={day}
+                    type="button"
+                    disabled={disabled}
+                    onClick={() => selectDay(day)}
+                    onMouseEnter={e => { if (!isSel && !disabled) e.currentTarget.style.background = "rgba(107,159,212,0.18)"; }}
+                    onMouseLeave={e => { if (!isSel) e.currentTarget.style.background = "transparent"; }}
+                    style={{
+                      height: cellH, borderRadius: small ? 8 : 12, fontSize: cellFs,
+                      border: isToday && !isSel ? "2px solid #1a5f8a" : "2px solid transparent",
+                      background: isSel ? "#1a5f8a" : "transparent",
+                      color: isSel ? "#fff" : disabled ? "#444" : "#e8eaf0",
+                      fontWeight: isSel ? 800 : 500,
+                      cursor: disabled ? "not-allowed" : "pointer",
+                      opacity: disabled ? 0.3 : 1,
+                      transition: "background 0.1s",
+                    }}
+                  >
+                    {day}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </>
   );
 }
 
-function navBtnStyle() {
+function navBtnStyle(small) {
   return {
-    width: 42, height: 42, borderRadius: 10,
+    width: small ? 32 : 42, height: small ? 32 : 42, borderRadius: 8,
     border: "2px solid #1a5f8a", background: "rgba(107,159,212,0.1)",
-    cursor: "pointer", fontSize: 22, fontWeight: 800, color: "#6b9fd4",
+    cursor: "pointer", fontSize: small ? 18 : 22, fontWeight: 800, color: "#6b9fd4",
     display: "flex", alignItems: "center", justifyContent: "center",
   };
 }

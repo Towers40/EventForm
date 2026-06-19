@@ -20,7 +20,7 @@ import {
   signToken,
   verifyPassword,
 } from "./auth.js";
-import { emailEnabled, sendVerificationCode, sendPasswordResetCode } from "./mailer.js";
+import { emailEnabled, sendVerificationCode, sendPasswordResetCode, sendRegistrationConfirmation } from "./mailer.js";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -373,6 +373,14 @@ app.post("/api/public/events/:slug/register", requireDb, async (req, res) => {
       sql: `INSERT INTO registrations (id, event_id, ticket_id, payload, used, checked_in_at, consent_privacy, consent_marketing, created_at) VALUES (?, ?, ?, ?, 0, NULL, ?, ?, ?)`,
       args: ["R" + uid(), ev.id, ticketId, JSON.stringify(form), consentPrivacy ? 1 : 0, consentMarketing ? 1 : 0, Date.now()],
     });
+    // Send confirmation email if attendee provided email field
+    if (emailEnabled && form) {
+      const emailField = (ev.fields || []).find(f => f.type === "email");
+      const nameField = (ev.fields || []).find(f => f.type === "text" && /nombre/i.test(f.label));
+      const recipientEmail = emailField ? form[emailField.id] : null;
+      const recipientName = nameField ? form[nameField.id] : null;
+      if (recipientEmail) sendRegistrationConfirmation(recipientEmail, recipientName, ticketId, ev).catch(() => {});
+    }
     res.status(201).json({ registration: { id: ticketId, eventId: ev.id, data: form, ts: Date.now(), used: false }, event: { id: ev.id, title: ev.title, slug: ev.slug } });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });

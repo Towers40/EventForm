@@ -54,6 +54,36 @@ export async function sendVerificationCode(email, name, code) {
   });
 }
 
+export async function sendRegistrationConfirmation(email, name, ticketId, event) {
+  if (!emailEnabled) return;
+  const firstName = (name || "asistente").split(" ")[0];
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(ticketId)}&bgcolor=ffffff&color=0d3b66&margin=10`;
+  const dateStr = event.startDate && event.startTime
+    ? `${event.startDate} · ${event.startTime}`
+    : event.startDate || "Fecha por confirmar";
+  const loc = [event.city, event.location || event.address].filter(Boolean).join(" — ") || "Lugar por confirmar";
+  await transporter.sendMail({
+    from: `EventForm Colombia <${SMTP_USER}>`,
+    to: email,
+    subject: `Tu entrada para ${event.title} — EventForm`,
+    html: emailLayout(`
+      <h2 style="color:#0d1b2a;font-size:20px;font-weight:700;margin:0 0 12px">¡Hola ${firstName}, estás inscrito! 🎉</h2>
+      <p style="color:#4a5568;font-size:15px;line-height:1.6;margin:0 0 24px">
+        Tu registro para <strong>${event.title}</strong> ha sido confirmado. Guarda este correo.
+      </p>
+      <div style="background:#f0f6fc;border-radius:12px;padding:16px 20px;margin-bottom:28px">
+        <p style="margin:0 0 6px;font-size:14px;color:#0d3b66;font-weight:700">📅 ${dateStr}</p>
+        <p style="margin:0;font-size:14px;color:#0d3b66;font-weight:700">📍 ${loc}</p>
+      </div>
+      <div style="text-align:center;margin:0 0 28px">
+        <img src="${qrUrl}" alt="QR de acceso" style="width:180px;height:180px;border-radius:12px;border:2px solid #0d3b66;display:block;margin:0 auto"/>
+        <p style="font-family:monospace;font-weight:800;font-size:13px;color:#0d3b66;margin:12px 0 4px;letter-spacing:1px">${ticketId}</p>
+        <p style="color:#718096;font-size:12px;margin:0">Presenta este QR en la entrada. Solo permite un ingreso.</p>
+      </div>
+    `),
+  });
+}
+
 export async function sendPasswordResetCode(email, name, code) {
   if (!emailEnabled) return;
   const firstName = (name || "usuario").split(" ")[0];

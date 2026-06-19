@@ -50,6 +50,27 @@ export default function ConfirmTicket({ ev, reg, onDone, standalone, onCancel, c
         <p style={{ fontSize: 12, color: "#8fa3b1", margin: "8px 0 0", lineHeight: 1.5 }}>
           Presenta este QR en la entrada.<br />Solo permite un ingreso.
         </p>
+        {typeof navigator !== "undefined" && typeof navigator.share === "function" && (
+          <button
+            type="button"
+            onClick={() => navigator.share({
+              title: `Mi entrada: ${ev.title}`,
+              text: `Tengo entrada para ${ev.title} — ID: ${reg.id}`,
+              url: window.location.href,
+            }).catch(() => {})}
+            style={{
+              marginTop: 16, width: "100%",
+              padding: "13px",
+              background: "rgba(107,159,212,0.08)",
+              color: "#6b9fd4", borderRadius: 12,
+              border: "1px solid rgba(107,159,212,0.25)",
+              fontWeight: 700, fontSize: 14, cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+            }}
+          >
+            ↗ Compartir ticket
+          </button>
+        )}
       </div>
 
       {/* Map */}
