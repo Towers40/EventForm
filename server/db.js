@@ -88,7 +88,8 @@ export async function initDb() {
     try {
       await db.execute({ sql, args: [] });
     } catch (e) {
-      if (!e.message?.includes("duplicate column") && !e.message?.includes("already exists")) throw e;
+      const m = e.message?.toLowerCase() || "";
+      if (!m.includes("duplicate column") && !m.includes("already has")) throw e;
     }
   }
 }

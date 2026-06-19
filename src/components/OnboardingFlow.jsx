@@ -6,6 +6,7 @@ import { EVENT_TYPE_OTHER, EVENT_TYPE_PRESETS } from "../lib/colombia.js";
 import { searchPlacesInColombia } from "../lib/geocoding.js";
 import { VERDE_CORPORATIVO } from "../lib/theme.js";
 import { api } from "../lib/api.js";
+import DateTimePicker from "./DateTimePicker.jsx";
 import "../styles/typeform.css";
 
 const uid = () => Math.random().toString(36).slice(2, 10).toUpperCase();
@@ -612,29 +613,40 @@ export default function OnboardingFlow({ onDraftReady }) {
             <h2 className="tf-question">¿Cuándo será tu evento?</h2>
             <p className="tf-hint">Define fecha y hora de inicio, y también fecha y hora de finalización.</p>
 
-            <div style={{ display: "grid", gap: 22 }}>
-              <div>
-                <p style={tfLabel}>Inicio del evento</p>
-                <input
-                  className="tf-input-line"
-                  type="datetime-local"
-                  min={new Date().toISOString().slice(0, 16)}
-                  value={toLocalDateTimeValue(draft.startDate, draft.startTime)}
-                  onInput={(e) => updateStartDateTime(e.target.value)}
-                  onChange={(e) => updateStartDateTime(e.target.value)}
-                />
-              </div>
-              <div>
-                <p style={tfLabel}>Fin del evento</p>
-                <input
-                  className="tf-input-line"
-                  type="datetime-local"
-                  min={new Date().toISOString().slice(0, 16)}
-                  value={toLocalDateTimeValue(draft.endDate, draft.endTime)}
-                  onInput={(e) => updateEndDateTime(e.target.value)}
-                  onChange={(e) => updateEndDateTime(e.target.value)}
-                />
-              </div>
+            <div style={{ display: "grid", gap: 28 }}>
+              <DateTimePicker
+                label="Inicio del evento"
+                date={draft.startDate}
+                time={draft.startTime}
+                minDate={new Date().toISOString().split("T")[0]}
+                onChange={({ date, time }) => {
+                  const today = new Date().toISOString().split("T")[0];
+                  if (date && date < today) {
+                    setDateErr("No puedes crear un evento en una fecha pasada.");
+                    return;
+                  }
+                  setDateErr("");
+                  setDraft(p => ({ ...p, startDate: date, startTime: time, date: date, endDate: p.endDate || date }));
+                }}
+              />
+              <DateTimePicker
+                label="Fin del evento"
+                date={draft.endDate}
+                time={draft.endTime}
+                minDate={draft.startDate || new Date().toISOString().split("T")[0]}
+                onChange={({ date, time }) => {
+                  if (date && draft.startDate && date < draft.startDate) {
+                    setDateErr("La fecha de fin no puede ser anterior a la fecha de inicio.");
+                    return;
+                  }
+                  if (date === draft.startDate && time && draft.startTime && time <= draft.startTime) {
+                    setDateErr("La hora de fin debe ser posterior a la hora de inicio del mismo día.");
+                    return;
+                  }
+                  setDateErr("");
+                  setDraft(p => ({ ...p, endDate: date, endTime: time }));
+                }}
+              />
             </div>
             {dateErr && (
               <p style={{ color: "#991b1b", fontWeight: 700, marginTop: 16, fontSize: 14 }}>
