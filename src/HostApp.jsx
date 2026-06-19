@@ -446,14 +446,14 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
       style={{
         fontFamily: "system-ui, -apple-system, sans-serif",
         minHeight: "100vh",
-        background: BLANCO_CONTRASTE,
-        color: NEGRO_PURO,
+        background: "#0d0f10",
+        color: "#e8eaf0",
         textAlign: "left",
       }}
     >
       {/* ── NAVEGACIÓN ── */}
-      <nav style={{ background: "#fff", borderBottom: "1px solid #e2e8f0", padding: "0 20px", minHeight: 60, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10, flexWrap: "wrap", gap: 8, boxShadow: "0 1px 4px rgba(13,59,102,0.06)" }}>
-        <button type="button" onClick={() => go("inicio")} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontWeight: 800, fontSize: 17, color: "#0d1b2a" }}>
+      <nav style={{ background: "#0d0f10", borderBottom: "1px solid rgba(255,255,255,0.08)", padding: "0 20px", minHeight: 60, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10, flexWrap: "wrap", gap: 8, boxShadow: "0 1px 8px rgba(0,0,0,0.4)" }}>
+        <button type="button" onClick={() => go("inicio")} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontWeight: 800, fontSize: 17, color: "#e8eaf0" }}>
           <span style={{ color: VERDE_CORPORATIVO, fontSize: 20 }}>●</span> EventForm
         </button>
         <div style={{ display: "flex", gap: 4, flexWrap: "wrap", alignItems: "center" }}>

@@ -1,20 +1,30 @@
-/* Estilo inspirado en Typeform — formulario público */
+/* ─── Tema oscuro — base de todas las vistas públicas ─────────────────────── */
+:root {
+  --tf-bg:        #0d0f10;
+  --tf-card:      #1a1c1e;
+  --tf-border:    rgba(255,255,255,0.08);
+  --tf-text:      #e8eaf0;
+  --tf-muted:     #8fa3b1;
+  --tf-accent:    #0d3b66;
+  --tf-accent-lt: #6b9fd4;
+}
+
 .tf-screen {
   min-height: 100dvh;
-  background: #fff;
+  background: var(--tf-bg);
   display: flex;
   flex-direction: column;
 }
 
 .tf-progress {
-  height: 4px;
-  background: #e8edf2;
+  height: 3px;
+  background: rgba(255,255,255,0.07);
   width: 100%;
 }
 
 .tf-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #0d3b66, #1a5f8a);
+  background: linear-gradient(90deg, #1a5f8a, #6b9fd4);
   transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -42,7 +52,7 @@
   justify-content: center;
   width: 28px;
   height: 28px;
-  background: #0d3b66;
+  background: #1a5f8a;
   color: #fff;
   font-weight: 800;
   font-size: 14px;
@@ -54,7 +64,7 @@
   font-size: clamp(22px, 5vw, 28px);
   font-weight: 400;
   line-height: 1.35;
-  color: #0d1b2a;
+  color: var(--tf-text);
   margin: 0 0 12px;
 }
 
@@ -64,7 +74,7 @@
 
 .tf-hint {
   font-size: 15px;
-  color: #5c6b7a;
+  color: var(--tf-muted);
   margin: 0 0 28px;
   line-height: 1.5;
 }
@@ -72,22 +82,22 @@
 .tf-input-line {
   width: 100%;
   border: none;
-  border-bottom: 2px solid #b8c5d4;
+  border-bottom: 2px solid rgba(255,255,255,0.15);
   padding: 12px 0;
   font-size: 20px;
   font-weight: 300;
-  color: #0d3b66;
+  color: var(--tf-accent-lt);
   background: transparent;
   outline: none;
   transition: border-color 0.2s;
 }
 
 .tf-input-line:focus {
-  border-bottom-color: #0d3b66;
+  border-bottom-color: var(--tf-accent-lt);
 }
 
 .tf-input-line::placeholder {
-  color: #a8b8c8;
+  color: rgba(255,255,255,0.22);
 }
 
 .tf-footer {
@@ -100,7 +110,7 @@
   gap: 12px;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(transparent, #fff 24%);
+  background: linear-gradient(transparent, var(--tf-bg) 28%);
   max-width: 720px;
   margin: 0 auto;
   box-sizing: border-box;
@@ -111,8 +121,8 @@
   height: 48px;
   border: none;
   border-radius: 6px;
-  background: #0d3b66;
-  color: #fff;
+  background: rgba(255,255,255,0.1);
+  color: var(--tf-text);
   font-size: 20px;
   cursor: pointer;
   flex-shrink: 0;
@@ -124,7 +134,7 @@
   height: 48px;
   border: none;
   border-radius: 6px;
-  background: #0d3b66;
+  background: #1a5f8a;
   color: #fff;
   font-weight: 700;
   font-size: 15px;
@@ -133,7 +143,7 @@
 }
 
 .tf-btn-ok:disabled {
-  opacity: 0.35;
+  opacity: 0.3;
   cursor: not-allowed;
 }
 
@@ -143,20 +153,21 @@
   text-align: left;
   padding: 14px 18px;
   margin-bottom: 8px;
-  border: 2px solid #e2e8f0;
-  border-radius: 8px;
-  background: #fff;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  background: rgba(255,255,255,0.04);
   font-size: 16px;
   font-weight: 500;
-  color: #0d1b2a;
+  color: var(--tf-text);
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .tf-choice:hover,
 .tf-choice.selected {
-  border-color: #0d3b66;
-  background: #f0f6fc;
+  border-color: var(--tf-accent-lt);
+  background: rgba(107,159,212,0.12);
+  color: var(--tf-text);
 }
 
 .tf-header-img {
@@ -173,10 +184,11 @@
   grid-template-columns: minmax(240px, 380px) 1fr;
   gap: 36px;
   align-items: start;
-  background: #082f12;
+  background: #0f1a1f;
   color: #fff;
   padding: clamp(20px, 4vw, 38px);
   border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.07);
 }
 
 .tf-event-cover-media {
@@ -184,7 +196,7 @@
   aspect-ratio: 1 / 1;
   border-radius: 14px;
   overflow: hidden;
-  background: #fff;
+  background: var(--tf-card);
 }
 
 .tf-event-cover-media img,
@@ -212,7 +224,7 @@
   margin: 0 0 14px;
   padding: 6px 10px;
   border-radius: 6px;
-  background: rgba(190, 242, 100, 0.18);
+  background: rgba(190, 242, 100, 0.15);
   color: #d9f99d;
   font-size: 12px;
   font-weight: 800;
@@ -230,7 +242,7 @@
 
 .tf-event-cover-desc {
   margin: 0 0 22px;
-  color: rgba(255, 255, 255, 0.78);
+  color: rgba(255, 255, 255, 0.75);
   font-size: 16px;
   line-height: 1.55;
 }
@@ -248,8 +260,8 @@
   margin: 0 0 22px;
   padding: 12px 14px;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.78);
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(255, 255, 255, 0.75);
   font-size: 13px;
   line-height: 1.45;
 }
@@ -257,8 +269,8 @@
 .tf-event-cover-btn {
   width: 100%;
   border: none;
-  border-radius: 6px;
-  background: #0d3b66;
+  border-radius: 8px;
+  background: #1a5f8a;
   color: #fff;
   padding: 14px 20px;
   font-size: 16px;
@@ -268,18 +280,18 @@
 
 .tf-upload-card {
   padding: 18px;
-  border: 1px solid #b8d4f0;
+  border: 1px solid rgba(255,255,255,0.1);
   border-radius: 14px;
-  background: #e8f4fd;
+  background: rgba(255,255,255,0.04);
 }
 
 .tf-upload-drop {
   width: 100%;
   min-height: 220px;
-  border: 2px dashed #0d3b66;
+  border: 2px dashed rgba(107,159,212,0.5);
   border-radius: 12px;
-  background: #fff;
-  color: #0d3b66;
+  background: rgba(255,255,255,0.03);
+  color: var(--tf-accent-lt);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -309,7 +321,7 @@
   margin: 0 auto 34px;
   border-radius: 999px;
   overflow: hidden;
-  background: #e8edf2;
+  background: rgba(255,255,255,0.08);
 }
 
 .host-tf-body {
@@ -322,24 +334,24 @@
 .host-tf-body .tf-question {
   font-size: clamp(24px, 4.5vw, 32px);
   font-weight: 400;
-  color: #1a1a1a;
+  color: var(--tf-text);
 }
 
 .host-tf-body .tf-choice {
-  border-color: #e2e8f0;
-  color: #0d1b2a;
+  border-color: rgba(255,255,255,0.1);
+  color: var(--tf-text);
   font-weight: 500;
 }
 
 .host-tf-body .tf-choice.selected,
 .host-tf-body .tf-choice:hover {
-  border-color: #0d3b66;
-  background: #f0f6fc;
-  color: #0d1b2a;
+  border-color: var(--tf-accent-lt);
+  background: rgba(107,159,212,0.12);
+  color: var(--tf-text);
 }
 
 .host-tf-location {
-  color: #0d1b2a;
+  color: var(--tf-text);
 }
 
 .host-tf-location label,
@@ -358,7 +370,7 @@
   gap: 12px;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(transparent, #fff 24%);
+  background: linear-gradient(transparent, var(--tf-bg) 28%);
   box-sizing: border-box;
   z-index: 9;
 }
@@ -366,11 +378,11 @@
 .tf-consent {
   font-size: 14px;
   line-height: 1.5;
-  color: #4a5568;
+  color: var(--tf-muted);
 }
 
 .tf-consent a {
-  color: #0d3b66;
+  color: var(--tf-accent-lt);
   font-weight: 700;
 }
 
@@ -379,25 +391,13 @@
 }
 
 @keyframes tfFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes tfFadeOut {
-  from {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  to {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-10px); }
 }
 
 .tf-fade-out {
@@ -405,19 +405,19 @@
   pointer-events: none;
 }
 
-/* Panel admin — más suave que el estilo plano anterior */
+/* Panel admin — dark */
 .panel-card {
   border-radius: 16px;
-  border: 1px solid #e2e8f0;
-  background: #fff;
-  box-shadow: 0 4px 24px rgba(13, 59, 102, 0.06);
+  border: 1px solid rgba(255,255,255,0.08);
+  background: #1a1c1e;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.3);
   overflow: hidden;
 }
 
 .panel-card-header {
   padding: 20px 24px;
-  background: #f8fafc;
-  border-bottom: 1px solid #e2e8f0;
+  background: rgba(255,255,255,0.03);
+  border-bottom: 1px solid rgba(255,255,255,0.07);
 }
 
 .soft-btn {
@@ -437,13 +437,17 @@
 .soft-btn-primary {
   background: linear-gradient(135deg, #0d3b66, #1a5f8a);
   color: #fff;
-  box-shadow: 0 4px 14px rgba(13, 59, 102, 0.25);
+  box-shadow: 0 4px 14px rgba(13,59,102,0.4);
 }
 
 .soft-btn-secondary {
-  background: #fff;
-  color: #0d3b66;
-  border: 2px solid #0d3b66;
+  background: rgba(255,255,255,0.07);
+  color: #c8dff0;
+  border: 1px solid rgba(107,159,212,0.25);
+}
+
+.soft-btn-secondary:hover {
+  background: rgba(255,255,255,0.12);
 }
 
 @media (max-width: 760px) {
@@ -454,7 +458,6 @@
     min-height: auto;
     padding: clamp(24px, 5vw, 40px);
     margin: 12px auto;
-    box-shadow: 0 10px 40px rgba(13, 27, 42, 0.15);
   }
 
   .tf-event-cover-media {

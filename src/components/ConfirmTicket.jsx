@@ -27,6 +27,12 @@ export default function ConfirmTicket({ ev, reg, onDone, standalone }) {
             Volver
           </button>
         )}
+        <div style={{ marginTop: 28, padding: "20px", borderRadius: 14, background: "rgba(107,159,212,0.1)", border: "1px solid rgba(107,159,212,0.25)" }}>
+          <p style={{ fontSize: 14, color: "#8fa3b1", margin: "0 0 12px" }}>¿Quieres organizar tus propios eventos?</p>
+          <a href="/app" style={{ display: "inline-block", padding: "12px 24px", background: "#1a5f8a", color: "#fff", borderRadius: 10, fontWeight: 700, fontSize: 14, textDecoration: "none" }}>
+            Crear cuenta de organizador →
+          </a>
+        </div>
       </div>
     </>
   );

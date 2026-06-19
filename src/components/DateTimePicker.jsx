@@ -44,12 +44,16 @@ export default function DateTimePicker({ date, time, onChange, minDate, label })
   const parts   = parseDateParts(date);
   const timeFmt = formatTime12(time);
 
-  const [showCal, setShowCal] = useState(false);
+  const [showCal,  setShowCal]  = useState(false);
+  const [showTime, setShowTime] = useState(false);
   const [calYear,  setCalYear]  = useState(parts?.year  || today.getFullYear());
   const [calMonth, setCalMonth] = useState(parts?.month || today.getMonth() + 1);
   const [calPos,   setCalPos]   = useState(null);
+  const [timePos,  setTimePos]  = useState(null);
 
   const dateBtnRef = useRef(null);
+  const timeBtnRef = useRef(null);
+  const timeListRef = useRef(null);
 
   // Close calendar when clicking outside
   useEffect(() => {
@@ -58,10 +62,22 @@ export default function DateTimePicker({ date, time, onChange, minDate, label })
         !dateBtnRef.current?.contains(e.target) &&
         !e.target.closest("[data-dtp-cal]")
       ) setShowCal(false);
+      if (
+        !timeBtnRef.current?.contains(e.target) &&
+        !e.target.closest("[data-dtp-time]")
+      ) setShowTime(false);
     }
     document.addEventListener("mousedown", onDown);
     return () => document.removeEventListener("mousedown", onDown);
   }, []);
+
+  // Scroll selected time into view when dropdown opens
+  useEffect(() => {
+    if (showTime && time && timeListRef.current) {
+      const selected = timeListRef.current.querySelector("[data-selected='true']");
+      if (selected) selected.scrollIntoView({ block: "center" });
+    }
+  }, [showTime, time]);
 
   function openCal() {
     const rect = dateBtnRef.current?.getBoundingClientRect();
@@ -74,6 +90,21 @@ export default function DateTimePicker({ date, time, onChange, minDate, label })
     if (top + 430 > window.innerHeight - 12) top = rect.top - 430 - 10;
     setCalPos({ top, left });
     setShowCal(s => !s);
+    setShowTime(false);
+  }
+
+  function openTime() {
+    const rect = timeBtnRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const MENU_W = 200;
+    let left = rect.left;
+    if (left + MENU_W > window.innerWidth - 12) left = rect.right - MENU_W;
+    if (left < 8) left = 8;
+    let top = rect.bottom + 8;
+    if (top + 260 > window.innerHeight - 12) top = rect.top - 260 - 8;
+    setTimePos({ top, left });
+    setShowTime(s => !s);
+    setShowCal(false);
   }
 
   function prevMonth() {
@@ -89,6 +120,11 @@ export default function DateTimePicker({ date, time, onChange, minDate, label })
     const newDate = `${calYear}-${String(calMonth).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
     onChange({ date: newDate, time });
     setShowCal(false);
+  }
+
+  function selectTime(val) {
+    onChange({ date, time: val });
+    setShowTime(false);
   }
 
   function isDisabled(day) {
@@ -125,8 +161,8 @@ export default function DateTimePicker({ date, time, onChange, minDate, label })
             display: "flex", flexDirection: "column",
             alignItems: "center", justifyContent: "center",
             width: 84, minHeight: 72, flexShrink: 0,
-            border: "2px solid #0d3b66", borderRadius: 14,
-            background: parts ? "#0d3b66" : "#f0f6fc",
+            border: "2px solid #1a5f8a", borderRadius: 14,
+            background: parts ? "#1a5f8a" : "rgba(255,255,255,0.05)",
             cursor: "pointer", padding: "10px 0",
           }}
         >
@@ -145,54 +181,81 @@ export default function DateTimePicker({ date, time, onChange, minDate, label })
             </>
           ) : (
             <>
-              <span style={{ fontSize: 22, color: "#b8c5d4" }}>📅</span>
-              <span style={{ fontSize: 11, fontWeight: 700, color: "#0d3b66", marginTop: 4 }}>Fecha</span>
+              <span style={{ fontSize: 22 }}>📅</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: "#6b9fd4", marginTop: 4 }}>Fecha</span>
             </>
           )}
         </button>
 
-        {/* ── Time — native <select> behind a styled label ── */}
-        <div style={{ position: "relative", flexShrink: 0 }}>
-          {/* Visible styled surface (pointer-events: none so clicks pass through) */}
-          <div style={{
-            height: "100%", minWidth: 148, minHeight: 72,
-            border: "2px solid #0d3b66", borderRadius: 14,
-            background: timeFmt ? "#0d3b66" : "#f0f6fc",
+        {/* ── Time — fully custom fixed dropdown (no native select) ── */}
+        <button
+          ref={timeBtnRef}
+          type="button"
+          onClick={openTime}
+          style={{
+            minWidth: 148, minHeight: 72, flexShrink: 0,
+            border: "2px solid #1a5f8a", borderRadius: 14,
+            background: timeFmt ? "#1a5f8a" : "rgba(255,255,255,0.05)",
             display: "flex", alignItems: "center", justifyContent: "space-between",
-            padding: "0 14px 0 18px", boxSizing: "border-box",
-            pointerEvents: "none",
+            padding: "0 14px 0 18px", cursor: "pointer",
+          }}
+        >
+          <span style={{
+            fontSize: 18, fontWeight: 800, whiteSpace: "nowrap",
+            color: timeFmt ? "#fff" : "#6b9fd4",
           }}>
-            <span style={{
-              fontSize: 17, fontWeight: 800, whiteSpace: "nowrap",
-              color: timeFmt ? "#fff" : "#0d3b66",
-            }}>
-              {timeFmt || "Hora"}
-            </span>
-            <span style={{
-              fontSize: 11, marginLeft: 8,
-              color: timeFmt ? "rgba(255,255,255,0.65)" : "#8fa3b1",
-            }}>
-              ▾
-            </span>
-          </div>
-
-          {/* Invisible native <select> positioned on top — native dropdown on all devices */}
-          <select
-            value={time || ""}
-            onChange={e => onChange({ date, time: e.target.value })}
-            style={{
-              position: "absolute", inset: 0,
-              width: "100%", height: "100%",
-              opacity: 0, cursor: "pointer",
-            }}
-          >
-            <option value="" disabled>Hora</option>
-            {TIME_OPTIONS.map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
-        </div>
+            {timeFmt || "Hora"}
+          </span>
+          <span style={{
+            fontSize: 12, marginLeft: 8,
+            color: timeFmt ? "rgba(255,255,255,0.65)" : "#8fa3b1",
+          }}>
+            ▾
+          </span>
+        </button>
       </div>
+
+      {/* ── Custom time dropdown — fixed position, scrollable ── */}
+      {showTime && timePos && (
+        <div
+          data-dtp-time="true"
+          ref={timeListRef}
+          style={{
+            position: "fixed", top: timePos.top, left: timePos.left,
+            zIndex: 9999, width: 200,
+            background: "#1a1c1e",
+            border: "2px solid #1a5f8a", borderRadius: 16,
+            maxHeight: 240, overflowY: "auto",
+            boxShadow: "0 16px 48px rgba(0,0,0,0.5)",
+            padding: "6px 0",
+          }}
+        >
+          {TIME_OPTIONS.map(opt => {
+            const isSel = opt.value === time;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                data-selected={isSel ? "true" : "false"}
+                onClick={() => selectTime(opt.value)}
+                style={{
+                  display: "block", width: "100%",
+                  textAlign: "left", padding: "12px 20px",
+                  background: isSel ? "#1a5f8a" : "transparent",
+                  color: isSel ? "#fff" : "#e8eaf0",
+                  fontSize: 18, fontWeight: isSel ? 800 : 400,
+                  border: "none", cursor: "pointer",
+                  transition: "background 0.1s",
+                }}
+                onMouseEnter={e => { if (!isSel) e.currentTarget.style.background = "rgba(107,159,212,0.15)"; }}
+                onMouseLeave={e => { if (!isSel) e.currentTarget.style.background = "transparent"; }}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* ── Calendar overlay — fixed position, BIG (480px) ── */}
       {showCal && calPos && (
@@ -201,10 +264,10 @@ export default function DateTimePicker({ date, time, onChange, minDate, label })
           style={{
             position: "fixed", top: calPos.top, left: calPos.left,
             zIndex: 9999, width: 480,
-            background: "#fff",
-            border: "2px solid #0d3b66", borderRadius: 22,
+            background: "#1a1c1e",
+            border: "2px solid #1a5f8a", borderRadius: 22,
             padding: "26px 28px 28px",
-            boxShadow: "0 20px 64px rgba(13,59,102,0.22)",
+            boxShadow: "0 20px 64px rgba(0,0,0,0.5)",
           }}
         >
           {/* Month / year navigation */}
@@ -213,7 +276,7 @@ export default function DateTimePicker({ date, time, onChange, minDate, label })
             justifyContent: "space-between", marginBottom: 22,
           }}>
             <button type="button" onClick={prevMonth} style={navBtnStyle()}>‹</button>
-            <span style={{ fontWeight: 800, fontSize: 19, color: "#0d1b2a" }}>
+            <span style={{ fontWeight: 800, fontSize: 19, color: "#e8eaf0" }}>
               {MONTHS_LONG[calMonth - 1]} {calYear}
             </span>
             <button type="button" onClick={nextMonth} style={navBtnStyle()}>›</button>
@@ -224,7 +287,7 @@ export default function DateTimePicker({ date, time, onChange, minDate, label })
             {DAYS_SHORT.map(d => (
               <div key={d} style={{
                 textAlign: "center", fontSize: 12, fontWeight: 800,
-                color: "#8fa3b1", paddingBottom: 10, textTransform: "uppercase",
+                color: "#6b9fd4", paddingBottom: 10, textTransform: "uppercase",
               }}>
                 {d}
               </div>
@@ -244,13 +307,13 @@ export default function DateTimePicker({ date, time, onChange, minDate, label })
                   type="button"
                   disabled={disabled}
                   onClick={() => selectDay(day)}
-                  onMouseEnter={e => { if (!isSel && !disabled) e.currentTarget.style.background = "#dbeafe"; }}
+                  onMouseEnter={e => { if (!isSel && !disabled) e.currentTarget.style.background = "rgba(107,159,212,0.18)"; }}
                   onMouseLeave={e => { if (!isSel) e.currentTarget.style.background = "transparent"; }}
                   style={{
                     height: 52, borderRadius: 12, fontSize: 16,
-                    border: isToday && !isSel ? "2px solid #0d3b66" : "2px solid transparent",
-                    background: isSel ? "#0d3b66" : "transparent",
-                    color: isSel ? "#fff" : disabled ? "#ccc" : "#0d1b2a",
+                    border: isToday && !isSel ? "2px solid #1a5f8a" : "2px solid transparent",
+                    background: isSel ? "#1a5f8a" : "transparent",
+                    color: isSel ? "#fff" : disabled ? "#444" : "#e8eaf0",
                     fontWeight: isSel ? 800 : 500,
                     cursor: disabled ? "not-allowed" : "pointer",
                     opacity: disabled ? 0.3 : 1,
@@ -271,8 +334,8 @@ export default function DateTimePicker({ date, time, onChange, minDate, label })
 function navBtnStyle() {
   return {
     width: 42, height: 42, borderRadius: 10,
-    border: "2px solid #0d3b66", background: "#f0f6fc",
-    cursor: "pointer", fontSize: 22, fontWeight: 800, color: "#0d3b66",
+    border: "2px solid #1a5f8a", background: "rgba(107,159,212,0.1)",
+    cursor: "pointer", fontSize: 22, fontWeight: 800, color: "#6b9fd4",
     display: "flex", alignItems: "center", justifyContent: "center",
   };
 }

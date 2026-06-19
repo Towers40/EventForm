@@ -515,9 +515,12 @@ export default function OnboardingFlow({ onDraftReady }) {
             <button type="button" onClick={() => go(1)} className="soft-btn soft-btn-primary" style={{ fontSize: 16, padding: "16px 48px", borderRadius: 12 }}>
               Empezar →
             </button>
-            <div style={{ marginTop: 32 }}>
-              <button type="button" onClick={() => nav("/login")} style={{ background: "none", border: "none", color: "#0d3b66", fontWeight: 700, cursor: "pointer", fontSize: 14, textDecoration: "underline", textUnderlineOffset: 3 }}>
+            <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 12, alignItems: "center" }}>
+              <button type="button" onClick={() => nav("/login")} style={{ background: "none", border: "none", color: "#8fa3b1", fontWeight: 700, cursor: "pointer", fontSize: 14, textDecoration: "underline", textUnderlineOffset: 3 }}>
                 Ya tengo cuenta → Iniciar sesión
+              </button>
+              <button type="button" onClick={() => nav("/discover")} style={{ background: "none", border: "none", color: "#6b9fd4", fontWeight: 700, cursor: "pointer", fontSize: 14, textDecoration: "underline", textUnderlineOffset: 3 }}>
+                Descubrir eventos →
               </button>
             </div>
           </div>

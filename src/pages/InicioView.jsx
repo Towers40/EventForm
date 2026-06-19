@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import "../styles/typeform.css";
 import { VERDE_CORPORATIVO } from "../lib/theme.js";
 
@@ -10,6 +11,7 @@ const STEPS = [
 
 export default function InicioView({ events, onNew }) {
   const totalRegs = events.reduce((n, e) => n + (e.registrations?.length || 0), 0);
+  const nav = useNavigate();
 
   return (
     <div style={{ maxWidth: 720, margin: "0 auto" }}>
@@ -26,6 +28,11 @@ export default function InicioView({ events, onNew }) {
         <button type="button" className="soft-btn soft-btn-primary" onClick={onNew} style={{ fontSize: 16, padding: "16px 40px", borderRadius: 12 }}>
           + Crear nuevo evento
         </button>
+        <div style={{ marginTop: 16 }}>
+          <button type="button" onClick={() => nav("/discover")} style={{ background: "none", border: "none", color: "#6b9fd4", fontWeight: 700, cursor: "pointer", fontSize: 14, textDecoration: "underline", textUnderlineOffset: 3 }}>
+            Descubrir eventos →
+          </button>
+        </div>
       </div>
 
       {/* Stats rápidas si hay eventos */}
@@ -37,7 +44,7 @@ export default function InicioView({ events, onNew }) {
             { label: "Check-ins", value: events.reduce((n, e) => n + (e.registrations?.filter(r => r.used).length || 0), 0) },
           ].map(s => (
             <div key={s.label} className="panel-card" style={{ padding: "20px 16px", textAlign: "center" }}>
-              <div style={{ fontSize: 28, fontWeight: 800, color: "#0d3b66" }}>{s.value}</div>
+              <div style={{ fontSize: 28, fontWeight: 800, color: "#6b9fd4" }}>{s.value}</div>
               <div style={{ fontSize: 12, color: "#8fa3b1", fontWeight: 700, marginTop: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>{s.label}</div>
             </div>
           ))}
@@ -52,12 +59,12 @@ export default function InicioView({ events, onNew }) {
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {STEPS.map(s => (
             <div key={s.n} className="panel-card" style={{ padding: "18px 20px", display: "flex", gap: 16, alignItems: "flex-start" }}>
-              <div style={{ width: 32, height: 32, borderRadius: 8, background: "#0d3b66", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14, flexShrink: 0 }}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: "#1a5f8a", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14, flexShrink: 0 }}>
                 {s.n}
               </div>
               <div>
-                <div style={{ fontWeight: 700, fontSize: 15, color: "#0d1b2a", marginBottom: 4 }}>{s.title}</div>
-                <div style={{ fontSize: 13, color: "#5c6b7a", lineHeight: 1.5 }}>{s.desc}</div>
+                <div style={{ fontWeight: 700, fontSize: 15, color: "#e8eaf0", marginBottom: 4 }}>{s.title}</div>
+                <div style={{ fontSize: 13, color: "#8fa3b1", lineHeight: 1.5 }}>{s.desc}</div>
               </div>
             </div>
           ))}
