@@ -145,7 +145,6 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
   const _hasDraft = Boolean(initialDraft || localStorage.getItem("ef_pending_draft"));
   const [view, setView] = useState(_hasDraft ? "builder" : "inicio");
   const [events, setEvents] = useState(() => (apiOn ? [] : loadEvents()));
-  const [adminData, setAdminData] = useState(null);
   const [shareEv, setShareEv] = useState(null);
   const [evId, setEvId] = useState(null);
   const [regId, setRegId] = useState(null);
@@ -184,10 +183,6 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
       try {
         const { events: list } = await api.events(token);
         setEvents(list.map((e) => ({ ...e, _persisted: true })));
-        if (isSuperAdmin) {
-          const data = await api.adminOverview(token);
-          setAdminData(data);
-        }
       } catch (e) {
         console.error(e);
       }

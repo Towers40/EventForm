@@ -444,6 +444,21 @@ app.post("/api/events/:id/check-in", requireDb, authMiddleware, async (req, res)
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+app.get("/api/admin/overview", requireDb, authMiddleware, requireRole("super_admin"), async (req, res) => {
+  try {
+    const { rows: users } = await db.execute({ sql: "SELECT COUNT(*) as c FROM users", args: [] });
+    const { rows: events } = await db.execute({ sql: "SELECT COUNT(*) as c FROM events", args: [] });
+    const { rows: regs } = await db.execute({ sql: "SELECT COUNT(*) as c FROM registrations", args: [] });
+    const { rows: latestUsers } = await db.execute({ sql: "SELECT id, email, name, role, created_at FROM users ORDER BY created_at DESC LIMIT 10", args: [] });
+    const { rows: latestEvents } = await db.execute({ sql: "SELECT id, slug, host_id, created_at FROM events ORDER BY created_at DESC LIMIT 10", args: [] });
+    res.json({
+      totals: { users: Number(users[0]?.c || 0), events: Number(events[0]?.c || 0), registrations: Number(regs[0]?.c || 0) },
+      latestUsers: latestUsers.map(u => ({ id: u.id, email: u.email, name: u.name, role: u.role, createdAt: u.created_at })),
+      latestEvents: latestEvents.map(e => ({ id: e.id, slug: e.slug, hostId: e.host_id, createdAt: e.created_at })),
+    });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.get("/api/health", (_, res) => {
   if (!dbReady) return res.status(503).json({ ok: false, needsConfig: true, error: "Agrega TURSO_URL en Vercel → Settings → Environment Variables" });
   res.json({ ok: true });

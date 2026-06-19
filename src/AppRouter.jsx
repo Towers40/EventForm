@@ -34,12 +34,7 @@ export default function AppRouter() {
           <Route path="/verify-email" element={<VerifyEmailPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/app" element={<AppGate />} />
-          <Route
-            path="/"
-            element={
-              apiEnabled ? <Navigate to="/app" replace /> : <Navigate to="/app" replace />
-            }
-          />
+          <Route path="/" element={<Navigate to="/app" replace />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

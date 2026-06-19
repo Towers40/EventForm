@@ -1,98 +1,52 @@
-# EventForm Colombia — CLAUDE.md
+# 🚀 EventForm - Manual de Contexto y Desarrollo
 
-## Descripción
-App MVP para crear y gestionar eventos en Colombia. Flujo completo:
-Crear evento (wizard 4 pasos) → Builder de formulario → Inscripción pública
-estilo Typeform (una pregunta por pantalla) → Pase QR estilo Eventbrite
-→ Check-in por escaneo QR el día del evento.
+Este archivo contiene las instrucciones de arquitectura, stack tecnológico y reglas de estilo para el asistente de IA. Debe respetarse estrictamente en cada generación de código.
 
-## Stack
-- Frontend: React + Vite (puerto 5173)
-- Backend: Node.js / Express en /server
-- Base de datos: SQLite
-- Estilos: sistema propio de variables en /src/lib/theme.js
-- CSS de formulario: typeform.css
+---
 
-## Comandos clave
-- Frontend: `npm run dev` (desde raíz)
-- Backend: `cd server && npm run dev`
-- Seed DB: `cd server && npm run seed`
-  → crea super admin: admin@eventform.co / cambiar-esta-clave
+## 🌐 Stack Tecnológico e Infraestructura
 
-## Estructura del proyecto
-- /src/App.jsx → componente principal (legacy, compatibilidad)
-- /src/HostApp.jsx → componente principal activo
-- /src/AppRouter.jsx → enrutamiento
-- /src/components/ → QrScanner, AdminPanel, FieldInput, EventHeader,
-                      ColombiaAddressPicker, LocationMap, NavigateButtons,
-                      HeaderImageUpload
-- /src/lib/theme.js → variables de color del sistema de diseño
-- /src/lib/tickets.js → lógica check-in, validación, build participante
-- /src/lib/capacity.js → control de aforo y sold-out
-- /src/lib/colombia.js → tipos de evento, presets
-- /src/lib/storage.js → persistencia local (loadEvents / saveEvents)
-- /src/pages/ → vistas por ruta
-- /server/ → API REST Express + SQLite
-- /public/ → assets estáticos
+* **Frontend:** React (Vite) - SPA moderna.
+* **Enrutamiento:** React Router v7 (Arquitectura basada en vistas y componentes modulares).
+* **Hosting & Despliegue:** **Vercel** con integración continua (CI/CD) automatizada vía **GitHub**.
+* **Base de Datos:** **Turso (SQLite en el Edge)**.
+* **Cliente de Datos:** `@libsql/client` (LibSQL).
 
-## ⚡ REFERENCIA DE DISEÑO — Estilo Typeform (PRIORITARIO)
-El formulario de inscripción debe replicar la experiencia de Typeform:
+---
 
-### Principios visuales
-- Fondo blanco puro, sin distracciones ni sidebars
-- UNA sola pregunta visible por pantalla (full-screen per question)
-- Transiciones suaves al avanzar (slide up / fade)
-- Barra de progreso delgada (3–4px) en la parte superior, color VERDE_CORPORATIVO
-- Número de pregunta con formato: círculo azul oscuro + número (ej. "3")
-  seguido del texto de la pregunta en tipografía grande (28–32px, peso 500)
-- Descripción/hint en gris claro debajo del título (14px)
-- Input minimalista: solo línea inferior (border-bottom), sin caja completa
-- Botón "OK" rectangular azul oscuro con check ✓ o flecha →, esquinas redondeadas
-- Hint de teclado: "Presiona Enter ↵" junto al botón OK
-- Navegación con flechas ↑ ↓ en esquina inferior derecha
-- Sin bordes de card ni sombras en el formulario de inscripción
-- Espacio generoso alrededor del contenido (padding mínimo 20% lateral)
+## 🏗️ Arquitectura de Datos y Backend (Turso + Vercel)
 
-### Paleta específica para el formulario Typeform
-- Fondo: #FFFFFF puro
-- Número de pregunta: círculo #1A3E6F (azul marino), texto blanco
-- Texto pregunta: #1A1A1A (casi negro), 28–32px
-- Descripción: #9B9B9B, 14px
-- Input (border-bottom): #CCCCCC en reposo, #1A3E6F en foco
-- Botón OK: fondo #1A3E6F, texto blanco, border-radius 4px, padding 10px 20px
-- Texto hint teclado: #9B9B9B, 12px
-- Barra progreso: VERDE_CORPORATIVO del sistema
+* **Transición de Estado:** La persistencia síncrona actual basada en `localStorage` (`loadEvents`/`saveEvents` en `src/lib/storage.js`) está en proceso de migración. Todo desarrollo nuevo debe ser asíncronico (`async/await`).
+* **Estrategia API Serverless:** Los componentes del cliente **no** deben conectarse directamente a Turso usando credenciales administrativas. Toda mutación y consulta debe pasar por funciones serverless alojadas en la carpeta `/api` de Vercel.
+* **Consultas a Base de Datos:** Utilizar sentencias SQL parametrizadas nativas mediante el cliente de LibSQL:
+    ```javascript
+    await client.execute({
+      sql: "INSERT INTO registrations (id, event_id, data, ts) VALUES (?, ?, ?, ?)",
+      args: [id, eventId, JSON.stringify(data), ts]
+    });
+    ```
 
-### Paleta general del sistema (no cambiar)
-- VERDE_CORPORATIVO → acción principal, progreso, check-in exitoso
-- VERDE_PASTEL_BG → fondos de sección y cards secundarias
-- NEGRO_PURO → bordes, headers, botones primarios generales
-- BLANCO_CONTRASTE → superficies y texto sobre negro
-- NEGRO_MUTED_70 / _50 → textos secundarios y terciarios
-- ROJO_SUAVE → error / acceso denegado
+---
 
-## Flujo de vistas
-dashboard → create_wizard (4 pasos) → builder → detail
-detail → register (ESTILO TYPEFORM: 1 pregunta/pantalla) → confirm (QR)
-dashboard / detail → validate (escáner QR / manual)
-admin → gestión de eventos
+## 🎨 Reglas de UI y Sistema de Estilos (CSS Moderno)
 
-## Reglas generales de UI (fuera del formulario)
-- Bordes: `2px solid NEGRO_PURO` en cards y botones
-- Botones primarios: NEGRO_PURO + BLANCO_CONTRASTE
-- Botones acción: VERDE_CORPORATIVO + borde NEGRO_PURO
-- Tipografía: system-ui, peso 700–900 en títulos
-- Border-radius: 8–20px según tamaño del componente
+### 1. Especificación Técnica de CSS
+* **Sin Preprocesadores:** No usar Tailwind, Sass, ni Less. Se utiliza **CSS puro nativo**.
+* **Nesting Nativo:** Está permitido y estandarizado el uso de *CSS Nesting* (anidamiento con `&`) y Media Queries internas dentro del selector del componente (ej. `#center`, `#next-steps`).
+* **Variables de Entorno CSS:** Respetar los tokens globales (`var(--accent)`, `var(--border)`, `var(--shadow)`).
 
-## Objetivos actuales (en orden de prioridad)
-1. Rediseñar formulario de inscripción — una pregunta por pantalla estilo Typeform
-2. Mejorar diseño del pase QR / boleta — inspiración Eventbrite
-3. Mejorar panel de check-in — optimizado para mobile y uso rápido
-4. Agregar funcionalidad de compartir enlace de evento
-5. Estadísticas básicas en panel de administración
-6. Preparar deploy: Railway (backend) + Vercel (frontend)
+### 2. Dualidad de Identidad Visual
+El proyecto maneja dos líneas estéticas estrictas que no deben mezclarse:
 
-## Contexto Colombia
-- Solo ciudades colombianas (ColombiaAddressPicker)
-- Fechas en español (es-MX locale)
-- IDs tickets: TICKET-XXXXXXXX / IDs eventos: EXXXXXXXX
+* **Línea Neo-brutalista:** Aplicada en vistas de administración (`DashboardView`, `MisEventosView`, `EventCrm`, `HostApp`). Características: bordes gruesos `2px solid #000`, sin border-radius pronunciado, fondo blanco/negro de alto contraste, tipografía pesada (font-weight: 800-900), paleta de constantes JS en `src/lib/theme.js` (`NEGRO_PURO`, `VERDE_CORPORATIVO`, `BLANCO_CONTRASTE`).
+
+* **Línea Premium (estilo lu.ma):** Aplicada en todas las vistas públicas (`PublicEventPage`, `TypeformRegister`, `ConfirmTicket`, `OnboardingFlow`). Características: `border-radius: 16-24px`, `box-shadow` suaves, colores pastel (#0d3b66, #f0f6fc), tipografía espaciada de peso ligero (font-weight: 300-400), clases CSS en `src/styles/typeform.css` (`.tf-*`, `.panel-card`, `.soft-btn`). **No mezclar ambas líneas en la misma vista.**
+
+## 🗺️ Roadmap de Funcionalidades Futuras (Para Planificación de Código)
+1. **Pasarela de Pagos:** Preparar el modelo de datos en Turso para soportar eventos con `price` y estados de tickets (`payment_status`).
+2. **Evolución Estética (Estilo lu.ma):** Las vistas públicas orientadas a la comunidad deben transicionar del Neo-brutalismo a un diseño UI premium: bordes curvos (`border-radius: 24px`), sombras suaves, tipografía espaciada y efectos de desenfoque (`backdrop-filter`).
+3. **Descubrimiento y Categorías:** La página de inicio pública debe implementar un sistema de filtrado por taxonomías (Música, Deporte, Comida, Creatividad, Bienestar) y una sección de urgencia ("Últimos Cupos").
+
+## 📱 Enfoque de Desarrollo Móvil & Pagos Integrados
+* **Prioridad Mobile-First:** Todo el diseño público debe ser pensado para pantallas táctiles (teléfonos). Elementos interactivos grandes, optimización de teclados móviles y navegación fluida sin recargas.
+* **Flujo de Pago In-App:** El sistema de cobros se integrará mediante Stripe Elements o SDK local. **Prohibido redirigir fuera de la aplicación** para realizar pagos. El botón de Apple Pay / Google Pay debe renderizarse de forma nativa directamente en el formulario de inscripción.

@@ -62,4 +62,5 @@ export const api = {
   publicEvent: (slug) => request(`/api/public/events/${slug}`),
   publicRegister: (slug, body) =>
     request(`/api/public/events/${slug}/register`, { method: "POST", body: JSON.stringify(body) }),
+  adminOverview: (token) => request("/api/admin/overview", {}, token),
 };
