@@ -49,8 +49,14 @@ export default function LoginPage() {
     e.preventDefault();
     setErr(""); setBusy(true);
     try {
-      await api.forgotPassword(email);
-      setMsg(`Código enviado a ${email}`);
+      const res = await api.forgotPassword(email);
+      if (res.code) {
+        // Email not configured — server returned the code directly
+        setResetCode(res.code);
+        setMsg(`Sin configuración de correo — código: ${res.code}`);
+      } else {
+        setMsg(`Código enviado a ${email}. Revisa tu bandeja de entrada y spam.`);
+      }
       setMode("reset");
     } catch (ex) {
       setErr(ex.message || "Error al enviar el código");
@@ -113,7 +119,7 @@ export default function LoginPage() {
                 </button>
               </div>
               <div style={{ marginBottom: 24 }}>
-                <button type="button" onClick={() => { setMode("forgot"); setErr(""); }} style={{ background: "none", border: "none", color: "#0d3b66", fontSize: 13, cursor: "pointer", fontWeight: 700, padding: 0, textDecoration: "underline", textUnderlineOffset: 3 }}>
+                <button type="button" onClick={() => { setMode("forgot"); setErr(""); }} style={{ background: "none", border: "none", color: "#6b9fd4", fontSize: 13, cursor: "pointer", fontWeight: 700, padding: 0, textDecoration: "underline", textUnderlineOffset: 3 }}>
                   ¿Olvidaste tu contraseña?
                 </button>
               </div>
@@ -125,7 +131,7 @@ export default function LoginPage() {
             <div style={{ marginTop: 28, textAlign: "center" }}>
               <p style={{ color: "#8fa3b1", fontSize: 14 }}>
                 ¿No tienes cuenta?{" "}
-                <Link to="/app" style={{ color: "#0d3b66", fontWeight: 700, textDecoration: "underline", textUnderlineOffset: 3 }}>
+                <Link to="/app" style={{ color: "#6b9fd4", fontWeight: 700, textDecoration: "underline", textUnderlineOffset: 3 }}>
                   Crear una gratis
                 </Link>
               </p>
@@ -165,7 +171,7 @@ export default function LoginPage() {
             <div style={{ fontSize: 40, marginBottom: 20 }}>📩</div>
             <h1 className="tf-question">Nueva contraseña</h1>
             <p className="tf-hint" style={{ marginBottom: 8 }}>Ingresa el código de 4 dígitos enviado a</p>
-            <p style={{ fontWeight: 800, fontSize: 15, color: "#0d3b66", marginBottom: 28 }}>{email}</p>
+            <p style={{ fontWeight: 800, fontSize: 15, color: "#6b9fd4", marginBottom: 28 }}>{email}</p>
             <form onSubmit={handleReset}>
               <input
                 className="tf-input-line"
@@ -200,7 +206,7 @@ export default function LoginPage() {
               </button>
             </form>
             <div style={{ marginTop: 20, textAlign: "center" }}>
-              <button type="button" onClick={handleForgot} style={{ background: "none", border: "none", color: "#0d3b66", cursor: "pointer", fontSize: 13, fontWeight: 700, textDecoration: "underline", textUnderlineOffset: 3 }} disabled={busy}>
+              <button type="button" onClick={handleForgot} style={{ background: "none", border: "none", color: "#6b9fd4", cursor: "pointer", fontSize: 13, fontWeight: 700, textDecoration: "underline", textUnderlineOffset: 3 }} disabled={busy}>
                 Reenviar código
               </button>
             </div>

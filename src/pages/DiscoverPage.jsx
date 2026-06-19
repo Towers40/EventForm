@@ -140,12 +140,12 @@ function CategoryPill({ cat, count, active, onClick }) {
       onMouseLeave={e => { if (!active) e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}
     >
       <div style={{ fontSize: 26, marginBottom: 6 }}>{cat.emoji}</div>
-      <div style={{ fontSize: 12, fontWeight: 700, color: active ? "#fff" : "#c8d6e5", lineHeight: 1.2 }}>
+      <div style={{ fontSize: 12, fontWeight: 600, color: active ? "#fff" : "#c8d6e5", lineHeight: 1.2 }}>
         {cat.label}
       </div>
       {count != null && (
-        <div style={{ fontSize: 11, color: active ? "rgba(255,255,255,0.65)" : "#555f6b", marginTop: 3 }}>
-          {count}
+        <div style={{ fontSize: 11, fontWeight: 400, color: active ? "rgba(255,255,255,0.65)" : "#555f6b", marginTop: 3 }}>
+          {count > 999 ? `${(count/1000).toFixed(1)}K` : count} Events
         </div>
       )}
     </button>
@@ -206,7 +206,7 @@ export default function DiscoverPage() {
   const activeCat = DISCOVER_CATEGORIES.find(c => c.slug === activeCategory);
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0a0a0a", color: "#e8eaf0", fontFamily: "system-ui, -apple-system, sans-serif" }}>
+    <div style={{ minHeight: "100vh", background: "#0a0a0a", color: "#e8eaf0", fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>
 
       {/* ── Nav ── */}
       <nav style={{

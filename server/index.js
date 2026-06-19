@@ -185,7 +185,16 @@ app.post("/api/auth/forgot-password", requireDb, async (req, res) => {
     if (row) {
       const code = gen4(); const expires = Date.now() + 15 * 60 * 1000;
       await db.execute({ sql: "UPDATE users SET reset_code = ?, reset_code_expires = ? WHERE id = ?", args: [code, expires, row.id] });
-      try { await sendPasswordResetCode(row.email, row.name, code); } catch {}
+      if (emailEnabled) {
+        try { await sendPasswordResetCode(row.email, row.name, code); } catch (e) {
+          console.error("Email send failed:", e.message);
+          // Return code directly so user can still reset even if email fails
+          return res.json({ ok: true, code });
+        }
+      } else {
+        // No email configured — return code directly in response
+        return res.json({ ok: true, code });
+      }
     }
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
