@@ -741,6 +741,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
             code={vCode} setCode={setVCode} result={vResult}
             onCheck={() => runCheckIn(vCode)} onScan={handleQrScan}
             onReset={() => { setVResult(null); setVCode(""); }}
+            onClose={() => (evId ? go("crm", evId) : go("mis_eventos"))}
           />
         )}
       </main>
@@ -1791,7 +1792,7 @@ function Confirm({ ev, reg, onDone }) {
   );
 }
 
-function Validate({ event, scopeLabel, code, setCode, result, onCheck, onScan, onReset }) {
+function Validate({ event, scopeLabel, code, setCode, result, onCheck, onScan, onReset, onClose }) {
   const [mode, setMode] = useState("camera");
   const cameraActive = mode === "camera" && !result;
 
@@ -1812,7 +1813,17 @@ function Validate({ event, scopeLabel, code, setCode, result, onCheck, onScan, o
   const aforoPct = capMax != null && capMax > 0 ? Math.min(100, Math.round((total / capMax) * 100)) : 0;
 
   return (
-    <div style={{ border: "1px solid rgba(107,159,212,0.3)", borderRadius: 16, padding: 24, background: "rgba(107,159,212,0.10)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}>
+    <div style={{ position: "relative", border: "1px solid rgba(107,159,212,0.3)", borderRadius: 16, padding: 24, background: "rgba(107,159,212,0.10)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}>
+      {onClose && (
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Cerrar escáner"
+          style={{ position: "absolute", top: 14, right: 14, width: 34, height: 34, borderRadius: "50%", border: "1px solid rgba(107,159,212,0.3)", background: "rgba(255,255,255,0.06)", color: AZUL_TXT, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", padding: 0 }}
+        >
+          <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+        </button>
+      )}
       <h2 style={{ fontSize: 22, fontWeight: 900, marginBottom: 8, color: AZUL_TXT, textAlign: "center" }}>Check-in con QR</h2>
       <p style={{ fontSize: 13, color: "rgba(200,223,240,0.6)", marginBottom: 20, fontWeight: 600, textAlign: "center" }}>{scopeLabel}</p>
 
