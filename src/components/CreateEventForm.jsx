@@ -115,19 +115,9 @@ function LocationModal({ onSelect, onClose }) {
 const ITEM_H  = 46;
 const VISIBLE = 5;
 
-function generateDates(minDate) {
-  const opts = [];
-  const start = minDate ? new Date(minDate + "T12:00:00") : new Date();
-  for (let i = 0; i < 120; i++) {
-    const d = new Date(start);
-    d.setDate(d.getDate() + i);
-    const y  = d.getFullYear();
-    const mo = String(d.getMonth() + 1).padStart(2, "0");
-    const dy = String(d.getDate()).padStart(2, "0");
-    opts.push({ value: `${y}-${mo}-${dy}`, label: `${DAYS_ES[d.getDay()]} ${d.getDate()} ${MONTHS_ES[d.getMonth()]}` });
-  }
-  return opts;
-}
+const MAX_YEAR = 2080;
+const pad2 = (n) => String(n).padStart(2, "0");
+function daysInMonth(y, m) { return new Date(y, m, 0).getDate(); } // m: 1-12
 
 const HOURS   = Array.from({ length: 24 }, (_, i) => ({ value: i, label: String(i).padStart(2, "0") }));
 const MINUTES = [0, 15, 30, 45].map(m => ({ value: m, label: String(m).padStart(2, "0") }));
@@ -161,7 +151,7 @@ function WheelCol({ items, selectedKey, getKey, getLabel, onChange, flex }) {
         <div style={{ height: ITEM_H * 2 }} />
         {items.map((item, i) => (
           <div key={getKey(item)} style={{ height: ITEM_H, scrollSnapAlign: "center", display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: i === live ? 19 : 16, fontWeight: i === live ? 700 : 400,
+            fontSize: i === live ? 17 : 14, fontWeight: i === live ? 700 : 400,
             color: i === live ? "#fff" : "rgba(255,255,255,0.28)", userSelect: "none", transition: "color 0.08s, font-size 0.08s" }}>
             {getLabel(item)}
           </div>
@@ -173,27 +163,68 @@ function WheelCol({ items, selectedKey, getKey, getLabel, onChange, flex }) {
 }
 
 function WheelPanel({ date, time, minDate, onChange, onClose }) {
-  const dates  = generateDates(minDate);
+  const min = minDate ? minDate.split("-").map(Number) : null; // [y, m, d]
+  const now = new Date();
+
+  // Selected date parts: from `date`, else minDate, else today.
+  const sel = date
+    ? date.split("-").map(Number)
+    : (min || [now.getFullYear(), now.getMonth() + 1, now.getDate()]);
+  const [sy, sm, sd] = sel;
+
   const hour   = time ? parseInt(time.split(":")[0], 10) : 8;
   const minRaw = time ? parseInt(time.split(":")[1], 10) : 0;
   const minute = [0, 15, 30, 45].reduce((a, b) => Math.abs(b - minRaw) < Math.abs(a - minRaw) ? b : a);
+  const curTime = time || `${pad2(hour)}:${pad2(minute)}`;
+  const curDate = date || `${sy}-${pad2(sm)}-${pad2(sd)}`;
+
+  // Build column ranges, respecting minDate as a lower bound.
+  const minY = min ? min[0] : now.getFullYear();
+  const years = [];
+  for (let y = minY; y <= MAX_YEAR; y++) years.push({ value: y, label: String(y) });
+
+  const monthStart = (min && sy === min[0]) ? min[1] : 1;
+  const months = [];
+  for (let m = monthStart; m <= 12; m++) months.push({ value: m, label: MONTHS_ES[m - 1] });
+
+  const dayStart = (min && sy === min[0] && sm === min[1]) ? min[2] : 1;
+  const days = [];
+  for (let d = dayStart; d <= daysInMonth(sy, sm); d++) days.push({ value: d, label: String(d) });
+
+  // Normalize a (y, m, d) selection back into a valid, in-range date string.
+  const emit = (y, m, d) => {
+    const mStart = (min && y === min[0]) ? min[1] : 1;
+    const mm = Math.max(m, mStart);
+    const dStart = (min && y === min[0] && mm === min[1]) ? min[2] : 1;
+    const dd = Math.min(Math.max(d, dStart), daysInMonth(y, mm));
+    onChange({ date: `${y}-${pad2(mm)}-${pad2(dd)}`, time: curTime });
+  };
+
+  // Auto-select the default date (today / min) on open so "hoy" needs no scrolling.
+  useEffect(() => {
+    if (!date) onChange({ date: curDate, time: curTime });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div style={{ borderRadius: 18, overflow: "hidden", background: "rgba(18,20,34,0.95)", border: "1px solid rgba(255,255,255,0.1)", margin: "8px 0 0" }}>
       <div style={{ display: "flex", borderBottom: "1px solid rgba(255,255,255,0.06)", padding: "8px 0 6px" }}>
-        {["Día", "Hr", "Min"].map((lbl, i) => (
-          <div key={lbl} style={{ flex: i === 0 ? 2 : 1, textAlign: "center", fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: "0.1em", textTransform: "uppercase" }}>{lbl}</div>
+        {[["Día",0.8],["Mes",1.2],["Año",1.2],["Hr",0.8],["Min",0.8]].map(([lbl, f]) => (
+          <div key={lbl} style={{ flex: f, textAlign: "center", fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: "0.1em", textTransform: "uppercase" }}>{lbl}</div>
         ))}
       </div>
       <div style={{ display: "flex" }}>
-        <WheelCol flex={2} items={dates} selectedKey={date || dates[0]?.value} getKey={i => i.value} getLabel={i => i.label}
-          onChange={d => onChange({ date: d, time })} />
+        <WheelCol key={`d-${sy}-${sm}`} flex={0.8} items={days} selectedKey={sd} getKey={i => i.value} getLabel={i => i.label}
+          onChange={d => emit(sy, sm, d)} />
+        <WheelCol key={`m-${sy}`} flex={1.2} items={months} selectedKey={sm} getKey={i => i.value} getLabel={i => i.label}
+          onChange={m => emit(sy, m, sd)} />
+        <WheelCol key="y" flex={1.2} items={years} selectedKey={sy} getKey={i => i.value} getLabel={i => i.label}
+          onChange={y => emit(y, sm, sd)} />
         <div style={{ width: 1, background: "rgba(255,255,255,0.07)", margin: "8px 0" }} />
-        <WheelCol flex={1} items={HOURS} selectedKey={hour} getKey={i => i.value} getLabel={i => i.label}
-          onChange={h => onChange({ date, time: `${String(h).padStart(2,"00")}:${String(minute).padStart(2,"0")}` })} />
-        <div style={{ width: 1, background: "rgba(255,255,255,0.07)", margin: "8px 0" }} />
-        <WheelCol flex={1} items={MINUTES} selectedKey={minute} getKey={i => i.value} getLabel={i => i.label}
-          onChange={m => onChange({ date, time: `${String(hour).padStart(2,"0")}:${String(m).padStart(2,"0")}` })} />
+        <WheelCol key="h" flex={0.8} items={HOURS} selectedKey={hour} getKey={i => i.value} getLabel={i => i.label}
+          onChange={h => onChange({ date: curDate, time: `${pad2(h)}:${pad2(minute)}` })} />
+        <WheelCol key="mi" flex={0.8} items={MINUTES} selectedKey={minute} getKey={i => i.value} getLabel={i => i.label}
+          onChange={m => onChange({ date: curDate, time: `${pad2(hour)}:${pad2(m)}` })} />
       </div>
       <div style={{ padding: "10px 16px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
         <button type="button" onClick={onClose} style={{ width: "100%", padding: 11, background: "rgba(107,159,212,0.3)", border: "none", borderRadius: 12, color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
