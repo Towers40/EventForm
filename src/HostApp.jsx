@@ -23,7 +23,7 @@ import {
   validateRegistrationForm,
   buildParticipant,
 } from "./lib/tickets.js";
-import { isSoldOut, capacityLabel } from "./lib/capacity.js";
+import { isSoldOut, capacityLabel, getCapacityMax } from "./lib/capacity.js";
 import {
   EVENT_TYPE_OTHER,
   EVENT_TYPE_PRESETS,
@@ -42,6 +42,19 @@ import {
 } from "./lib/theme.js";
 
 const uid = () => Math.random().toString(36).slice(2, 10).toUpperCase();
+
+// ─── ICONOS SVG (heredan color con currentColor) ──────────────────────────────
+const svgBase = (s = 18) => ({ width: s, height: s, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round" });
+function IconHome({ size }) { return <svg {...svgBase(size)}><path d="M3 9.5 12 3l9 6.5" /><path d="M5 10v10h14V10" /><path d="M9 20v-6h6v6" /></svg>; }
+function IconCalendar({ size }) { return <svg {...svgBase(size)}><rect x="3" y="4.5" width="18" height="16" rx="2" /><path d="M3 9h18M8 2.5v4M16 2.5v4" /></svg>; }
+function IconChart({ size }) { return <svg {...svgBase(size)}><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></svg>; }
+function IconGear({ size }) { return <svg {...svgBase(size)}><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.2a1.6 1.6 0 0 0-2.7-1.1l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 4.6 15H4.5a2 2 0 1 1 0-4h.2a1.6 1.6 0 0 0 1.1-2.7l-.1-.1A2 2 0 1 1 8.5 5.4l.1.1A1.6 1.6 0 0 0 11 4.6V4.5a2 2 0 1 1 4 0v.2a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8 1.6 1.6 0 0 0 1.5 1h.1a2 2 0 1 1 0 4h-.2a1.6 1.6 0 0 0-1.5 1z" /></svg>; }
+function IconSearch({ size }) { return <svg {...svgBase(size)}><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg>; }
+function IconPlus({ size }) { return <svg {...svgBase(size)}><path d="M12 5v14M5 12h14" /></svg>; }
+function IconPencil({ size = 11 }) { return <svg {...svgBase(size)}><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" /></svg>; }
+function IconCamera({ size }) { return <svg {...svgBase(size)}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-3h8l2 3h3a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg>; }
+function IconKeyboard({ size }) { return <svg {...svgBase(size)}><rect x="2" y="5" width="20" height="14" rx="2" /><path d="M6 9h0M10 9h0M14 9h0M18 9h0M6 13h0M10 13h0M14 13h0M18 13h0M8 17h8" /></svg>; }
+function IconScan({ size = 16 }) { return <svg {...svgBase(size)}><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2" /><path d="M3 12h18" /></svg>; }
 
 const FIELD_TYPES = [
   { type: "text", label: "Texto corto", icon: "✏️" },
@@ -450,10 +463,10 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
   const showScannerNav = ["inicio", "mis_eventos", "detail", "validate"].includes(view);
 
   const NAV_ITEMS = [
-    { key: "inicio", label: "Inicio", icon: "🏠" },
-    { key: "mis_eventos", label: "Mis eventos", icon: "📅" },
-    { key: "stats", label: "Dashboard", icon: "📊" },
-    { key: "mi_cuenta", label: "Mi cuenta", icon: "⚙️" },
+    { key: "inicio", label: "Inicio", icon: <IconHome /> },
+    { key: "mis_eventos", label: "Mis eventos", icon: <IconCalendar /> },
+    { key: "stats", label: "Dashboard", icon: <IconChart /> },
+    { key: "mi_cuenta", label: "Mi cuenta", icon: <IconGear /> },
   ];
 
   const initials = user?.name
@@ -543,10 +556,10 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
                 width: 22, height: 22, borderRadius: "50%",
                 background: "#1a5f8a", border: "2px solid #111315",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                cursor: "pointer", fontSize: 11,
+                cursor: "pointer", fontSize: 11, color: "#fff",
               }}
             >
-              ✏️
+              <IconPencil size={11} />
             </div>
             <input ref={avatarInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleAvatarChange} />
           </div>
@@ -575,7 +588,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
                 borderLeft: view === key ? "3px solid #1a5f8a" : "3px solid transparent",
               }}
             >
-              <span>{icon}</span> {label}
+              <span style={{ display: "flex" }}>{icon}</span> {label}
             </button>
           ))}
           <a
@@ -588,7 +601,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
               borderLeft: "3px solid transparent",
             }}
           >
-            <span>🔍</span> Descubrir eventos
+            <span style={{ display: "flex" }}><IconSearch /></span> Descubrir eventos
           </a>
           <button
             type="button"
@@ -604,7 +617,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
               marginTop: 8,
             }}
           >
-            <span>＋</span> Crear evento
+            <span style={{ display: "flex" }}><IconPlus /></span> Crear evento
           </button>
         </nav>
 
@@ -1663,7 +1676,7 @@ function Detail({ ev, onEdit, onValidate, onCrm, onShare, publicUrl: pubUrl }) {
           <button type="button" className="soft-btn soft-btn-primary" onClick={onCrm}>CRM inscritos</button>
           <button type="button" className="soft-btn soft-btn-secondary" onClick={onShare}>Compartir enlace</button>
           <button type="button" className="soft-btn soft-btn-secondary" onClick={onEdit}>Editar formulario</button>
-          <button type="button" className="soft-btn soft-btn-secondary" onClick={onValidate}>Check-in QR</button>
+          <button type="button" className="soft-btn soft-btn-secondary" onClick={onValidate} style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>Verificar <IconScan size={16} /></button>
         </div>
         </div>
       </div>
@@ -1782,47 +1795,35 @@ function Validate({ event, scopeLabel, code, setCode, result, onCheck, onScan, o
   const [mode, setMode] = useState("camera");
   const cameraActive = mode === "camera" && !result;
 
+  const AZUL_TXT = "#c8dff0";
+  const tabStyle = (active) => ({
+    flex: 1, padding: 11, fontWeight: 800, fontSize: 13,
+    border: `1px solid rgba(107,159,212,${active ? 0.5 : 0.3})`, borderRadius: 8,
+    background: active ? "rgba(107,159,212,0.22)" : "rgba(255,255,255,0.05)",
+    color: AZUL_TXT, cursor: "pointer",
+    display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
+  });
+
+  // Conteo de escaneados / inscritos y aforo
+  const regs = event?.registrations || [];
+  const total = regs.length;
+  const scanned = regs.filter((r) => r.used || r.checkedInAt).length;
+  const capMax = event ? getCapacityMax(event.capacity, event) : null;
+  const aforoPct = capMax != null && capMax > 0 ? Math.min(100, Math.round((total / capMax) * 100)) : 0;
+
   return (
-    <div style={{ border: `2px solid ${NEGRO_PURO}`, borderRadius: 16, padding: 24, background: BLANCO_CONTRASTE }}>
-      <h2 style={{ fontSize: 22, fontWeight: 900, marginBottom: 8, color: NEGRO_PURO }}>Check-in con QR</h2>
-      <p style={{ fontSize: 13, color: NEGRO_MUTED_70, marginBottom: 20, fontWeight: 600 }}>{scopeLabel}</p>
+    <div style={{ border: "1px solid rgba(107,159,212,0.3)", borderRadius: 16, padding: 24, background: "rgba(107,159,212,0.10)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}>
+      <h2 style={{ fontSize: 22, fontWeight: 900, marginBottom: 8, color: AZUL_TXT, textAlign: "center" }}>Check-in con QR</h2>
+      <p style={{ fontSize: 13, color: "rgba(200,223,240,0.6)", marginBottom: 20, fontWeight: 600, textAlign: "center" }}>{scopeLabel}</p>
 
       {!result && (
         <>
           <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
-            <button
-              type="button"
-              onClick={() => setMode("camera")}
-              style={{
-                flex: 1,
-                padding: 10,
-                fontWeight: 800,
-                fontSize: 13,
-                border: `2px solid ${NEGRO_PURO}`,
-                borderRadius: 8,
-                background: mode === "camera" ? NEGRO_PURO : BLANCO_CONTRASTE,
-                color: mode === "camera" ? BLANCO_CONTRASTE : NEGRO_PURO,
-                cursor: "pointer",
-              }}
-            >
-              📷 Cámara
+            <button type="button" onClick={() => setMode("camera")} style={tabStyle(mode === "camera")}>
+              <IconCamera size={16} /> Cámara
             </button>
-            <button
-              type="button"
-              onClick={() => setMode("manual")}
-              style={{
-                flex: 1,
-                padding: 10,
-                fontWeight: 800,
-                fontSize: 13,
-                border: `2px solid ${NEGRO_PURO}`,
-                borderRadius: 8,
-                background: mode === "manual" ? NEGRO_PURO : BLANCO_CONTRASTE,
-                color: mode === "manual" ? BLANCO_CONTRASTE : NEGRO_PURO,
-                cursor: "pointer",
-              }}
-            >
-              ⌨️ Manual
+            <button type="button" onClick={() => setMode("manual")} style={tabStyle(mode === "manual")}>
+              <IconKeyboard size={16} /> Manual
             </button>
           </div>
 
@@ -1837,8 +1838,8 @@ function Validate({ event, scopeLabel, code, setCode, result, onCheck, onScan, o
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
               />
-              <button type="button" onClick={onCheck} style={{ background: NEGRO_PURO, color: BLANCO_CONTRASTE, border: "none", padding: 14, borderRadius: 8, fontWeight: 800, cursor: "pointer" }}>
-                Verificar boleto
+              <button type="button" onClick={onCheck} style={{ background: "linear-gradient(135deg, #0d3b66, #1a5f8a)", color: "#fff", border: "none", padding: 14, borderRadius: 8, fontWeight: 800, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                Verificar boleto <IconScan size={16} />
               </button>
             </div>
           )}
@@ -1899,6 +1900,23 @@ function Validate({ event, scopeLabel, code, setCode, result, onCheck, onScan, o
           <button type="button" onClick={onReset} style={{ background: NEGRO_PURO, color: BLANCO_CONTRASTE, padding: "12px 24px", border: "none", borderRadius: 8, cursor: "pointer", fontWeight: 700, width: "100%" }}>
             Escanear siguiente entrada
           </button>
+        </div>
+      )}
+
+      {/* ── Conteo de escaneados y aforo ── */}
+      {event && (
+        <div style={{ marginTop: 22, paddingTop: 18, borderTop: "1px solid rgba(107,159,212,0.2)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(200,223,240,0.7)" }}>Escaneados</span>
+            <span style={{ fontSize: 16, fontWeight: 900, color: "#c8dff0" }}>{scanned} / {total}</span>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 12, marginBottom: 7 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(200,223,240,0.7)" }}>Aforo</span>
+            <span style={{ fontSize: 14, fontWeight: 800, color: "#c8dff0" }}>{capMax != null ? `${total} / ${capMax}` : `${total} inscritos`}</span>
+          </div>
+          <div style={{ height: 10, borderRadius: 6, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+            <div style={{ height: "100%", width: `${aforoPct}%`, background: "linear-gradient(90deg, #1a5f8a, #6b9fd4)", borderRadius: 6, transition: "width 0.3s" }} />
+          </div>
         </div>
       )}
     </div>
