@@ -28,7 +28,7 @@ function fmtDateTime(dateStr, timeStr) {
 // ── General address search (Photon / OpenStreetMap) ─────────────────────────
 async function searchAddresses(query) {
   const q = query.trim();
-  if (q.length < 3) return [];
+  if (q.length < 2) return [];
   try {
     const params = new URLSearchParams({ q, limit: "8" });
     const res = await fetch(`https://photon.komoot.io/api/?${params}`);
@@ -47,70 +47,66 @@ async function searchAddresses(query) {
   } catch { return []; }
 }
 
-// ── Address search input ─────────────────────────────────────────────────────
-function AddressSearch({ value, onChange }) {
-  const [query,   setQuery]   = useState(value || "");
+// ── Full-screen location search modal ────────────────────────────────────────
+function LocationModal({ onSelect, onClose }) {
+  const [query,   setQuery]   = useState("");
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [open,    setOpen]    = useState(false);
-  const debounce  = useRef(null);
-  const wrapRef   = useRef(null);
+  const inputRef = useRef(null);
+  const debounce = useRef(null);
 
-  useEffect(() => {
-    function onDown(e) {
-      if (!wrapRef.current?.contains(e.target)) setOpen(false);
-    }
-    document.addEventListener("mousedown", onDown);
-    return () => document.removeEventListener("mousedown", onDown);
-  }, []);
+  useEffect(() => { setTimeout(() => inputRef.current?.focus(), 80); }, []);
 
   function handleChange(e) {
     const q = e.target.value;
     setQuery(q);
-    setOpen(true);
     clearTimeout(debounce.current);
-    if (q.trim().length < 3) { setResults([]); return; }
+    if (q.trim().length < 2) { setResults([]); setLoading(false); return; }
     setLoading(true);
     debounce.current = setTimeout(async () => {
       const res = await searchAddresses(q);
       setResults(res);
       setLoading(false);
-    }, 380);
-  }
-
-  function select(item) {
-    setQuery(item.label);
-    setResults([]);
-    setOpen(false);
-    onChange({ address: item.label, lat: item.lat, lng: item.lng });
+    }, 300);
   }
 
   return (
-    <div ref={wrapRef} style={{ position: "relative" }}>
-      <input
-        type="text"
-        value={query}
-        onChange={handleChange}
-        onFocus={() => results.length && setOpen(true)}
-        placeholder="Buscar dirección o lugar…"
-        style={{ width: "100%", boxSizing: "border-box", background: "rgba(255,255,255,0.06)", border: BORDER, borderRadius: 14, padding: "13px 16px", fontSize: 15, color: TEXT, outline: "none", caretColor: ACCENT, fontFamily: "inherit" }}
-      />
-      {loading && (
-        <span style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", fontSize: 12, color: SUB }}>…</span>
-      )}
-      {open && results.length > 0 && (
-        <div style={{ position: "absolute", left: 0, right: 0, top: "calc(100% + 6px)", zIndex: 50, background: "rgba(22,25,44,0.98)", border: BORDER, borderRadius: 14, overflow: "hidden", boxShadow: "0 12px 40px rgba(0,0,0,0.6)" }}>
-          {results.map(item => (
-            <button key={item.id} type="button" onMouseDown={() => select(item)}
-              style={{ width: "100%", background: "none", border: "none", padding: "12px 16px", textAlign: "left", cursor: "pointer", color: TEXT, fontSize: 14, borderBottom: "1px solid rgba(255,255,255,0.06)", display: "block" }}
-              onMouseEnter={e => e.currentTarget.style.background = "rgba(107,159,212,0.15)"}
-              onMouseLeave={e => e.currentTarget.style.background = "none"}
-            >
-              {item.label}
-            </button>
-          ))}
+    <div style={{ position: "fixed", inset: 0, zIndex: 500, background: "#131628", display: "flex", flexDirection: "column" }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.1)", flexShrink: 0 }}>
+        <button type="button" onClick={onClose} style={{ background: "none", border: "none", color: "#6b9fd4", fontSize: 15, cursor: "pointer", padding: "4px 8px 4px 0", fontWeight: 600, whiteSpace: "nowrap" }}>
+          ← Cancelar
+        </button>
+        <div style={{ flex: 1, position: "relative" }}>
+          <input
+            ref={inputRef}
+            type="text" value={query} onChange={handleChange}
+            placeholder="Buscar dirección o lugar…"
+            style={{ width: "100%", boxSizing: "border-box", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 12, padding: "11px 40px 11px 14px", fontSize: 16, color: "#e8eaf0", outline: "none", caretColor: "#6b9fd4", fontFamily: "inherit" }}
+          />
+          {loading && <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", fontSize: 13, color: "rgba(232,234,240,0.4)" }}>…</span>}
         </div>
-      )}
+      </div>
+
+      {/* Suggestions */}
+      <div style={{ flex: 1, overflowY: "auto" }}>
+        {!loading && query.trim().length >= 2 && results.length === 0 && (
+          <p style={{ padding: "20px 20px", color: "rgba(232,234,240,0.4)", fontSize: 14, margin: 0 }}>Sin resultados. Intenta con otro término.</p>
+        )}
+        {results.map((item, idx) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => onSelect(item)}
+            style={{ width: "100%", background: "none", border: "none", borderBottom: "1px solid rgba(255,255,255,0.06)", padding: "16px 20px", textAlign: "left", cursor: "pointer", display: "flex", alignItems: "flex-start", gap: 12 }}
+            onMouseEnter={e => e.currentTarget.style.background = "rgba(107,159,212,0.1)"}
+            onMouseLeave={e => e.currentTarget.style.background = "none"}
+          >
+            <svg style={{ flexShrink: 0, marginTop: 1 }} width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="rgba(107,159,212,0.7)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            <span style={{ fontSize: 15, color: "#e8eaf0", lineHeight: 1.4 }}>{item.label}</span>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -240,7 +236,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
 
   const [startPicker, setStartPicker] = useState(false);
   const [endPicker,   setEndPicker]   = useState(false);
-  const [showLoc,     setShowLoc]     = useState(false);
+  const [showLocModal,setShowLocModal]= useState(false);
   const [showDesc,    setShowDesc]    = useState(false);
   const [showPrice,   setShowPrice]   = useState(false);
   const [showCap,     setShowCap]     = useState(false);
@@ -389,30 +385,19 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
 
           {/* ── Location ── */}
           <div style={cardStyle}>
-            <button type="button" onClick={() => setShowLoc(v => !v)}
-              style={{ width: "100%", background: "none", border: "none", padding: 0, cursor: "pointer", display: "block", ...(showLoc ? rowDivider : {}), textAlign: "left" }}>
+            <button type="button" onClick={() => setShowLocModal(true)}
+              style={{ width: "100%", background: "none", border: "none", padding: 0, cursor: "pointer", display: "block", textAlign: "left" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "15px 18px" }}>
                 <span style={{ color: SUB }}><I.MapPin /></span>
-                <span style={{ flex: 1, fontSize: 15, color: locLabel ? TEXT : SUB, textAlign: "left" }}>
+                <span style={{ flex: 1, fontSize: 15, color: locLabel ? TEXT : SUB, textAlign: "left", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {locLabel || "Elegir ubicación"}
                 </span>
-                {locLabel && (
-                  <span onClick={e => { e.stopPropagation(); setDraft(p => ({ ...p, address: "", lat: null, lng: null })); setShowLoc(false); }} style={{ color: SUB, cursor: "pointer" }}><I.X /></span>
-                )}
-                {!locLabel && <span style={{ color: SUB }}><I.ChevronRight /></span>}
+                {locLabel
+                  ? <span onClick={e => { e.stopPropagation(); setDraft(p => ({ ...p, address: "", lat: null, lng: null })); }} style={{ color: SUB, cursor: "pointer", flexShrink: 0 }}><I.X /></span>
+                  : <span style={{ color: SUB, flexShrink: 0 }}><I.ChevronRight /></span>
+                }
               </div>
             </button>
-            {showLoc && (
-              <div style={{ padding: "12px 16px 16px" }}>
-                <AddressSearch
-                  value={draft.address || ""}
-                  onChange={({ address, lat, lng }) => {
-                    setDraft(p => ({ ...p, address, lat, lng }));
-                    setShowLoc(false);
-                  }}
-                />
-              </div>
-            )}
           </div>
 
           {/* ── Description ── */}
@@ -567,6 +552,17 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
           </button>
         </div>
       </div>
+
+      {/* ── Location modal (full-screen) ── */}
+      {showLocModal && (
+        <LocationModal
+          onSelect={item => {
+            setDraft(p => ({ ...p, address: item.label, lat: item.lat, lng: item.lng }));
+            setShowLocModal(false);
+          }}
+          onClose={() => setShowLocModal(false)}
+        />
+      )}
     </>
   );
 }

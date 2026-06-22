@@ -295,21 +295,23 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
     setDraft({ ...event, fields: [...(event.fields || [])], registrations: [...(event.registrations || [])] });
     setEvId(event.id);
     if (event.isDraft) localStorage.removeItem("ef_builder_draft");
-    setView("builder");
+    setView("create_wizard"); // passes through CreateEventForm for consistent UX
   };
 
   const generatePreliminaryForm = (finalDraft) => {
+    // If editing an existing event (already has fields), go straight to builder
+    if (finalDraft.fields?.length > 0) {
+      setDraft(finalDraft);
+      setView("builder");
+      return;
+    }
+    // New event: generate base registration fields
     const baseFields = [
       { id: "F" + uid(), type: "text", label: "Nombre completo del asistente", description: "Escribe tus nombres tal como aparecen en tu documento", placeholder: "", required: true, options: [] },
       { id: "F" + uid(), type: "email", label: "Correo electrónico", description: "Usa un correo al que tengas acceso; lo verás en tu boleto", placeholder: "", required: true, options: [] }
     ];
-
-    if (finalDraft.capacity === "100-300" || finalDraft.capacity === "300+") {
-      baseFields.push({ id: "F" + uid(), type: "phone", label: "Teléfono de Contacto", description: "", placeholder: "", required: true, options: [] });
-    }
-
     setDraft({ ...finalDraft, fields: baseFields });
-    setView("builder"); 
+    setView("builder");
   };
 
   const addField = (type) => {
