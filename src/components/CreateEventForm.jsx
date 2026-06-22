@@ -243,11 +243,13 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
   const [showCap,     setShowCap]     = useState(false);
   const [visSheet,    setVisSheet]    = useState(false);
   const [imgBusy,     setImgBusy]     = useState(false);
+  const [isDragging,  setIsDragging]  = useState(false);
   const [err,         setErr]         = useState("");
 
-  const imgRef = useRef(null);
-  const capRef = useRef(null);
+  const imgRef   = useRef(null);
+  const capRef   = useRef(null);
   const priceRef = useRef(null);
+  const dragRef  = useRef({ startX: 0, startY: 0, startPosX: 50, startPosY: 50 });
 
   const up = (k, v) => setDraft(p => ({ ...p, [k]: v }));
 
@@ -319,9 +321,38 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
 
         <div className="ce-scroll">
           {/* ── Cover image ── */}
-          <div style={{ position: "relative", margin: "20px 0 12px", borderRadius: 20, overflow: "hidden", aspectRatio: "16/10", background: draft.headerImage ? "none" : "rgba(255,255,255,0.05)", border: BORDER }}>
+          <div
+            style={{ position: "relative", margin: "20px 0 12px", borderRadius: 20, overflow: "hidden", aspectRatio: "16/10", background: draft.headerImage ? "none" : "rgba(255,255,255,0.05)", border: BORDER, cursor: draft.headerImage ? (isDragging ? "grabbing" : "grab") : "default", touchAction: draft.headerImage ? "none" : "auto", userSelect: "none" }}
+            onPointerDown={e => {
+              if (!draft.headerImage || e.target.closest("button, label, input")) return;
+              e.currentTarget.setPointerCapture(e.pointerId);
+              dragRef.current = { startX: e.clientX, startY: e.clientY, startPosX: draft.imagePos?.x ?? 50, startPosY: draft.imagePos?.y ?? 50 };
+              setIsDragging(true);
+            }}
+            onPointerMove={e => {
+              if (!isDragging) return;
+              const dx = e.clientX - dragRef.current.startX;
+              const dy = e.clientY - dragRef.current.startY;
+              up("imagePos", {
+                x: Math.max(0, Math.min(100, dragRef.current.startPosX - dx * 0.13)),
+                y: Math.max(0, Math.min(100, dragRef.current.startPosY - dy * 0.13)),
+              });
+            }}
+            onPointerUp={() => setIsDragging(false)}
+            onPointerCancel={() => setIsDragging(false)}
+          >
             {draft.headerImage
-              ? <img src={draft.headerImage} alt="portada" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+              ? <>
+                  <img
+                    src={draft.headerImage} alt="portada" draggable={false}
+                    style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: `${draft.imagePos?.x ?? 50}% ${draft.imagePos?.y ?? 50}%`, display: "block", pointerEvents: "none" }}
+                  />
+                  {!isDragging && (
+                    <div style={{ position: "absolute", bottom: 58, left: "50%", transform: "translateX(-50%)", background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)", borderRadius: 20, padding: "5px 13px", fontSize: 11, color: "rgba(255,255,255,0.75)", pointerEvents: "none", whiteSpace: "nowrap" }}>
+                      ✥ Arrastra para reencuadrar
+                    </div>
+                  )}
+                </>
               : <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, color: SUB }}>
                   <I.Image /><span style={{ fontSize: 13 }}>Portada del evento</span>
                 </div>
@@ -332,7 +363,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
               <input type="file" accept="image/*" hidden onChange={handleImage} ref={imgRef} />
             </label>
             {draft.headerImage && (
-              <button type="button" onClick={() => up("headerImage", "")} style={{ position: "absolute", top: 10, right: 10, background: "rgba(0,0,0,0.55)", border: "none", borderRadius: 20, padding: "4px 10px", color: "#fff", fontSize: 11, cursor: "pointer" }}>Quitar</button>
+              <button type="button" onClick={() => { up("headerImage", ""); up("imagePos", { x: 50, y: 50 }); }} style={{ position: "absolute", top: 10, right: 10, background: "rgba(0,0,0,0.55)", border: "none", borderRadius: 20, padding: "4px 10px", color: "#fff", fontSize: 11, cursor: "pointer" }}>Quitar</button>
             )}
           </div>
 

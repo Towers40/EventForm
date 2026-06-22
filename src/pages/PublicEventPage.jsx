@@ -26,8 +26,27 @@ function fmtTime(t) {
   return `${h12}:${String(mi).padStart(2, "0")} ${suffix}`;
 }
 
-function mapsUrl(lat, lng, label) {
-  return `https://maps.google.com/?q=${lat},${lng}&query=${encodeURIComponent(label || "")}`;
+function DirectionButtons({ lat, lng }) {
+  const ll = `${lat},${lng}`;
+  const links = [
+    { label: "Google Maps", href: `https://maps.google.com/?daddr=${ll}` },
+    { label: "Apple Maps",  href: `https://maps.apple.com/?daddr=${ll}` },
+    { label: "Waze",        href: `https://waze.com/ul?ll=${ll}&navigate=yes` },
+  ];
+  return (
+    <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
+      {links.map(l => (
+        <a key={l.label} href={l.href} target="_blank" rel="noopener noreferrer" style={{
+          display: "inline-flex", alignItems: "center", gap: 5,
+          padding: "7px 14px", borderRadius: 20,
+          background: "rgba(107,159,212,0.12)", border: "1px solid rgba(107,159,212,0.28)",
+          fontSize: 12, fontWeight: 600, color: "#6b9fd4", textDecoration: "none", whiteSpace: "nowrap",
+        }}>
+          {l.label} ↗
+        </a>
+      ))}
+    </div>
+  );
 }
 
 // ── Calendar date widget ──────────────────────────────────────────────────────
@@ -168,7 +187,7 @@ export default function PublicEventPage() {
         {/* ── Cover image ── */}
         <div style={{ width: "100%", aspectRatio: "1/1", overflow: "hidden", background: "#1a1c1e" }}>
           {event.headerImage
-            ? <img src={event.headerImage} alt={event.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+            ? <img src={event.headerImage} alt={event.title} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: `${event.imagePos?.x ?? 50}% ${event.imagePos?.y ?? 50}%`, display: "block" }} />
             : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg,#1a2540,#0d1520)", fontSize: 64 }}>🎉</div>
           }
         </div>
@@ -205,32 +224,18 @@ export default function PublicEventPage() {
 
           {/* Location row */}
           {locName && (
-            hasCoords
-              ? (
-                <a href={mapsUrl(event.lat, event.lng, locName)} target="_blank" rel="noopener noreferrer"
-                  style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 28, textDecoration: "none", cursor: "pointer" }}>
-                  <div style={{ width: 52, height: 52, borderRadius: 12, flexShrink: 0, background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#6b9fd4" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ margin: 0, fontSize: 15, fontWeight: 600, color: TEXT, display: "flex", alignItems: "center", gap: 6 }}>
-                      {locName}
-                      <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="#6b9fd4" strokeWidth={2.5} strokeLinecap="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
-                    </p>
-                    {event.city && event.address && event.city !== locName && (
-                      <p style={{ margin: "2px 0 0", fontSize: 13, color: SUB }}>{event.city}</p>
-                    )}
-                  </div>
-                </a>
-              )
-              : (
-                <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 28 }}>
-                  <div style={{ width: 52, height: 52, borderRadius: 12, flexShrink: 0, background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#6b9fd4" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                  </div>
-                  <p style={{ margin: 0, fontSize: 15, fontWeight: 600, color: TEXT }}>{locName}</p>
-                </div>
-              )
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 14, marginBottom: 28 }}>
+              <div style={{ width: 52, height: 52, borderRadius: 12, flexShrink: 0, background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#6b9fd4" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ margin: 0, fontSize: 15, fontWeight: 600, color: TEXT }}>{locName}</p>
+                {event.city && event.address && event.city !== locName && (
+                  <p style={{ margin: "2px 0 0", fontSize: 13, color: SUB }}>{event.city}</p>
+                )}
+                {hasCoords && <DirectionButtons lat={event.lat} lng={event.lng} />}
+              </div>
+            </div>
           )}
 
           {/* Registration card */}
@@ -265,18 +270,9 @@ export default function PublicEventPage() {
           {locName && (
             <div style={{ marginBottom: 28, borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 24 }}>
               <p style={{ margin: "0 0 10px", fontSize: 13, fontWeight: 600, color: SUB, textTransform: "uppercase", letterSpacing: "0.08em" }}>Ubicación</p>
-              {hasCoords ? (
-                <a href={mapsUrl(event.lat, event.lng, locName)} target="_blank" rel="noopener noreferrer" style={{ color: TEXT, textDecoration: "none" }}>
-                  <p style={{ margin: 0, fontSize: 17, fontWeight: 700, color: TEXT }}>{locName}</p>
-                  {event.locationInstructions && <p style={{ margin: "6px 0 0", fontSize: 13, color: SUB, lineHeight: 1.5 }}>{event.locationInstructions}</p>}
-                  <p style={{ margin: "8px 0 0", fontSize: 13, color: "#6b9fd4" }}>Ver en Google Maps ↗</p>
-                </a>
-              ) : (
-                <>
-                  <p style={{ margin: 0, fontSize: 17, fontWeight: 700, color: TEXT }}>{locName}</p>
-                  {event.locationInstructions && <p style={{ margin: "6px 0 0", fontSize: 13, color: SUB, lineHeight: 1.5 }}>{event.locationInstructions}</p>}
-                </>
-              )}
+              <p style={{ margin: 0, fontSize: 17, fontWeight: 700, color: TEXT }}>{locName}</p>
+              {event.locationInstructions && <p style={{ margin: "6px 0 0", fontSize: 13, color: SUB, lineHeight: 1.5 }}>{event.locationInstructions}</p>}
+              {hasCoords && <DirectionButtons lat={event.lat} lng={event.lng} />}
             </div>
           )}
 
