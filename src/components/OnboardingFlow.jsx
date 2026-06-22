@@ -536,24 +536,24 @@ export default function OnboardingFlow({ onDraftReady }) {
               Configura en minutos, inscribe asistentes y gestiona el acceso con QR el día del evento.
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 12, width: "100%", maxWidth: 340, margin: "0 auto" }}>
-              <button type="button" onClick={() => { setSkipWizard(true); go(10); }} className="soft-btn soft-btn-primary" style={{ fontSize: 16, padding: "16px 24px", borderRadius: 12, width: "100%" }}>
-                Crear un evento
+              <button type="button" onClick={() => { setSkipWizard(true); go(10); }} className="soft-btn soft-btn-primary wbtn" style={{ fontSize: 16, padding: "16px 24px", borderRadius: 12, width: "100%" }}>
+                <span className="wbtn-text">Crear un evento</span>
               </button>
               <button
                 type="button"
                 onClick={() => nav("/login")}
-                style={{ width: "100%", padding: "16px 24px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 12, color: "#fff", fontWeight: 700, fontSize: 16, cursor: "pointer" }}
+                className="wbtn"
+                style={{ width: "100%", padding: "16px 24px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 12, fontWeight: 700, fontSize: 16, cursor: "pointer" }}
               >
-                Iniciar sesión
+                <span className="wbtn-text">Iniciar sesión</span>
               </button>
               <button
                 type="button"
                 onClick={() => nav("/discover")}
+                className="wbtn"
                 style={{ width: "100%", padding: "16px 24px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 12, cursor: "pointer", fontWeight: 700, fontSize: 16 }}
               >
-                <span style={{ background: "linear-gradient(90deg, #5b86e5, #36d1dc, #56ab2f, #e0ffe0, #ffffff)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
-                  Descubrir eventos
-                </span>
+                <span className="wbtn-text-multi">Descubrir eventos</span>
               </button>
             </div>
           </div>
