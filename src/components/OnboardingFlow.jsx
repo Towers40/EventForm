@@ -536,14 +536,24 @@ export default function OnboardingFlow({ onDraftReady }) {
               Configura en minutos, inscribe asistentes y gestiona el acceso con QR el día del evento.
             </p>
             <button type="button" onClick={() => { setSkipWizard(true); go(10); }} className="soft-btn soft-btn-primary" style={{ fontSize: 16, padding: "16px 48px", borderRadius: 12 }}>
-              Empezar →
+              Crear un evento
             </button>
-            <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 12, alignItems: "center" }}>
-              <button type="button" onClick={() => nav("/login")} style={{ background: "none", border: "none", color: "#8fa3b1", fontWeight: 700, cursor: "pointer", fontSize: 14, textDecoration: "underline", textUnderlineOffset: 3 }}>
-                Ya tengo cuenta → Iniciar sesión
+            <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 12, alignItems: "center", width: "100%", maxWidth: 320, margin: "20px auto 0" }}>
+              <button
+                type="button"
+                onClick={() => nav("/login")}
+                style={{ width: "100%", padding: "14px 24px", background: "rgba(107,159,212,0.18)", border: "1px solid rgba(107,159,212,0.4)", borderRadius: 12, color: "#c8dff5", fontWeight: 700, fontSize: 15, cursor: "pointer" }}
+              >
+                Iniciar sesión
               </button>
-              <button type="button" onClick={() => nav("/discover")} style={{ background: "none", border: "none", color: "#6b9fd4", fontWeight: 700, cursor: "pointer", fontSize: 14, textDecoration: "underline", textUnderlineOffset: 3 }}>
-                Descubrir eventos →
+              <button
+                type="button"
+                onClick={() => nav("/discover")}
+                style={{ width: "100%", padding: "14px 24px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 12, cursor: "pointer", fontWeight: 700, fontSize: 15 }}
+              >
+                <span style={{ background: "linear-gradient(90deg, #5b86e5, #36d1dc, #56ab2f, #e0ffe0, #ffffff)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+                  Descubrir eventos
+                </span>
               </button>
             </div>
           </div>
