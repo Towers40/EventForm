@@ -314,6 +314,7 @@ export default function OnboardingFlow({ onDraftReady }) {
     eventDescription: "",
   });
 
+  const [skipWizard, setSkipWizard] = useState(false);
   const [acName, setAcName] = useState("");
   const [acEmail, setAcEmail] = useState("");
   const [acPassword, setAcPassword] = useState("");
@@ -420,8 +421,9 @@ export default function OnboardingFlow({ onDraftReady }) {
     setBusy(true);
 
     // Guardar draft en localStorage para recuperarlo después de verificar
-    const date = draft.startDate || draft.date;
-    const finalDraft = { ...draft, date };
+    const finalDraft = skipWizard
+      ? { _openCreate: true }
+      : { ...draft, date: draft.startDate || draft.date };
     localStorage.setItem("ef_pending_draft", JSON.stringify(finalDraft));
 
     try {
@@ -517,7 +519,7 @@ export default function OnboardingFlow({ onDraftReady }) {
             <p className="tf-hint" style={{ maxWidth: 420, margin: "0 auto 44px", fontSize: 16 }}>
               Configura en minutos, inscribe asistentes y gestiona el acceso con QR el día del evento.
             </p>
-            <button type="button" onClick={() => go(1)} className="soft-btn soft-btn-primary" style={{ fontSize: 16, padding: "16px 48px", borderRadius: 12 }}>
+            <button type="button" onClick={() => { setSkipWizard(true); go(7); }} className="soft-btn soft-btn-primary" style={{ fontSize: 16, padding: "16px 48px", borderRadius: 12 }}>
               Empezar →
             </button>
             <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 12, alignItems: "center" }}>

@@ -129,15 +129,26 @@ const CAPACITY_OPTIONS = [
 export default function HostApp({ initialDraft = null, onDraftConsumed }) {
   const { user, token, logout, isSuperAdmin, apiEnabled: apiOn } = useAuth();
 
+  const _pendingSaved = localStorage.getItem("ef_pending_draft");
+  const _pendingParsed = _pendingSaved ? (() => { try { return JSON.parse(_pendingSaved); } catch { return null; } })() : null;
+  const _isOpenCreate = Boolean(initialDraft?._openCreate || _pendingParsed?._openCreate);
+
   const [draft, setDraft] = useState(() => {
+    if (_isOpenCreate) return {
+      id: "E" + uid(), title: "", eventType: "", eventTypeCustom: "", slug: "",
+      date: "", startDate: "", startTime: "", endDate: "", endTime: "",
+      city: "", location: "", address: "", locationInstructions: "",
+      lat: null, lng: null, capacity: "", capacityCustom: "",
+      headerImage: "", fields: [], registrations: [],
+      eventDescription: "", requireApproval: false, priceType: "free", price: "", visibility: "public",
+    };
     if (initialDraft) return initialDraft;
-    const saved = localStorage.getItem("ef_pending_draft");
-    if (saved) { try { return JSON.parse(saved); } catch {} }
+    if (_pendingParsed) return _pendingParsed;
     return null;
   });
 
-  const _hasDraft = Boolean(initialDraft || localStorage.getItem("ef_pending_draft"));
-  const [view, setView] = useState(_hasDraft ? "builder" : "inicio");
+  const _hasDraft = !_isOpenCreate && Boolean(initialDraft || _pendingSaved);
+  const [view, setView] = useState(_isOpenCreate ? "create_wizard" : _hasDraft ? "builder" : "inicio");
   const [events, setEvents] = useState(() => (apiOn ? [] : loadEvents()));
   const [shareEv, setShareEv] = useState(null);
   const [evId, setEvId] = useState(null);
