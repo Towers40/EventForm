@@ -649,7 +649,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
 
       <main className="app-main">
         {view === "inicio" && (
-          <InicioView events={events} onNew={startNew} />
+          <InicioView events={events} onNew={startNew} onGoTo={(v) => go(v)} />
         )}
         {view === "mis_eventos" && (
           <MisEventosView

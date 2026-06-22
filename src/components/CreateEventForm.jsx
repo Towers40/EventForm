@@ -439,15 +439,8 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
 
             {/* Price */}
             <button type="button"
-              onClick={() => {
-                if (draft.priceType !== "paid") {
-                  up("priceType", "paid");
-                  setShowPrice(true);
-                } else {
-                  setShowPrice(v => !v);
-                }
-              }}
-              style={{ width: "100%", background: "none", border: "none", padding: 0, cursor: "pointer", display: "block", ...(showPrice ? rowDivider : {}), textAlign: "left" }}>
+              onClick={() => { if (draft.priceType !== "paid") up("priceType", "paid"); setShowPrice(true); }}
+              style={{ width: "100%", background: "none", border: "none", padding: 0, cursor: "pointer", display: "block", textAlign: "left" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "15px 18px" }}>
                 <span style={{ color: SUB }}><I.Dollar /></span>
                 <span style={{ flex: 1, fontSize: 15, color: TEXT, textAlign: "left" }}>Precio</span>
@@ -456,26 +449,6 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
                 </span>
               </div>
             </button>
-
-            {showPrice && (
-              <div style={{ padding: "12px 16px 16px" }}>
-                <p style={{ fontSize: 12, color: SUB, margin: "0 0 8px" }}>Ingresa valor (COP)</p>
-                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <input
-                    ref={priceRef}
-                    type="number" inputMode="numeric" placeholder="Ej. 50000"
-                    value={draft.price || ""}
-                    onChange={e => up("price", e.target.value)}
-                    style={{ flex: 1, background: "rgba(255,255,255,0.06)", border: BORDER, borderRadius: 12, padding: "12px 14px", fontSize: 16, color: TEXT, outline: "none", caretColor: ACCENT, fontFamily: "inherit" }}
-                  />
-                  <button type="button"
-                    onClick={() => { up("priceType", "free"); up("price", ""); setShowPrice(false); }}
-                    style={{ background: "rgba(255,255,255,0.08)", border: BORDER, borderRadius: 12, padding: "12px 14px", color: SUB, fontSize: 13, cursor: "pointer", whiteSpace: "nowrap" }}>
-                    Gratis
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* ── Opciones ── */}
@@ -503,8 +476,8 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
             )}
 
             {/* Capacity */}
-            <button type="button" onClick={() => setShowCap(v => !v)}
-              style={{ width: "100%", background: "none", border: "none", padding: 0, cursor: "pointer", display: "block", ...(showCap ? rowDivider : {}), textAlign: "left" }}>
+            <button type="button" onClick={() => setShowCap(true)}
+              style={{ width: "100%", background: "none", border: "none", padding: 0, cursor: "pointer", display: "block", textAlign: "left" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "15px 18px" }}>
                 <span style={{ color: SUB }}><I.Capacity /></span>
                 <span style={{ flex: 1, fontSize: 15, color: TEXT, textAlign: "left" }}>Capacidad</span>
@@ -513,30 +486,6 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
                 </span>
               </div>
             </button>
-            {showCap && (
-              <div style={{ padding: "12px 16px 16px" }}>
-                <p style={{ fontSize: 12, color: SUB, margin: "0 0 8px" }}>Número de asistentes (0 = ilimitada)</p>
-                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <input
-                    ref={capRef}
-                    type="number" inputMode="numeric" min="0" max="1000" placeholder="Ilimitada"
-                    value={draft.capacityNum || ""}
-                    onChange={e => {
-                      const v = e.target.value;
-                      if (v === "" || (Number(v) >= 0 && Number(v) <= 1000)) up("capacityNum", v);
-                    }}
-                    style={{ flex: 1, background: "rgba(255,255,255,0.06)", border: BORDER, borderRadius: 12, padding: "12px 14px", fontSize: 16, color: TEXT, outline: "none", caretColor: ACCENT, fontFamily: "inherit" }}
-                  />
-                  {draft.capacityNum && (
-                    <button type="button"
-                      onClick={() => { up("capacityNum", ""); setShowCap(false); }}
-                      style={{ background: "rgba(255,255,255,0.08)", border: BORDER, borderRadius: 12, padding: "12px 14px", color: SUB, fontSize: 13, cursor: "pointer" }}>
-                      <I.X />
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Error */}
@@ -552,6 +501,73 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
           </button>
         </div>
       </div>
+
+      {/* ── Price bottom sheet ── */}
+      {showPrice && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.55)" }} onClick={() => setShowPrice(false)}>
+          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, maxWidth: 540, margin: "0 auto", background: "rgba(18,20,38,0.98)", borderRadius: "24px 24px 0 0", padding: "28px 20px 44px", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", border: "1px solid rgba(255,255,255,0.11)", borderBottom: "none" }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ width: 36, height: 4, background: "rgba(255,255,255,0.18)", borderRadius: 2, margin: "0 auto 24px" }} />
+            <p style={{ fontSize: 17, fontWeight: 700, color: TEXT, margin: "0 0 6px" }}>Precio de entrada</p>
+            <p style={{ fontSize: 13, color: SUB, margin: "0 0 16px" }}>Ingresa el valor en pesos colombianos (COP)</p>
+            <input
+              ref={priceRef}
+              autoFocus
+              type="number" inputMode="numeric" placeholder="Ej. 50000"
+              value={draft.price || ""}
+              onChange={e => up("price", e.target.value)}
+              style={{ width: "100%", boxSizing: "border-box", background: "rgba(255,255,255,0.07)", border: BORDER, borderRadius: 16, padding: "16px 18px", fontSize: 22, color: TEXT, outline: "none", caretColor: ACCENT, fontFamily: "inherit", marginBottom: 16 }}
+            />
+            <div style={{ display: "flex", gap: 10 }}>
+              <button type="button"
+                onClick={() => { up("priceType", "free"); up("price", ""); setShowPrice(false); }}
+                style={{ flex: 1, padding: "14px 0", background: "rgba(255,255,255,0.07)", border: BORDER, borderRadius: 16, color: SUB, fontSize: 14, cursor: "pointer", fontWeight: 600 }}>
+                Gratis
+              </button>
+              <button type="button"
+                onClick={() => setShowPrice(false)}
+                style={{ flex: 2, padding: "14px 0", background: "rgba(107,159,212,0.25)", border: "1px solid rgba(107,159,212,0.4)", borderRadius: 16, color: TEXT, fontSize: 14, cursor: "pointer", fontWeight: 700 }}>
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Capacity bottom sheet ── */}
+      {showCap && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.55)" }} onClick={() => setShowCap(false)}>
+          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, maxWidth: 540, margin: "0 auto", background: "rgba(18,20,38,0.98)", borderRadius: "24px 24px 0 0", padding: "28px 20px 44px", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", border: "1px solid rgba(255,255,255,0.11)", borderBottom: "none" }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ width: 36, height: 4, background: "rgba(255,255,255,0.18)", borderRadius: 2, margin: "0 auto 24px" }} />
+            <p style={{ fontSize: 17, fontWeight: 700, color: TEXT, margin: "0 0 6px" }}>Capacidad del evento</p>
+            <p style={{ fontSize: 13, color: SUB, margin: "0 0 16px" }}>Número máximo de asistentes (0 = ilimitada)</p>
+            <input
+              ref={capRef}
+              autoFocus
+              type="number" inputMode="numeric" min="0" max="1000" placeholder="Ilimitada"
+              value={draft.capacityNum || ""}
+              onChange={e => {
+                const v = e.target.value;
+                if (v === "" || (Number(v) >= 0 && Number(v) <= 1000)) up("capacityNum", v);
+              }}
+              style={{ width: "100%", boxSizing: "border-box", background: "rgba(255,255,255,0.07)", border: BORDER, borderRadius: 16, padding: "16px 18px", fontSize: 22, color: TEXT, outline: "none", caretColor: ACCENT, fontFamily: "inherit", marginBottom: 16 }}
+            />
+            <div style={{ display: "flex", gap: 10 }}>
+              <button type="button"
+                onClick={() => { up("capacityNum", ""); setShowCap(false); }}
+                style={{ flex: 1, padding: "14px 0", background: "rgba(255,255,255,0.07)", border: BORDER, borderRadius: 16, color: SUB, fontSize: 14, cursor: "pointer", fontWeight: 600 }}>
+                Ilimitada
+              </button>
+              <button type="button"
+                onClick={() => setShowCap(false)}
+                style={{ flex: 2, padding: "14px 0", background: "rgba(107,159,212,0.25)", border: "1px solid rgba(107,159,212,0.4)", borderRadius: 16, color: TEXT, fontSize: 14, cursor: "pointer", fontWeight: 700 }}>
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Location modal (full-screen) ── */}
       {showLocModal && (

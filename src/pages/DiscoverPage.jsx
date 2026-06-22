@@ -94,8 +94,9 @@ function EventCard({ ev }) {
       href={`/e/${ev.slug}`}
       style={{
         display: "block", textDecoration: "none",
-        borderRadius: 16, overflow: "hidden",
-        background: "#1a1c1e", border: "1px solid rgba(255,255,255,0.06)",
+        borderRadius: 20, overflow: "hidden",
+        background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.11)",
+        backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
         transition: "transform 0.18s, box-shadow 0.18s",
       }}
       onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 18px 48px rgba(0,0,0,0.55)"; }}
@@ -259,15 +260,15 @@ export default function DiscoverPage() {
   const activeCat = DISCOVER_CATEGORIES.find(c => c.slug === activeCategory);
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0a0a0a", color: "#e8eaf0", fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>
+    <div style={{ minHeight: "100vh", background: "linear-gradient(170deg, #1d2340 0%, #131628 100%)", backgroundAttachment: "fixed", color: "#e8eaf0", fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>
 
       {/* ── Nav ── */}
       <nav style={{
         padding: "0 24px", height: 56,
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        borderBottom: "1px solid rgba(255,255,255,0.06)",
+        borderBottom: "1px solid rgba(255,255,255,0.08)",
         position: "sticky", top: 0, zIndex: 20,
-        background: "rgba(10,10,10,0.88)", backdropFilter: "blur(14px)",
+        background: "rgba(18,20,34,0.82)", backdropFilter: "blur(16px)",
       }}>
         <a href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
           <span style={{ color: "#22c55e", fontSize: 18 }}>●</span>
@@ -276,7 +277,8 @@ export default function DiscoverPage() {
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           <span style={{ fontSize: 13, color: "#6b7280", display: "none" }} className="hide-mobile">¿Organizas eventos?</span>
           <a href="/app" style={{
-            background: "#fff", color: "#0a0a0a",
+            background: "rgba(107,159,212,0.25)", color: "#e8eaf0",
+            border: "1px solid rgba(107,159,212,0.4)",
             borderRadius: 20, padding: "7px 16px",
             fontSize: 13, fontWeight: 700, textDecoration: "none",
           }}>
@@ -304,7 +306,7 @@ export default function DiscoverPage() {
             onChange={e => handleSearch(e.target.value)}
             style={{
               width: "100%", boxSizing: "border-box",
-              background: "#1a1c1e", border: "1px solid rgba(255,255,255,0.1)",
+              background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.11)",
               borderRadius: 28, padding: "14px 20px 14px 50px",
               fontSize: 15, color: "#e8eaf0", outline: "none",
               fontFamily: "inherit",
@@ -373,7 +375,7 @@ export default function DiscoverPage() {
               <p style={{ color: "#8fa3b1", fontSize: 15, marginBottom: 16 }}>{error}</p>
               <button
                 onClick={() => fetchEvents(search, activeCategory)}
-                style={{ background: "#fff", color: "#0a0a0a", border: "none", borderRadius: 10, padding: "11px 22px", cursor: "pointer", fontWeight: 700, fontSize: 14 }}
+                style={{ background: "rgba(107,159,212,0.22)", color: "#e8eaf0", border: "1px solid rgba(107,159,212,0.4)", borderRadius: 10, padding: "11px 22px", cursor: "pointer", fontWeight: 700, fontSize: 14 }}
               >
                 Reintentar
               </button>

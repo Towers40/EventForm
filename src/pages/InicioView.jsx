@@ -9,7 +9,7 @@ const STEPS = [
   { n: "4", title: "Check-in con QR", desc: "El día del evento escanea el código QR de cada asistente desde tu celular en segundos." },
 ];
 
-export default function InicioView({ events, onNew }) {
+export default function InicioView({ events, onNew, onGoTo }) {
   const totalRegs = events.reduce((n, e) => n + (e.registrations?.length || 0), 0);
   const nav = useNavigate();
 
@@ -39,14 +39,22 @@ export default function InicioView({ events, onNew }) {
       {events.length > 0 && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, marginBottom: 40, padding: "0 8px" }}>
           {[
-            { label: "Eventos", value: events.length },
-            { label: "Inscritos", value: totalRegs },
-            { label: "Check-ins", value: events.reduce((n, e) => n + (e.registrations?.filter(r => r.used).length || 0), 0) },
+            { label: "Eventos",   value: events.length,  nav: "mis_eventos" },
+            { label: "Inscritos", value: totalRegs,       nav: "mis_eventos" },
+            { label: "Check-ins", value: events.reduce((n, e) => n + (e.registrations?.filter(r => r.used).length || 0), 0), nav: "stats" },
           ].map(s => (
-            <div key={s.label} className="panel-card" style={{ padding: "20px 16px", textAlign: "center" }}>
+            <button
+              key={s.label}
+              type="button"
+              onClick={() => onGoTo?.(s.nav)}
+              className="panel-card"
+              style={{ padding: "20px 16px", textAlign: "center", cursor: "pointer", border: "none", width: "100%", transition: "opacity 0.15s" }}
+              onMouseEnter={e => e.currentTarget.style.opacity = "0.8"}
+              onMouseLeave={e => e.currentTarget.style.opacity = "1"}
+            >
               <div style={{ fontSize: 28, fontWeight: 800, color: "#6b9fd4" }}>{s.value}</div>
               <div style={{ fontSize: 12, color: "#8fa3b1", fontWeight: 700, marginTop: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>{s.label}</div>
-            </div>
+            </button>
           ))}
         </div>
       )}

@@ -1,12 +1,9 @@
 import { buildParticipant } from "../lib/tickets.js";
 import { capacityLabel, isSoldOut } from "../lib/capacity.js";
-import {
-  VERDE_CORPORATIVO,
-  NEGRO_PURO,
-  NEGRO_MUTED_70,
-  BLANCO_CONTRASTE,
-  VERDE_PASTEL_BG,
-} from "../lib/theme.js";
+
+const SUB  = "rgba(232,234,240,0.5)";
+const TEXT = "#e8eaf0";
+const BORDER = "1px solid rgba(255,255,255,0.09)";
 
 function exportCsv(event, registrations) {
   const fields = event.fields || [];
@@ -61,8 +58,8 @@ export default function EventCrm({ event, onBack, onToggleSoldOut, onShare }) {
 
       <div className="panel-card" style={{ marginBottom: 24 }}>
         <div className="panel-card-header">
-          <h2 style={{ margin: 0, fontSize: 22, fontWeight: 900 }}>CRM — {event.title}</h2>
-          <p style={{ margin: "8px 0 0", fontSize: 14, color: NEGRO_MUTED_70 }}>
+          <h2 style={{ margin: 0, fontSize: 22, fontWeight: 900, color: TEXT }}>CRM — {event.title}</h2>
+          <p style={{ margin: "8px 0 0", fontSize: 14, color: SUB }}>
             {capacityLabel(event)} · {checked} ingresaron ·{" "}
             {isSoldOut(event) ? "🔴 Venta cerrada" : "🟢 Venta abierta"}
           </p>
@@ -83,9 +80,9 @@ export default function EventCrm({ event, onBack, onToggleSoldOut, onShare }) {
             className="soft-btn"
             onClick={() => onToggleSoldOut(!event.manualSoldOut)}
             style={{
-              background: event.manualSoldOut ? VERDE_CORPORATIVO : "#fee2e2",
-              color: event.manualSoldOut ? "#fff" : NEGRO_PURO,
-              border: `2px solid ${NEGRO_PURO}`,
+              background: event.manualSoldOut ? "rgba(52,199,89,0.15)" : "rgba(220,38,38,0.12)",
+              color: event.manualSoldOut ? "#86efac" : "#fca5a5",
+              border: event.manualSoldOut ? "1px solid rgba(52,199,89,0.3)" : "1px solid rgba(220,38,38,0.3)",
             }}
           >
             {event.manualSoldOut ? "Reabrir venta de entradas" : "Cerrar venta (sold out manual)"}
@@ -97,18 +94,18 @@ export default function EventCrm({ event, onBack, onToggleSoldOut, onShare }) {
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
             <thead>
-              <tr style={{ background: VERDE_PASTEL_BG, textAlign: "left" }}>
-                <th style={{ padding: 12, borderBottom: `2px solid ${NEGRO_PURO}` }}>Asistente</th>
-                <th style={{ padding: 12, borderBottom: `2px solid ${NEGRO_PURO}` }}>Ticket</th>
-                <th style={{ padding: 12, borderBottom: `2px solid ${NEGRO_PURO}` }}>Registro</th>
-                <th style={{ padding: 12, borderBottom: `2px solid ${NEGRO_PURO}` }}>Ingreso</th>
-                <th style={{ padding: 12, borderBottom: `2px solid ${NEGRO_PURO}` }}>Marketing</th>
+              <tr style={{ background: "rgba(255,255,255,0.04)", textAlign: "left" }}>
+                <th style={{ padding: 12, borderBottom: BORDER, color: SUB, fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.05em" }}>Asistente</th>
+                <th style={{ padding: 12, borderBottom: BORDER, color: SUB, fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.05em" }}>Ticket</th>
+                <th style={{ padding: 12, borderBottom: BORDER, color: SUB, fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.05em" }}>Registro</th>
+                <th style={{ padding: 12, borderBottom: BORDER, color: SUB, fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.05em" }}>Ingreso</th>
+                <th style={{ padding: 12, borderBottom: BORDER, color: SUB, fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.05em" }}>Marketing</th>
               </tr>
             </thead>
             <tbody>
               {regs.length === 0 ? (
                 <tr>
-                  <td colSpan={5} style={{ padding: 24, textAlign: "center", color: NEGRO_MUTED_70 }}>
+                  <td colSpan={5} style={{ padding: 24, textAlign: "center", color: SUB }}>
                     Sin inscripciones aún
                   </td>
                 </tr>
@@ -116,18 +113,18 @@ export default function EventCrm({ event, onBack, onToggleSoldOut, onShare }) {
                 regs.map((r) => {
                   const p = buildParticipant(event, r);
                   return (
-                    <tr key={r.id} style={{ borderBottom: `1px solid ${VERDE_PASTEL_BG}` }}>
-                      <td style={{ padding: 12, fontWeight: 700 }}>{p.name}</td>
-                      <td style={{ padding: 12, fontFamily: "monospace", fontSize: 11 }}>{r.id}</td>
-                      <td style={{ padding: 12 }}>
+                    <tr key={r.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                      <td style={{ padding: 12, fontWeight: 700, color: TEXT }}>{p.name}</td>
+                      <td style={{ padding: 12, fontFamily: "monospace", fontSize: 11, color: SUB }}>{r.id}</td>
+                      <td style={{ padding: 12, color: SUB }}>
                         {new Date(r.ts).toLocaleString("es-CO")}
                       </td>
                       <td style={{ padding: 12 }}>
                         <span
                           style={{
-                            background: r.used ? NEGRO_PURO : VERDE_CORPORATIVO,
-                            color: BLANCO_CONTRASTE,
-                            padding: "4px 8px",
+                            background: r.used ? "rgba(107,159,212,0.2)" : "rgba(52,199,89,0.15)",
+                            color: r.used ? "#6b9fd4" : "#86efac",
+                            padding: "4px 10px",
                             borderRadius: 100,
                             fontSize: 11,
                             fontWeight: 700,
@@ -136,7 +133,7 @@ export default function EventCrm({ event, onBack, onToggleSoldOut, onShare }) {
                           {r.used ? "INGRESÓ" : "PENDIENTE"}
                         </span>
                       </td>
-                      <td style={{ padding: 12 }}>{r.consentMarketing ? "Sí" : "No"}</td>
+                      <td style={{ padding: 12, color: SUB }}>{r.consentMarketing ? "Sí" : "No"}</td>
                     </tr>
                   );
                 })
