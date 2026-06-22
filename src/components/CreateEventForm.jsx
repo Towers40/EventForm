@@ -228,6 +228,7 @@ const I = {
   Image:     () => <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
   Plus:      () => <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
   X:         () => <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+  Video:     () => <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>,
 };
 
 // ── MAIN COMPONENT ───────────────────────────────────────────────────────────
@@ -385,8 +386,9 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
 
           {/* ── Location ── */}
           <div style={cardStyle}>
+            {/* Physical location picker */}
             <button type="button" onClick={() => setShowLocModal(true)}
-              style={{ width: "100%", background: "none", border: "none", padding: 0, cursor: "pointer", display: "block", textAlign: "left" }}>
+              style={{ width: "100%", background: "none", border: "none", padding: 0, cursor: "pointer", display: "block", ...rowDivider, textAlign: "left" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "15px 18px" }}>
                 <span style={{ color: SUB }}><I.MapPin /></span>
                 <span style={{ flex: 1, fontSize: 15, color: locLabel ? TEXT : SUB, textAlign: "left", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -398,6 +400,27 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
                 }
               </div>
             </button>
+
+            {/* Virtual event toggle */}
+            <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "15px 18px", ...(draft.isVirtual ? rowDivider : {}) }}>
+              <span style={{ color: SUB }}><I.Video /></span>
+              <span style={{ flex: 1, fontSize: 15, color: TEXT }}>Evento virtual</span>
+              <Toggle value={Boolean(draft.isVirtual)} onChange={v => up("isVirtual", v)} />
+            </div>
+
+            {/* Virtual URL input */}
+            {draft.isVirtual && (
+              <div style={{ padding: "4px 18px 14px" }}>
+                <input
+                  type="url"
+                  inputMode="url"
+                  placeholder="Enlace del evento (Zoom, Meet, Teams…)"
+                  value={draft.virtualUrl || ""}
+                  onChange={e => up("virtualUrl", e.target.value)}
+                  style={{ width: "100%", boxSizing: "border-box", background: "rgba(255,255,255,0.05)", border: BORDER, borderRadius: 14, padding: "13px 16px", fontSize: 15, color: TEXT, outline: "none", caretColor: ACCENT, fontFamily: "inherit" }}
+                />
+              </div>
+            )}
           </div>
 
           {/* ── Description ── */}

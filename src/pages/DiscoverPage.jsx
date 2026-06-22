@@ -110,16 +110,20 @@ function EventCard({ ev }) {
           <div style={{
             width: "100%", height: "100%",
             background: cat ? `linear-gradient(135deg, ${cat.color}33, #111)` : "linear-gradient(135deg, #1e3a5f, #0d1b2a)",
-            display: "flex", alignItems: "center", justifyContent: "center", fontSize: 52,
+            display: "flex", alignItems: "center", justifyContent: "center",
           }}>
-            {cat?.emoji || "🗓️"}
+            {cat && CAT_ICONS[cat.slug]
+              ? <div style={{ opacity: 0.45, transform: "scale(2.2)", transformOrigin: "center" }}>{CAT_ICONS[cat.slug](cat.color)}</div>
+              : <span style={{ fontSize: 52, opacity: 0.5 }}>🗓️</span>
+            }
           </div>
         )}
         {live && (
           <div style={{
             position: "absolute", top: 10, left: 10,
-            background: "#ef4444", color: "#fff",
-            borderRadius: 6, padding: "4px 10px",
+            background: "rgba(239,68,68,0.85)", color: "#fff",
+            backdropFilter: "blur(6px)",
+            borderRadius: 8, padding: "5px 10px",
             fontSize: 11, fontWeight: 800, letterSpacing: "0.06em",
             display: "flex", alignItems: "center", gap: 5,
           }}>
@@ -127,14 +131,16 @@ function EventCard({ ev }) {
             EN VIVO
           </div>
         )}
-        {cat && (
+        {cat && CAT_ICONS[cat.slug] && (
           <div style={{
             position: "absolute", top: 10, right: 10,
-            background: "rgba(0,0,0,0.6)", backdropFilter: "blur(6px)",
-            borderRadius: 20, padding: "3px 9px",
-            fontSize: 11, fontWeight: 700, color: "#e8eaf0",
+            background: live ? "rgba(220,38,38,0.22)" : `${cat.color}28`,
+            border: live ? "1px solid rgba(220,38,38,0.45)" : `1px solid ${cat.color}55`,
+            backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
+            borderRadius: 12, padding: 8,
+            display: "flex", alignItems: "center", justifyContent: "center",
           }}>
-            {cat.emoji} {cat.label}
+            {CAT_ICONS[cat.slug](live ? "#fca5a5" : cat.color)}
           </div>
         )}
       </div>
@@ -179,8 +185,7 @@ function CategoryPill({ cat, count, active, onClick }) {
       type="button"
       onClick={onClick}
       style={{
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        gap: 12,
+        display: "flex", alignItems: "center", gap: 12,
         background: active ? cat.color : "rgba(255,255,255,0.07)",
         border: `1px solid ${active ? cat.color : "rgba(255,255,255,0.11)"}`,
         borderRadius: 16, padding: "14px 16px",
@@ -191,7 +196,16 @@ function CategoryPill({ cat, count, active, onClick }) {
       onMouseEnter={e => { if (!active) { e.currentTarget.style.background = "rgba(255,255,255,0.11)"; } }}
       onMouseLeave={e => { if (!active) { e.currentTarget.style.background = "rgba(255,255,255,0.07)"; } }}
     >
-      {/* Text side */}
+      {/* Icon side — LEFT */}
+      <div style={{
+        flexShrink: 0, width: 38, height: 38,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        background: active ? "rgba(255,255,255,0.18)" : `${cat.color}22`,
+        borderRadius: 10,
+      }}>
+        {Icon ? Icon(iconColor) : <span style={{ fontSize: 22 }}>{cat.emoji}</span>}
+      </div>
+      {/* Text side — RIGHT */}
       <div>
         <div style={{ fontSize: 13, fontWeight: 600, color: active ? "#fff" : "#e8eaf0", lineHeight: 1.3, marginBottom: count != null ? 3 : 0 }}>
           {cat.label}
@@ -201,15 +215,6 @@ function CategoryPill({ cat, count, active, onClick }) {
             {count > 999 ? `${(count/1000).toFixed(1)}K` : count} eventos
           </div>
         )}
-      </div>
-      {/* Icon side — right */}
-      <div style={{
-        flexShrink: 0, width: 38, height: 38,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        background: active ? "rgba(255,255,255,0.18)" : `${cat.color}22`,
-        borderRadius: 10,
-      }}>
-        {Icon ? Icon(iconColor) : <span style={{ fontSize: 22 }}>{cat.emoji}</span>}
       </div>
     </button>
   );
