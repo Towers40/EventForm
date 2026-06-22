@@ -473,7 +473,8 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
       style={{
         fontFamily: "system-ui, -apple-system, sans-serif",
         minHeight: "100vh",
-        background: "#0d0f10",
+        background: "linear-gradient(170deg, #1d2340 0%, #131628 100%)",
+        backgroundAttachment: "fixed",
         color: "#e8eaf0",
         textAlign: "left",
       }}
@@ -492,7 +493,8 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
       {/* ── SIDEBAR ── */}
       <div style={{
         position: "fixed", top: 0, left: 0, bottom: 0, zIndex: 50,
-        width: 280, background: "#111315",
+        width: 280, background: "rgba(14,16,30,0.96)",
+        backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
         borderRight: "1px solid rgba(255,255,255,0.08)",
         transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)",
         transition: "transform 0.28s cubic-bezier(.4,0,.2,1)",
@@ -614,7 +616,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
       </div>
 
       {/* ── NAVEGACIÓN COMPACTA ── */}
-      <nav style={{ background: "#0d0f10", borderBottom: "1px solid rgba(255,255,255,0.08)", padding: "0 20px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10, boxShadow: "0 1px 8px rgba(0,0,0,0.4)" }}>
+      <nav style={{ background: "rgba(18,20,34,0.82)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderBottom: "1px solid rgba(255,255,255,0.08)", padding: "0 20px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10, boxShadow: "0 1px 8px rgba(0,0,0,0.4)" }}>
         <button type="button" onClick={() => go("inicio")} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontWeight: 800, fontSize: 17, color: "#e8eaf0" }}>
           <span style={{ color: VERDE_CORPORATIVO, fontSize: 20 }}>●</span> EventForm
         </button>
@@ -726,7 +728,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
       </main>
 
       {view !== "create_wizard" && (
-        <footer style={{ background: "#f8fafc", borderTop: "1px solid #e2e8f0", padding: 20, textAlign: "center", fontSize: 12, color: "#8fa3b1", marginTop: 48 }}>
+        <footer style={{ background: "transparent", borderTop: "1px solid rgba(255,255,255,0.07)", padding: 20, textAlign: "center", fontSize: 12, color: "rgba(232,234,240,0.3)", marginTop: 48 }}>
           EventForm Colombia © 2026
         </footer>
       )}
@@ -1248,7 +1250,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
   };
 
   return (
-    <div style={{ maxWidth: 720, margin: "0 auto", paddingBottom: 80 }}>
+    <div style={{ maxWidth: 540, margin: "0 auto", paddingBottom: 80 }}>
 
       {/* ── Encabezado del evento ── */}
       <div className="panel-card" style={{ marginBottom: 20, overflow: "hidden" }}>
@@ -1360,7 +1362,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
             {draft.fields.length} campo{draft.fields.length !== 1 ? "s" : ""} · Edita, reordena o añade más
           </p>
         </div>
-        <button onClick={onPublish} className="soft-btn soft-btn-primary">
+        <button onClick={onPublish} style={{ padding: "12px 20px", background: "rgba(107,159,212,0.22)", border: "1px solid rgba(107,159,212,0.4)", borderRadius: 14, color: "#e8eaf0", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
           Publicar evento →
         </button>
       </div>
@@ -1528,18 +1530,20 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
               { value: "public",   label: "🌐 Público",       title: "Aparece en Discover" },
               { value: "unlisted", label: "🔗 Solo enlace",   title: "No aparece en Discover" },
               { value: "private",  label: "🔒 Privado",       title: "Solo tú puedes verlo" },
-            ].map(opt => (
-              <button
-                key={opt.value}
-                type="button"
-                title={opt.title}
-                onClick={() => setDraft(p => ({ ...p, visibility: opt.value }))}
-                className={`soft-btn ${(draft.visibility || "public") === opt.value ? "soft-btn-primary" : "soft-btn-secondary"}`}
-                style={{ fontSize: 11, flex: 1, padding: "10px 6px" }}
-              >
-                {opt.label}
-              </button>
-            ))}
+            ].map(opt => {
+              const active = (draft.visibility || "public") === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  title={opt.title}
+                  onClick={() => setDraft(p => ({ ...p, visibility: opt.value }))}
+                  style={{ fontSize: 11, flex: 1, padding: "10px 6px", cursor: "pointer", fontWeight: 700, borderRadius: 10, background: active ? "rgba(107,159,212,0.22)" : "rgba(255,255,255,0.06)", border: `1px solid ${active ? "rgba(107,159,212,0.4)" : "rgba(255,255,255,0.1)"}`, color: active ? "#e8eaf0" : "rgba(232,234,240,0.5)" }}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -1567,22 +1571,20 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
         <div>
           <label style={bldLabel}>Precio de entrada</label>
           <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-            <button
-              type="button"
-              className={`soft-btn ${!draft.isPaid ? "soft-btn-primary" : "soft-btn-secondary"}`}
-              style={{ fontSize: 13, flex: 1 }}
-              onClick={() => setDraft(p => ({ ...p, isPaid: false, price: null }))}
-            >
-              Gratis
-            </button>
-            <button
-              type="button"
-              className={`soft-btn ${draft.isPaid ? "soft-btn-primary" : "soft-btn-secondary"}`}
-              style={{ fontSize: 13, flex: 1 }}
-              onClick={() => setDraft(p => ({ ...p, isPaid: true }))}
-            >
-              De pago
-            </button>
+            {[
+              { key: false, label: "Gratis" },
+              { key: true,  label: "De pago" },
+            ].map(opt => {
+              const active = !!draft.isPaid === opt.key;
+              return (
+                <button key={String(opt.key)} type="button"
+                  onClick={() => opt.key ? setDraft(p => ({ ...p, isPaid: true })) : setDraft(p => ({ ...p, isPaid: false, price: null }))}
+                  style={{ fontSize: 13, flex: 1, padding: "11px 8px", cursor: "pointer", fontWeight: 700, borderRadius: 10, background: active ? "rgba(107,159,212,0.22)" : "rgba(255,255,255,0.06)", border: `1px solid ${active ? "rgba(107,159,212,0.4)" : "rgba(255,255,255,0.1)"}`, color: active ? "#e8eaf0" : "rgba(232,234,240,0.5)" }}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
           </div>
           {draft.isPaid && (
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -1595,7 +1597,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
                 value={draft.price || ""}
                 onChange={e => setDraft(p => ({ ...p, price: e.target.value ? Number(e.target.value) : null }))}
                 style={{
-                  flex: 1, border: "2px solid #e2e8f0", borderRadius: 10,
+                  flex: 1, border: "1px solid rgba(255,255,255,0.11)", borderRadius: 10,
                   padding: "11px 14px", fontSize: 14, color: "#e8eaf0",
                   background: "rgba(255,255,255,0.06)", outline: "none", fontFamily: "inherit",
                 }}

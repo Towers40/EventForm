@@ -1,24 +1,19 @@
 import { useState } from "react";
 import { compressHeaderImage } from "../lib/images.js";
-import {
-  inputStyle,
-  NEGRO_PURO,
-  NEGRO_MUTED_70,
-  VERDE_PASTEL_BG,
-  BLANCO_CONTRASTE,
-} from "../lib/theme.js";
 
-function Lbl({ children }) {
+function ImageIcon() {
   return (
-    <div style={{ fontSize: 12, fontWeight: 800, marginBottom: 8, textTransform: "uppercase" }}>
-      {children}
-    </div>
+    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2"/>
+      <circle cx="8.5" cy="8.5" r="1.5"/>
+      <polyline points="21 15 16 10 5 21"/>
+    </svg>
   );
 }
 
 export default function HeaderImageUpload({ image, onChange }) {
-  const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
+  const [err,  setErr]  = useState("");
 
   const onFile = async (e) => {
     const file = e.target.files?.[0];
@@ -37,71 +32,69 @@ export default function HeaderImageUpload({ image, onChange }) {
   };
 
   return (
-    <div
-      style={{
-        border: "1px solid #b8d4f0",
-        borderRadius: 12,
-        padding: 20,
-        background: "linear-gradient(135deg, #e8f4fd 0%, #f0f6fc 100%)",
-        marginBottom: 0,
-      }}
-    >
-      <Lbl>Imagen de encabezado</Lbl>
-      <p style={{ fontSize: 12, color: "#5c6b7a", marginBottom: 12 }}>
-        Opcional. Se mostrará en inscripción y boleto. Recomendado: formato horizontal 16:9.
-      </p>
+    <div style={{
+      position: "relative",
+      aspectRatio: "16/10",
+      overflow: "hidden",
+      background: image ? "none" : "rgba(255,255,255,0.04)",
+    }}>
+      {image
+        ? <img src={image} alt="portada" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+        : (
+          <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, color: "rgba(232,234,240,0.35)" }}>
+            <ImageIcon />
+            <span style={{ fontSize: 13 }}>Portada del evento</span>
+          </div>
+        )
+      }
+
+      {/* Upload trigger */}
+      <label style={{
+        position: "absolute", bottom: 12, right: 12,
+        width: 42, height: 42, borderRadius: "50%",
+        background: "rgba(255,255,255,0.9)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        cursor: busy ? "wait" : "pointer",
+        boxShadow: "0 2px 12px rgba(0,0,0,0.5)",
+        color: "#1a1e32",
+        flexShrink: 0,
+      }}>
+        {busy ? <span style={{ fontSize: 11, fontWeight: 700 }}>…</span> : <ImageIcon />}
+        <span style={{
+          position: "absolute", bottom: 4, right: 4,
+          background: "#1a1e32", borderRadius: "50%",
+          width: 14, height: 14,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          color: "#fff", fontSize: 11, lineHeight: 1,
+        }}>+</span>
+        <input type="file" accept="image/*" hidden onChange={onFile} disabled={busy} />
+      </label>
+
+      {/* Remove button */}
       {image && (
-        <img
-          src={image}
-          alt="Vista previa portada"
+        <button
+          type="button"
+          onClick={() => onChange("")}
           style={{
-            width: "100%",
-            maxHeight: 160,
-            objectFit: "cover",
-            borderRadius: 10,
-            border: `2px solid ${NEGRO_PURO}`,
-            marginBottom: 12,
-            display: "block",
-          }}
-        />
-      )}
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        <label
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: busy ? "wait" : "pointer",
-            padding: "10px 18px",
-            borderRadius: 8,
-            border: "none",
-            background: "#0d3b66",
-            color: "#fff",
-            fontWeight: 700,
-            fontSize: 13,
-            flex: "1 1 auto",
+            position: "absolute", top: 10, left: 10,
+            background: "rgba(0,0,0,0.55)", border: "none",
+            borderRadius: 20, padding: "4px 10px",
+            color: "#fff", fontSize: 11, cursor: "pointer",
           }}
         >
-          {busy ? "Procesando…" : image ? "Cambiar imagen" : "Subir imagen"}
-          <input type="file" accept="image/*" hidden onChange={onFile} disabled={busy} />
-        </label>
-        {image && (
-          <button
-            type="button"
-            onClick={() => onChange("")}
-            style={{
-              ...inputStyle,
-              width: "auto",
-              flex: "0 0 auto",
-              cursor: "pointer",
-              fontWeight: 700,
-            }}
-          >
-            Quitar
-          </button>
-        )}
-      </div>
-      {err && <p style={{ color: "#991b1b", fontSize: 12, marginTop: 8, fontWeight: 700 }}>{err}</p>}
+          Quitar
+        </button>
+      )}
+
+      {err && (
+        <div style={{
+          position: "absolute", bottom: 0, left: 0, right: 0,
+          background: "rgba(220,38,38,0.8)", padding: "6px 12px",
+          fontSize: 12, color: "#fff",
+        }}>
+          {err}
+        </div>
+      )}
     </div>
   );
 }
