@@ -514,7 +514,7 @@
 
 .wbtn-text-multi {
   display: inline-block;
-  background: linear-gradient(90deg, #5b86e5, #36d1dc, #56ab2f, #e0ffe0, #fff, #aee6ff, #5b86e5);
+  background: linear-gradient(90deg, #5b86e5, #36d1dc, #56ab2f, #ffffff, #56ab2f, #36d1dc, #5b86e5);
   background-size: 300% 100%;
   background-position: 100% center;
   -webkit-background-clip: text;
