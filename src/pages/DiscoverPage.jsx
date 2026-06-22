@@ -284,10 +284,15 @@ export default function DiscoverPage() {
         position: "sticky", top: 0, zIndex: 20,
         background: "rgba(18,20,34,0.82)", backdropFilter: "blur(16px)",
       }}>
-        <a href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
-          <span style={{ color: "#22c55e", fontSize: 18 }}>●</span>
-          <span style={{ fontWeight: 800, fontSize: 16, color: "#e8eaf0" }}>EventForm</span>
-        </a>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <a href="/app" style={{ display: "flex", alignItems: "center", gap: 4, textDecoration: "none", color: "rgba(232,234,240,0.55)", fontSize: 13, fontWeight: 600 }}>
+            ← Inicio
+          </a>
+          <a href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
+            <span style={{ color: "#22c55e", fontSize: 18 }}>●</span>
+            <span style={{ fontWeight: 800, fontSize: 16, color: "#e8eaf0" }}>EventForm</span>
+          </a>
+        </div>
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           <span style={{ fontSize: 13, color: "#6b7280", display: "none" }} className="hide-mobile">¿Organizas eventos?</span>
           <a href="/app" style={{

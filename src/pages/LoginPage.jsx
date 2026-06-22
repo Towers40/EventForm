@@ -91,8 +91,11 @@ export default function LoginPage() {
         {/* ── LOGIN ── */}
         {mode === "login" && (
           <>
+            <button type="button" onClick={() => nav("/app")} style={{ background: "none", border: "none", color: "#8fa3b1", cursor: "pointer", fontSize: 13, fontWeight: 600, padding: "0 0 20px", display: "block" }}>
+              ← Inicio
+            </button>
             <h1 className="tf-question">Inicia sesión</h1>
-            <p className="tf-hint">Accede a tu cuenta de anfitrión de EventForm.</p>
+            <p className="tf-hint">Accede a tu cuenta de EventForm.</p>
             <form onSubmit={handleLogin} style={{ marginTop: 24 }}>
               <input
                 className="tf-input-line"

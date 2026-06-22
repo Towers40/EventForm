@@ -423,8 +423,10 @@ export default function OnboardingFlow({ onDraftReady }) {
     setBusy(true);
 
     // Guardar draft en localStorage para recuperarlo después de verificar
-    const finalDraft = { ...draft, date: draft.startDate || draft.date };
-    localStorage.setItem("ef_pending_draft", JSON.stringify(finalDraft));
+    const hasDraftContent = Boolean(draft.title?.trim());
+    const finalDraft = hasDraftContent ? { ...draft, date: draft.startDate || draft.date } : null;
+    if (finalDraft) localStorage.setItem("ef_pending_draft", JSON.stringify(finalDraft));
+    else localStorage.removeItem("ef_pending_draft");
 
     try {
       const result = await register(acEmail.trim(), acPassword, acName.trim());
@@ -761,11 +763,12 @@ export default function OnboardingFlow({ onDraftReady }) {
           <form onSubmit={handleRegister}>
             <div className="tf-step-num" style={{ background: VERDE_CORPORATIVO, fontSize: 16 }}>✓</div>
             <h2 className="tf-question">
-              ¡Casi listo! Crea tu <strong>cuenta de anfitrión</strong>
+              ¡Casi listo! Crea tu <strong>cuenta</strong>
             </h2>
             <p className="tf-hint">
-              Tu evento <strong>"{draft.title}"</strong> está configurado.
-              Crea tu cuenta para publicarlo y gestionar inscripciones.
+              {draft.title?.trim()
+                ? <>Tu evento <strong>"{draft.title}"</strong> está listo. Crea tu cuenta para publicarlo.</>
+                : "Crea tu cuenta para empezar a gestionar tus eventos."}
             </p>
 
             <input
@@ -813,12 +816,6 @@ export default function OnboardingFlow({ onDraftReady }) {
               <button type="button" onClick={() => nav("/login")}
                 style={{ background: "none", border: "none", color: "#0d3b66", fontWeight: 700, cursor: "pointer", fontSize: 14, textDecoration: "underline", textUnderlineOffset: 3 }}>
                 Ya tengo cuenta → Iniciar sesión
-              </button>
-            </div>
-            <div style={{ marginTop: 16, textAlign: "center" }}>
-              <button type="button" onClick={() => go(skipWizard ? 10 : 6)}
-                style={{ background: "none", border: "none", color: "#8fa3b1", fontWeight: 600, cursor: "pointer", fontSize: 13 }}>
-                ← Volver al paso anterior
               </button>
             </div>
           </form>
