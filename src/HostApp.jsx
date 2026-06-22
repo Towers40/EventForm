@@ -10,6 +10,7 @@ import EventCrm from "./components/EventCrm.jsx";
 import ShareEventModal from "./components/ShareEventModal.jsx";
 import ConfirmTicket from "./components/ConfirmTicket.jsx";
 import DateTimePicker from "./components/DateTimePicker.jsx";
+import CreateEventForm from "./components/CreateEventForm.jsx";
 import InicioView from "./pages/InicioView.jsx";
 import MisEventosView from "./pages/MisEventosView.jsx";
 import DashboardView from "./pages/DashboardView.jsx";
@@ -281,8 +282,11 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
       fields: [],
       registrations: [],
       eventDescription: "",
+      requireApproval: false,
+      priceType: "free",
+      price: "",
+      visibility: "public",
     });
-    setWizardStep(1);
     setEvId(null);
     setView("create_wizard");
   };
@@ -658,13 +662,13 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
         {view === "stats" && <DashboardView events={events} />}
         {view === "mi_cuenta" && <MiCuentaView />}
         {view === "create_wizard" && (
-          <CreateEventWizard
+          <CreateEventForm
             draft={draft}
             setDraft={setDraft}
-            step={wizardStep}
-            setStep={setWizardStep}
             onDone={generatePreliminaryForm}
             onCancel={() => go("inicio")}
+            user={user}
+            avatarUrl={avatarUrl}
           />
         )}
         {view === "builder" && draft && (
