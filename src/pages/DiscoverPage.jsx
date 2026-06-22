@@ -179,29 +179,38 @@ function CategoryPill({ cat, count, active, onClick }) {
       type="button"
       onClick={onClick}
       style={{
-        background: active ? cat.color : "rgba(255,255,255,0.05)",
-        border: `1.5px solid ${active ? cat.color : "rgba(255,255,255,0.09)"}`,
-        borderRadius: 16, padding: "16px 10px",
-        cursor: "pointer", textAlign: "center",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        gap: 12,
+        background: active ? cat.color : "rgba(255,255,255,0.07)",
+        border: `1px solid ${active ? cat.color : "rgba(255,255,255,0.11)"}`,
+        borderRadius: 16, padding: "14px 16px",
+        cursor: "pointer", textAlign: "left",
         transition: "all 0.15s",
-        width: 96, flexShrink: 0,
-        transform: active ? "scale(1.05)" : undefined,
-        boxShadow: active ? `0 4px 16px ${cat.color}55` : "none",
+        boxShadow: active ? `0 4px 20px ${cat.color}55` : "none",
       }}
-      onMouseEnter={e => { if (!active) { e.currentTarget.style.background = "rgba(255,255,255,0.09)"; e.currentTarget.style.borderColor = cat.color + "66"; } }}
-      onMouseLeave={e => { if (!active) { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.09)"; } }}
+      onMouseEnter={e => { if (!active) { e.currentTarget.style.background = "rgba(255,255,255,0.11)"; } }}
+      onMouseLeave={e => { if (!active) { e.currentTarget.style.background = "rgba(255,255,255,0.07)"; } }}
     >
-      <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}>
-        {Icon ? Icon(iconColor) : <span style={{ fontSize: 26 }}>{cat.emoji}</span>}
-      </div>
-      <div style={{ fontSize: 11, fontWeight: 600, color: active ? "#fff" : "#c8d6e5", lineHeight: 1.3 }}>
-        {cat.label}
-      </div>
-      {count != null && (
-        <div style={{ fontSize: 10, fontWeight: 400, color: active ? "rgba(255,255,255,0.7)" : "#555f6b", marginTop: 3 }}>
-          {count > 999 ? `${(count/1000).toFixed(1)}K` : count}
+      {/* Text side */}
+      <div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: active ? "#fff" : "#e8eaf0", lineHeight: 1.3, marginBottom: count != null ? 3 : 0 }}>
+          {cat.label}
         </div>
-      )}
+        {count != null && (
+          <div style={{ fontSize: 14, fontWeight: 400, color: active ? "rgba(255,255,255,0.75)" : "rgba(232,234,240,0.42)", lineHeight: 1 }}>
+            {count > 999 ? `${(count/1000).toFixed(1)}K` : count} eventos
+          </div>
+        )}
+      </div>
+      {/* Icon side — right */}
+      <div style={{
+        flexShrink: 0, width: 38, height: 38,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        background: active ? "rgba(255,255,255,0.18)" : `${cat.color}22`,
+        borderRadius: 10,
+      }}>
+        {Icon ? Icon(iconColor) : <span style={{ fontSize: 22 }}>{cat.emoji}</span>}
+      </div>
     </button>
   );
 }
@@ -323,9 +332,8 @@ export default function DiscoverPage() {
             Explorar por categoría
           </h2>
           <div style={{
-            display: "flex",
-            flexWrap: "wrap",
-            justifyContent: "center",
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))",
             gap: 10,
           }}>
             {DISCOVER_CATEGORIES.map(cat => (

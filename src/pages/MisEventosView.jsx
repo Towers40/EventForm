@@ -4,18 +4,24 @@ import { buildParticipant } from "../lib/tickets.js";
 import "../styles/typeform.css";
 
 function statusOf(ev) {
-  if (!ev.date) return "activo";
-  const d = new Date(ev.date);
+  const dateStr = ev.startDate || ev.date;
+  if (!dateStr) return "activo";
+  const d = new Date(dateStr + "T12:00:00");
   return d < new Date() ? "pasado" : "activo";
 }
 
 export default function MisEventosView({ events, onNew, onOpen, onEdit, onValidate, onDelete, onShare, onToggleSoldOut }) {
-  const [tab, setTab] = useState("activos");
+  const [tab, setTab] = useState("todos");
 
   const borradores = events.filter(e => e.isDraft);
-  const activos = events.filter(e => statusOf(e) === "activo" && !e.isDraft);
-  const pasados = events.filter(e => statusOf(e) === "pasado" && !e.isDraft);
-  const lista = tab === "activos" ? activos : tab === "pasados" ? pasados : borradores;
+  const proximos   = events.filter(e => statusOf(e) === "activo" && !e.isDraft);
+  const pasados    = events.filter(e => statusOf(e) === "pasado" && !e.isDraft);
+  const todos      = [...proximos, ...pasados];
+
+  const lista = tab === "todos" ? todos
+    : tab === "proximos" ? proximos
+    : tab === "pasados"  ? pasados
+    : borradores;
 
   return (
     <div style={{ maxWidth: 760, margin: "0 auto" }}>
@@ -27,10 +33,11 @@ export default function MisEventosView({ events, onNew, onOpen, onEdit, onValida
       </div>
 
       {/* Tabs */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 24 }}>
+      <div style={{ display: "flex", gap: 8, marginBottom: 24, flexWrap: "wrap" }}>
         {[
-          { key: "activos", label: `Próximos (${activos.length})` },
-          { key: "pasados", label: `Pasados (${pasados.length})` },
+          { key: "todos",      label: `Todos (${todos.length})` },
+          { key: "proximos",   label: `Próximos (${proximos.length})` },
+          { key: "pasados",    label: `Pasados (${pasados.length})` },
           { key: "borradores", label: `Borradores (${borradores.length})` },
         ].map(t => (
           <button key={t.key} type="button"
@@ -46,11 +53,12 @@ export default function MisEventosView({ events, onNew, onOpen, onEdit, onValida
       {lista.length === 0 ? (
         <div className="panel-card" style={{ padding: "48px 24px", textAlign: "center" }}>
           <p style={{ color: "#8fa3b1", fontSize: 15, margin: 0 }}>
-            {tab === "activos" ? "No tienes eventos próximos."
-              : tab === "pasados" ? "No tienes eventos pasados."
+            {tab === "todos"      ? "No tienes eventos publicados."
+              : tab === "proximos"  ? "No tienes eventos próximos."
+              : tab === "pasados"   ? "No tienes eventos pasados."
               : "No hay borradores guardados."}
           </p>
-          {tab === "activos" && (
+          {(tab === "todos" || tab === "proximos") && (
             <button type="button" className="soft-btn soft-btn-primary" onClick={onNew} style={{ marginTop: 20 }}>
               Crear mi primer evento
             </button>
@@ -87,6 +95,7 @@ function EventCard({ ev, onOpen, onEdit, onValidate, onDelete, onShare, onToggle
   const regs = ev.registrations || [];
   const checkins = regs.filter(r => r.used).length;
   const sold = isSoldOut(ev);
+  const isPast = statusOf(ev) === "pasado";
 
   const startLabel = fmtDate(ev.startDate);
   const endLabel = ev.endDate && ev.endDate !== ev.startDate ? fmtDate(ev.endDate) : null;
@@ -112,9 +121,10 @@ function EventCard({ ev, onOpen, onEdit, onValidate, onDelete, onShare, onToggle
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
               <span style={{
                 fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 100,
-                background: sold ? "rgba(220,38,38,0.15)" : "rgba(52,199,89,0.15)", color: sold ? "#fca5a5" : "#86efac",
+                background: isPast ? "rgba(220,38,38,0.15)" : sold ? "rgba(220,38,38,0.15)" : "rgba(52,199,89,0.15)",
+                color: isPast ? "#fca5a5" : sold ? "#fca5a5" : "#86efac",
               }}>
-                {sold ? "Sold out" : "Activo"}
+                {isPast ? "Pasado" : sold ? "Sold out" : "Activo"}
               </span>
             </div>
             <h3 style={{ fontSize: 17, fontWeight: 700, color: "#e8eaf0", margin: "0 0 4px", lineHeight: 1.3 }}>
