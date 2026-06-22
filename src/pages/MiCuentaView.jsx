@@ -73,12 +73,12 @@ export default function MiCuentaView() {
 
   return (
     <div style={{ maxWidth: 560, margin: "0 auto" }}>
-      <h1 style={{ fontSize: 24, fontWeight: 700, color: "#0d1b2a", marginBottom: 28 }}>Mi cuenta</h1>
+      <h1 style={{ fontSize: 24, fontWeight: 700, color: "#e8eaf0", marginBottom: 28 }}>Mi cuenta</h1>
 
       {/* Info de cuenta */}
       <div className="panel-card" style={{ marginBottom: 20 }}>
         <div className="panel-card-header">
-          <h2 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "#0d1b2a" }}>Información personal</h2>
+          <h2 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "#e8eaf0" }}>Información personal</h2>
         </div>
         <form onSubmit={saveName} style={{ padding: 20 }}>
           <label style={{ fontSize: 11, fontWeight: 800, color: "#8fa3b1", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 8 }}>
@@ -93,13 +93,13 @@ export default function MiCuentaView() {
           <label style={{ fontSize: 11, fontWeight: 800, color: "#8fa3b1", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 8 }}>
             Correo electrónico
           </label>
-          <p style={{ fontSize: 16, color: "#5c6b7a", marginBottom: 24, paddingBottom: 10, borderBottom: "2px solid #e2e8f0" }}>
+          <p style={{ fontSize: 16, color: "rgba(232,234,240,0.5)", marginBottom: 24, paddingBottom: 10, borderBottom: "1px solid rgba(255,255,255,0.15)" }}>
             {user?.email}
           </p>
           <label style={{ fontSize: 11, fontWeight: 800, color: "#8fa3b1", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 8 }}>
             Miembro desde
           </label>
-          <p style={{ fontSize: 14, color: "#5c6b7a", marginBottom: 20 }}>
+          <p style={{ fontSize: 14, color: "rgba(232,234,240,0.5)", marginBottom: 20 }}>
             {user?.createdAt ? new Date(user.createdAt).toLocaleDateString("es-CO", { year: "numeric", month: "long", day: "numeric" }) : "—"}
           </p>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -114,7 +114,7 @@ export default function MiCuentaView() {
       {/* Cambiar contraseña */}
       <div className="panel-card" style={{ marginBottom: 20 }}>
         <div className="panel-card-header">
-          <h2 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "#0d1b2a" }}>Cambiar contraseña</h2>
+          <h2 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "#e8eaf0" }}>Cambiar contraseña</h2>
         </div>
         <form onSubmit={changePw} style={{ padding: 20 }}>
           <label style={{ fontSize: 11, fontWeight: 800, color: "#8fa3b1", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 8 }}>
@@ -159,16 +159,16 @@ export default function MiCuentaView() {
       {/* Cerrar sesión */}
       <div className="panel-card" style={{ padding: 20, display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
         <div>
-          <p style={{ margin: 0, fontWeight: 600, color: "#0d1b2a", fontSize: 14 }}>Cerrar sesión</p>
+          <p style={{ margin: 0, fontWeight: 600, color: "#e8eaf0", fontSize: 14 }}>Cerrar sesión</p>
           <p style={{ margin: "2px 0 0", fontSize: 12, color: "#8fa3b1" }}>Salir de tu cuenta en este dispositivo</p>
         </div>
-        <button type="button" className="soft-btn" style={{ background: "#fff", color: "#e53e3e", border: "1px solid #fed7d7", borderRadius: 10, fontSize: 13, padding: "10px 18px" }} onClick={logout}>
+        <button type="button" className="soft-btn" style={{ background: "rgba(220,38,38,0.12)", color: "#fca5a5", border: "1px solid rgba(220,38,38,0.3)", borderRadius: 10, fontSize: 13, padding: "10px 18px" }} onClick={logout}>
           Cerrar sesión
         </button>
       </div>
 
       {/* Eliminar cuenta */}
-      <div className="panel-card" style={{ padding: 20, borderColor: "#fed7d7", borderWidth: 2 }}>
+      <div className="panel-card" style={{ padding: 20, borderColor: "rgba(220,38,38,0.35)", borderWidth: 1 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
           <div>
             <p style={{ margin: 0, fontWeight: 600, color: "#991b1b", fontSize: 14 }}>Zona de peligro: Eliminar cuenta</p>
@@ -179,7 +179,7 @@ export default function MiCuentaView() {
           <button
             type="button"
             className="soft-btn"
-            style={{ background: "#fee2e2", color: "#991b1b", border: "1px solid #fecaca", borderRadius: 10, fontSize: 13, padding: "10px 18px", whiteSpace: "nowrap" }}
+            style={{ background: "rgba(220,38,38,0.12)", color: "#fca5a5", border: "1px solid rgba(220,38,38,0.3)", borderRadius: 10, fontSize: 13, padding: "10px 18px", whiteSpace: "nowrap" }}
             onClick={() => { setDeleteModalOpen(true); setDeleteConfirmText(""); setDeleteErr(""); }}
           >
             Eliminar cuenta
@@ -195,21 +195,23 @@ export default function MiCuentaView() {
           zIndex: 1000
         }}>
           <div style={{
-            background: "#fff", borderRadius: 12, padding: 28, maxWidth: 380,
-            boxShadow: "0 20px 60px rgba(0, 0, 0, 0.2)"
+            background: "rgba(20,22,40,0.95)", borderRadius: 20, padding: 28, maxWidth: 380,
+            border: "1px solid rgba(220,38,38,0.3)",
+            boxShadow: "0 24px 64px rgba(0,0,0,0.7)",
+            backdropFilter: "blur(20px)",
           }}>
-            <h3 style={{ margin: "0 0 12px", fontSize: 18, fontWeight: 700, color: "#991b1b" }}>
+            <h3 style={{ margin: "0 0 12px", fontSize: 18, fontWeight: 700, color: "#fca5a5" }}>
               ¿Estás seguro?
             </h3>
-            <p style={{ margin: "0 0 20px", fontSize: 14, color: "#5c6b7a", lineHeight: 1.6 }}>
+            <p style={{ margin: "0 0 20px", fontSize: 14, color: "rgba(232,234,240,0.6)", lineHeight: 1.6 }}>
               Esta acción eliminará:
             </p>
-            <ul style={{ margin: "0 0 20px", paddingLeft: 20, fontSize: 13, color: "#5c6b7a" }}>
+            <ul style={{ margin: "0 0 20px", paddingLeft: 20, fontSize: 13, color: "rgba(232,234,240,0.5)" }}>
               <li>Tu cuenta de anfitrión</li>
               <li>Todos tus eventos</li>
               <li>Todos los registros e inscripciones</li>
             </ul>
-            <p style={{ margin: "0 0 16px", fontSize: 13, fontWeight: 600, color: "#0d1b2a" }}>
+            <p style={{ margin: "0 0 16px", fontSize: 13, fontWeight: 600, color: "#e8eaf0" }}>
               Escribe "eliminar mi cuenta" para continuar:
             </p>
             <input
@@ -230,9 +232,9 @@ export default function MiCuentaView() {
                 type="button"
                 onClick={() => setDeleteModalOpen(false)}
                 style={{
-                  flex: 1, padding: "10px 16px", background: "#f0f4f8",
-                  border: "none", borderRadius: 8, cursor: "pointer", fontSize: 13,
-                  fontWeight: 600, color: "#0d3b66"
+                  flex: 1, padding: "10px 16px", background: "rgba(255,255,255,0.07)",
+                  border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, cursor: "pointer", fontSize: 13,
+                  fontWeight: 600, color: "#e8eaf0"
                 }}
               >
                 Cancelar
@@ -242,9 +244,9 @@ export default function MiCuentaView() {
                 onClick={handleDeleteAccount}
                 disabled={deleteBusy || deleteConfirmText.toLowerCase() !== "eliminar mi cuenta"}
                 style={{
-                  flex: 1, padding: "10px 16px", background: "#fee2e2",
-                  border: "1px solid #fecaca", borderRadius: 8, cursor: deleteConfirmText.toLowerCase() === "eliminar mi cuenta" ? "pointer" : "not-allowed",
-                  fontSize: 13, fontWeight: 600, color: "#991b1b", opacity: deleteConfirmText.toLowerCase() === "eliminar mi cuenta" ? 1 : 0.5
+                  flex: 1, padding: "10px 16px", background: "rgba(220,38,38,0.2)",
+                  border: "1px solid rgba(220,38,38,0.4)", borderRadius: 8, cursor: deleteConfirmText.toLowerCase() === "eliminar mi cuenta" ? "pointer" : "not-allowed",
+                  fontSize: 13, fontWeight: 600, color: "#fca5a5", opacity: deleteConfirmText.toLowerCase() === "eliminar mi cuenta" ? 1 : 0.5
                 }}
               >
                 {deleteBusy ? "Eliminando..." : "Eliminar permanentemente"}

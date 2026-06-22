@@ -410,17 +410,18 @@
   pointer-events: none;
 }
 
-/* Panel admin — dark */
+/* Panel admin — glass dark */
 .panel-card {
-  border-radius: 16px;
-  border: 1px solid rgba(255,255,255,0.08);
-  background: #1a1c1e;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.11);
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   overflow: hidden;
 }
 
 .panel-card-header {
-  padding: 20px 24px;
+  padding: 18px 24px;
   background: rgba(255,255,255,0.03);
   border-bottom: 1px solid rgba(255,255,255,0.07);
 }

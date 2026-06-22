@@ -20,7 +20,7 @@ export default function MisEventosView({ events, onNew, onOpen, onEdit, onValida
   return (
     <div style={{ maxWidth: 760, margin: "0 auto" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0, color: "#0d1b2a" }}>Mis eventos</h1>
+        <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0, color: "#e8eaf0" }}>Mis eventos</h1>
         <button type="button" className="soft-btn soft-btn-primary" onClick={onNew} style={{ fontSize: 13 }}>
           + Crear evento
         </button>
@@ -112,12 +112,12 @@ function EventCard({ ev, onOpen, onEdit, onValidate, onDelete, onShare, onToggle
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
               <span style={{
                 fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 100,
-                background: sold ? "#fee2e2" : "#f0fdf4", color: sold ? "#991b1b" : "#16a34a",
+                background: sold ? "rgba(220,38,38,0.15)" : "rgba(52,199,89,0.15)", color: sold ? "#fca5a5" : "#86efac",
               }}>
                 {sold ? "Sold out" : "Activo"}
               </span>
             </div>
-            <h3 style={{ fontSize: 17, fontWeight: 700, color: "#0d1b2a", margin: "0 0 4px", lineHeight: 1.3 }}>
+            <h3 style={{ fontSize: 17, fontWeight: 700, color: "#e8eaf0", margin: "0 0 4px", lineHeight: 1.3 }}>
               {ev.title}
             </h3>
             {dateLabel && (
@@ -126,15 +126,15 @@ function EventCard({ ev, onOpen, onEdit, onValidate, onDelete, onShare, onToggle
             {ev.city && <p style={{ fontSize: 12, color: "#8fa3b1", margin: 0 }}>📍 {ev.city}</p>}
           </div>
           <div style={{ textAlign: "right", flexShrink: 0 }}>
-            <div style={{ fontSize: 26, fontWeight: 800, color: "#0d3b66" }}>{regs.length}</div>
+            <div style={{ fontSize: 26, fontWeight: 800, color: "#6b9fd4" }}>{regs.length}</div>
             <div style={{ fontSize: 11, color: "#8fa3b1", fontWeight: 700 }}>inscritos</div>
           </div>
         </div>
 
         {/* Mini stats */}
         <div style={{ display: "flex", gap: 20, marginTop: 10 }}>
-          <span style={{ fontSize: 12, color: "#5c6b7a" }}>✓ {checkins} check-ins</span>
-          <span style={{ fontSize: 12, color: "#5c6b7a" }}>{capacityLabel(ev)}</span>
+          <span style={{ fontSize: 12, color: "rgba(232,234,240,0.5)" }}>✓ {checkins} check-ins</span>
+          <span style={{ fontSize: 12, color: "rgba(232,234,240,0.5)" }}>{capacityLabel(ev)}</span>
         </div>
       </div>
 
@@ -145,14 +145,14 @@ function EventCard({ ev, onOpen, onEdit, onValidate, onDelete, onShare, onToggle
         if (!max) return null;
         const pct = Math.min(100, Math.round((regs.length / max) * 100));
         return (
-          <div style={{ height: 3, background: "#f0f4f8", margin: "0 20px" }}>
-            <div style={{ height: "100%", width: `${pct}%`, background: pct >= 90 ? "#e53e3e" : "#0d3b66", transition: "width 0.3s" }} />
+          <div style={{ height: 3, background: "rgba(255,255,255,0.08)", margin: "0 20px" }}>
+            <div style={{ height: "100%", width: `${pct}%`, background: pct >= 90 ? "#ef4444" : "#6b9fd4", transition: "width 0.3s" }} />
           </div>
         );
       })()}
 
       {/* Acciones — centradas */}
-      <div style={{ padding: "14px 16px", borderTop: "1px solid #f0f4f8", display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
+      <div style={{ padding: "14px 16px", borderTop: "1px solid rgba(255,255,255,0.07)", display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
         <button type="button" className="soft-btn soft-btn-primary" style={{ fontSize: 12, padding: "8px 14px" }} onClick={onOpen}>
           Ver inscritos
         </button>
@@ -167,14 +167,14 @@ function EventCard({ ev, onOpen, onEdit, onValidate, onDelete, onShare, onToggle
         </button>
         <button type="button"
           className="soft-btn"
-          style={{ fontSize: 12, padding: "8px 14px", background: sold ? "#f0fdf4" : "#fff7ed", color: sold ? "#16a34a" : "#c2410c", border: `1px solid ${sold ? "#bbf7d0" : "#fed7aa"}`, borderRadius: 10 }}
+          style={{ fontSize: 12, padding: "8px 14px", background: sold ? "rgba(52,199,89,0.12)" : "rgba(234,88,12,0.12)", color: sold ? "#86efac" : "#fdba74", border: `1px solid ${sold ? "rgba(52,199,89,0.3)" : "rgba(234,88,12,0.3)"}`, borderRadius: 10 }}
           onClick={() => onToggleSoldOut(!ev.manualSoldOut)}
         >
           {sold ? "Reabrir" : "Sold out"}
         </button>
         <button type="button"
           className="soft-btn"
-          style={{ fontSize: 12, padding: "8px 14px", background: "#fff", color: "#e53e3e", border: "1px solid #fed7d7", borderRadius: 10 }}
+          style={{ fontSize: 12, padding: "8px 14px", background: "rgba(220,38,38,0.12)", color: "#fca5a5", border: "1px solid rgba(220,38,38,0.3)", borderRadius: 10 }}
           onClick={onDelete}
         >
           Eliminar
@@ -183,19 +183,19 @@ function EventCard({ ev, onOpen, onEdit, onValidate, onDelete, onShare, onToggle
 
       {/* Lista de últimos inscritos */}
       {expanded && regs.length > 0 && (
-        <div style={{ borderTop: "1px solid #f0f4f8", padding: "0 20px 16px" }}>
+        <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", padding: "0 20px 16px" }}>
           <p style={{ fontSize: 12, fontWeight: 700, color: "#8fa3b1", textTransform: "uppercase", letterSpacing: "0.06em", margin: "16px 0 10px" }}>
             Últimos inscritos
           </p>
           {[...regs].reverse().slice(0, 10).map(r => {
             const p = buildParticipant(ev, r);
             return (
-              <div key={r.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #f8fafc" }}>
+              <div key={r.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
                 <div>
-                  <span style={{ fontSize: 14, fontWeight: 600, color: "#0d1b2a" }}>{p.name}</span>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: "#e8eaf0" }}>{p.name}</span>
                   <span style={{ fontSize: 11, color: "#8fa3b1", marginLeft: 8 }}>{new Date(r.ts).toLocaleString("es-CO")}</span>
                 </div>
-                <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 100, background: r.used ? "#0d3b66" : "#f0fdf4", color: r.used ? "#fff" : "#16a34a" }}>
+                <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 100, background: r.used ? "rgba(107,159,212,0.25)" : "rgba(52,199,89,0.15)", color: r.used ? "#6b9fd4" : "#86efac" }}>
                   {r.used ? "CHECK-IN" : "ACTIVO"}
                 </span>
               </div>
@@ -220,7 +220,7 @@ function DraftCard({ ev, onEdit, onDelete }) {
         <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 100, background: "#fef3c7", color: "#92400e", display: "inline-block", marginBottom: 8 }}>
           Borrador — sin publicar
         </span>
-        <h3 style={{ fontSize: 16, fontWeight: 700, color: "#0d1b2a", margin: "0 0 4px" }}>
+        <h3 style={{ fontSize: 16, fontWeight: 700, color: "#e8eaf0", margin: "0 0 4px" }}>
           {ev.title || "Sin título"}
         </h3>
         <p style={{ fontSize: 13, color: "#8fa3b1", margin: 0 }}>
@@ -228,11 +228,11 @@ function DraftCard({ ev, onEdit, onDelete }) {
           {ev.city ? ` · ${ev.city}` : ""}
         </p>
       </div>
-      <div style={{ padding: "12px 20px", borderTop: "1px solid #f0f4f8", display: "flex", gap: 8 }}>
+      <div style={{ padding: "12px 20px", borderTop: "1px solid rgba(255,255,255,0.07)", display: "flex", gap: 8 }}>
         <button type="button" className="soft-btn soft-btn-primary" style={{ fontSize: 13 }} onClick={onEdit}>
           Continuar editando →
         </button>
-        <button type="button" className="soft-btn" style={{ fontSize: 13, background: "#fff", color: "#e53e3e", border: "1px solid #fed7d7", borderRadius: 10 }} onClick={onDelete}>
+        <button type="button" className="soft-btn" style={{ fontSize: 13, background: "rgba(220,38,38,0.12)", color: "#fca5a5", border: "1px solid rgba(220,38,38,0.3)", borderRadius: 10 }} onClick={onDelete}>
           Descartar
         </button>
       </div>

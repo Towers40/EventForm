@@ -1263,7 +1263,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
             placeholder="Título del evento"
             style={{
               width: "100%", border: "none", outline: "none",
-              fontSize: 24, fontWeight: 700, color: "#0d1b2a",
+              fontSize: 24, fontWeight: 700, color: "#e8eaf0",
               background: "transparent", boxSizing: "border-box",
               fontFamily: "system-ui, -apple-system, sans-serif",
               textAlign: "center",
@@ -1278,7 +1278,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
             rows={3}
             style={{
               width: "100%", border: "none", outline: "none", resize: "none",
-              fontSize: 14, color: "#5c6b7a", lineHeight: 1.7,
+              fontSize: 14, color: "rgba(232,234,240,0.5)", lineHeight: 1.7,
               background: "transparent", boxSizing: "border-box",
               fontFamily: "system-ui, -apple-system, sans-serif",
             }}
@@ -1286,7 +1286,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
         </div>
 
         {/* Configuración adicional (ubicación) — colapsable */}
-        <div style={{ borderTop: "1px solid #f0f4f8" }}>
+        <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
           <button
             type="button"
             onClick={() => setShowSettings((s) => !s)}
@@ -1353,7 +1353,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
       {/* ── Encabezado de campos + acción publicar ── */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
         <div>
-          <h2 style={{ fontSize: 17, fontWeight: 700, margin: 0, color: "#0d1b2a" }}>
+          <h2 style={{ fontSize: 17, fontWeight: 700, margin: 0, color: "#e8eaf0" }}>
             Campos del formulario
           </h2>
           <p style={{ fontSize: 13, color: "#8fa3b1", margin: "3px 0 0" }}>
@@ -1379,7 +1379,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
             style={{
               overflow: "hidden", position: "relative",
               opacity: dragId === f.id ? 0.4 : 1,
-              outline: dragOverId === f.id && dragId !== f.id ? "2px solid #0d3b66" : "none",
+              outline: dragOverId === f.id && dragId !== f.id ? "2px solid rgba(107,159,212,0.5)" : "none",
               cursor: "grab",
               transition: "outline 0.1s",
             }}
@@ -1392,7 +1392,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
               style={{
                 position: "absolute", top: 8, right: 8,
                 width: 24, height: 24, borderRadius: "50%",
-                border: "none", background: "#dbeafe", color: "#0d3b66",
+                border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.07)", color: "rgba(232,234,240,0.6)",
                 cursor: "pointer", fontSize: 14, fontWeight: 700,
                 display: "flex", alignItems: "center", justifyContent: "center",
                 lineHeight: 1, zIndex: 1,
@@ -1406,13 +1406,13 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
               style={{
                 padding: "14px 44px 14px 20px",
                 cursor: "pointer",
-                background: editFid === f.id ? "#f0f6fc" : "#fff",
+                background: editFid === f.id ? "rgba(107,159,212,0.1)" : "transparent",
               }}
               onClick={() => setEditFid(editFid === f.id ? null : f.id)}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
                 <span style={{ color: "#b8c5d4", fontSize: 14, cursor: "grab" }}>⣿</span>
-                <span style={{ fontWeight: 700, fontSize: 15, color: "#0d1b2a" }}>
+                <span style={{ fontWeight: 700, fontSize: 15, color: "#e8eaf0" }}>
                   {f.label}
                 </span>
               </div>
@@ -1428,7 +1428,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
 
             {/* Panel de edición del campo */}
             {editFid === f.id && (
-              <div style={{ padding: "16px 20px", borderTop: "1px solid #f0f4f8", background: "#fafbfc" }}>
+              <div style={{ padding: "16px 20px", borderTop: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.03)" }}>
                 <div style={{ marginBottom: 16 }}>
                   <label style={bldLabel}>Pregunta o título del campo</label>
                   <input
@@ -1476,7 +1476,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
                     </button>
                   </div>
                 )}
-                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "#5c6b7a", cursor: "pointer" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "rgba(232,234,240,0.5)", cursor: "pointer" }}>
                   <input type="checkbox" checked={f.required}
                     onChange={(e) => onUpdate(f.id, { required: e.target.checked })}
                     style={{ width: 16, height: 16 }} />
@@ -1516,7 +1516,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
 
       {/* ── Publicación ── */}
       <div className="panel-card" style={{ marginTop: 20, padding: "20px 24px" }}>
-        <h3 style={{ fontSize: 13, fontWeight: 800, color: "#5c6b7a", marginBottom: 20, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+        <h3 style={{ fontSize: 13, fontWeight: 800, color: "rgba(232,234,240,0.5)", marginBottom: 20, textTransform: "uppercase", letterSpacing: "0.08em" }}>
           Publicación
         </h3>
 
@@ -1550,9 +1550,9 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
             value={draft.category || ""}
             onChange={e => setDraft(p => ({ ...p, category: e.target.value || null }))}
             style={{
-              width: "100%", border: "2px solid #e2e8f0", borderRadius: 10,
-              padding: "11px 14px", fontSize: 14, color: "#0d1b2a",
-              background: "#fff", outline: "none", cursor: "pointer",
+              width: "100%", border: "1px solid rgba(255,255,255,0.11)", borderRadius: 10,
+              padding: "11px 14px", fontSize: 14, color: "#e8eaf0",
+              background: "rgba(255,255,255,0.06)", outline: "none", cursor: "pointer",
               fontFamily: "inherit",
             }}
           >
@@ -1586,7 +1586,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
           </div>
           {draft.isPaid && (
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <span style={{ fontSize: 14, fontWeight: 700, color: "#5c6b7a", whiteSpace: "nowrap" }}>COP</span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: "rgba(232,234,240,0.5)", whiteSpace: "nowrap" }}>COP</span>
               <input
                 type="number"
                 min="0"
@@ -1596,8 +1596,8 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
                 onChange={e => setDraft(p => ({ ...p, price: e.target.value ? Number(e.target.value) : null }))}
                 style={{
                   flex: 1, border: "2px solid #e2e8f0", borderRadius: 10,
-                  padding: "11px 14px", fontSize: 14, color: "#0d1b2a",
-                  background: "#fff", outline: "none", fontFamily: "inherit",
+                  padding: "11px 14px", fontSize: 14, color: "#e8eaf0",
+                  background: "rgba(255,255,255,0.06)", outline: "none", fontFamily: "inherit",
                 }}
               />
             </div>
@@ -1613,9 +1613,9 @@ function iconBtn() {
     width: 30,
     height: 30,
     borderRadius: "50%",
-    border: "none",
-    background: "#dbeafe",
-    color: "#0d3b66",
+    border: "1px solid rgba(255,255,255,0.1)",
+    background: "rgba(255,255,255,0.07)",
+    color: "rgba(232,234,240,0.6)",
     cursor: "pointer",
     fontSize: 14,
     fontWeight: 900,
