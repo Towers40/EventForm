@@ -7,6 +7,7 @@ import { searchPlacesInColombia } from "../lib/geocoding.js";
 import { VERDE_CORPORATIVO } from "../lib/theme.js";
 import { api } from "../lib/api.js";
 import DateTimePicker from "./DateTimePicker.jsx";
+import CreateEventForm from "./CreateEventForm.jsx";
 import "../styles/typeform.css";
 
 const uid = () => Math.random().toString(36).slice(2, 10).toUpperCase();
@@ -421,9 +422,7 @@ export default function OnboardingFlow({ onDraftReady }) {
     setBusy(true);
 
     // Guardar draft en localStorage para recuperarlo después de verificar
-    const finalDraft = skipWizard
-      ? { _openCreate: true }
-      : { ...draft, date: draft.startDate || draft.date };
+    const finalDraft = { ...draft, date: draft.startDate || draft.date };
     localStorage.setItem("ef_pending_draft", JSON.stringify(finalDraft));
 
     try {
@@ -492,6 +491,20 @@ export default function OnboardingFlow({ onDraftReady }) {
     }
   };
 
+  // Phase 10: CreateEventForm full-screen (pre-auth)
+  if (phase === 10) {
+    return (
+      <CreateEventForm
+        draft={draft}
+        setDraft={setDraft}
+        onDone={(d) => { setDraft(d); go(7); }}
+        onCancel={() => go(0)}
+        user={null}
+        avatarUrl={null}
+      />
+    );
+  }
+
   const progressPct =
     phase === 0 ? 0 : phase >= 7 ? 95 : Math.round((phase / 6) * 85);
 
@@ -519,7 +532,7 @@ export default function OnboardingFlow({ onDraftReady }) {
             <p className="tf-hint" style={{ maxWidth: 420, margin: "0 auto 44px", fontSize: 16 }}>
               Configura en minutos, inscribe asistentes y gestiona el acceso con QR el día del evento.
             </p>
-            <button type="button" onClick={() => { setSkipWizard(true); go(7); }} className="soft-btn soft-btn-primary" style={{ fontSize: 16, padding: "16px 48px", borderRadius: 12 }}>
+            <button type="button" onClick={() => { setSkipWizard(true); go(10); }} className="soft-btn soft-btn-primary" style={{ fontSize: 16, padding: "16px 48px", borderRadius: 12 }}>
               Empezar →
             </button>
             <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 12, alignItems: "center" }}>
@@ -802,7 +815,7 @@ export default function OnboardingFlow({ onDraftReady }) {
               </button>
             </div>
             <div style={{ marginTop: 16, textAlign: "center" }}>
-              <button type="button" onClick={() => go(6)}
+              <button type="button" onClick={() => go(skipWizard ? 10 : 6)}
                 style={{ background: "none", border: "none", color: "#8fa3b1", fontWeight: 600, cursor: "pointer", fontSize: 13 }}>
                 ← Volver al paso anterior
               </button>

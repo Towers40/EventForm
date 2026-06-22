@@ -131,24 +131,18 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
 
   const _pendingSaved = localStorage.getItem("ef_pending_draft");
   const _pendingParsed = _pendingSaved ? (() => { try { return JSON.parse(_pendingSaved); } catch { return null; } })() : null;
-  const _isOpenCreate = Boolean(initialDraft?._openCreate || _pendingParsed?._openCreate);
+  // Ignore stale _openCreate markers — treat as no draft
+  const _realInitial = initialDraft?._openCreate ? null : initialDraft;
+  const _realPending = _pendingParsed?._openCreate ? null : _pendingParsed;
 
   const [draft, setDraft] = useState(() => {
-    if (_isOpenCreate) return {
-      id: "E" + uid(), title: "", eventType: "", eventTypeCustom: "", slug: "",
-      date: "", startDate: "", startTime: "", endDate: "", endTime: "",
-      city: "", location: "", address: "", locationInstructions: "",
-      lat: null, lng: null, capacity: "", capacityCustom: "",
-      headerImage: "", fields: [], registrations: [],
-      eventDescription: "", requireApproval: false, priceType: "free", price: "", visibility: "public",
-    };
-    if (initialDraft) return initialDraft;
-    if (_pendingParsed) return _pendingParsed;
+    if (_realInitial) return _realInitial;
+    if (_realPending) return _realPending;
     return null;
   });
 
-  const _hasDraft = !_isOpenCreate && Boolean(initialDraft || _pendingSaved);
-  const [view, setView] = useState(_isOpenCreate ? "create_wizard" : _hasDraft ? "builder" : "inicio");
+  const _hasDraft = Boolean(_realInitial || _realPending);
+  const [view, setView] = useState(_hasDraft ? "builder" : "inicio");
   const [events, setEvents] = useState(() => (apiOn ? [] : loadEvents()));
   const [shareEv, setShareEv] = useState(null);
   const [evId, setEvId] = useState(null);
