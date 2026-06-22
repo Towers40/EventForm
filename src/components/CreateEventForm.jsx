@@ -263,7 +263,7 @@ const I = {
 };
 
 // ── MAIN COMPONENT ───────────────────────────────────────────────────────────
-export default function CreateEventForm({ draft, setDraft, onDone, onCancel, user, avatarUrl }) {
+export default function CreateEventForm({ draft, setDraft, onDone, onCancel, user, avatarUrl, isEditing }) {
   const today = new Date().toISOString().split("T")[0];
 
   const [startPicker, setStartPicker] = useState(false);
@@ -337,9 +337,9 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
         {/* ── Sticky header ── */}
         <div style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(18,20,34,0.82)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderBottom: "1px solid rgba(255,255,255,0.07)", padding: "0 16px" }}>
           <div className="ce-header-inner" style={{ display: "flex", alignItems: "center", height: 60, gap: 12 }}>
-            {!user ? (
-              <button type="button" onClick={onCancel} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", padding: "8px 4px", color: SUB, fontSize: 22, lineHeight: 1 }}>
-                ←
+            {!user || isEditing ? (
+              <button type="button" onClick={onCancel} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", padding: "8px 4px", color: SUB, fontSize: isEditing ? 15 : 22, fontWeight: isEditing ? 700 : 400, lineHeight: 1 }}>
+                {isEditing ? "← Volver" : "←"}
               </button>
             ) : (
               <button type="button" onClick={onCancel} style={{ display: "flex", alignItems: "center", gap: 4, background: "none", border: "none", cursor: "pointer", padding: 0 }}>
@@ -349,7 +349,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
                 <span style={{ color: SUB }}><I.ChevronDown /></span>
               </button>
             )}
-            <p style={{ flex: 1, textAlign: "center", fontWeight: 700, fontSize: 17, color: TEXT, margin: 0 }}>Crear evento</p>
+            <p style={{ flex: 1, textAlign: "center", fontWeight: 700, fontSize: 17, color: TEXT, margin: 0 }}>{isEditing ? "Editar evento" : "Crear evento"}</p>
             <button type="button" onClick={handleSubmit} style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(232,234,240,0.15)", border: "1px solid rgba(255,255,255,0.25)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: TEXT, flexShrink: 0 }}>
               <I.Check />
             </button>

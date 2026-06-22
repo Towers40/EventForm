@@ -10,7 +10,7 @@ function statusOf(ev) {
   return d < new Date() ? "pasado" : "activo";
 }
 
-export default function MisEventosView({ events, onNew, onOpen, onEdit, onValidate, onDelete, onShare, onToggleSoldOut }) {
+export default function MisEventosView({ events, onNew, onOpen, onEdit, onValidate, onDelete, onShare, onToggleSoldOut, onHome }) {
   const [tab, setTab] = useState("todos");
 
   const borradores = events.filter(e => e.isDraft);
@@ -25,6 +25,12 @@ export default function MisEventosView({ events, onNew, onOpen, onEdit, onValida
 
   return (
     <div style={{ maxWidth: 760, margin: "0 auto" }}>
+      {onHome && (
+        <button type="button" onClick={onHome} style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(107,159,212,0.25)", borderRadius: 10, color: "#c8dff0", cursor: "pointer", fontSize: 13, fontWeight: 700, padding: "8px 14px", marginBottom: 16 }}>
+          <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M3 9.5 12 3l9 6.5" /><path d="M5 10v10h14V10" /><path d="M9 20v-6h6v6" /></svg>
+          Inicio
+        </button>
+      )}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
         <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0, color: "#e8eaf0" }}>Mis eventos</h1>
         <button type="button" className="soft-btn soft-btn-primary" onClick={onNew} style={{ fontSize: 13 }}>

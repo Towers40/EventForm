@@ -679,6 +679,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
             onDelete={deleteEvent}
             onShare={(ev) => setShareEv(ev)}
             onToggleSoldOut={toggleSoldOut}
+            onHome={() => go("inicio")}
           />
         )}
         {view === "stats" && <DashboardView events={events} />}
@@ -688,7 +689,8 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
             draft={draft}
             setDraft={setDraft}
             onDone={generatePreliminaryForm}
-            onCancel={() => go("inicio")}
+            onCancel={() => (evId ? go("mis_eventos") : go("inicio"))}
+            isEditing={Boolean(evId)}
             user={user}
             avatarUrl={avatarUrl}
           />
