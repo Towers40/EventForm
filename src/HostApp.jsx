@@ -210,6 +210,10 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
 
   const saveDraftToEvents = (d) => {
     if (!d?.title?.trim()) return;
+    const existing = events.find((e) => e.id === d.id);
+    // No degradar a borrador un evento ya publicado al navegar hacia atrás:
+    // queda en la sección en la que estaba.
+    if (existing && !existing.isDraft) return;
     const draftEv = { ...d, isDraft: true };
     localStorage.setItem("ef_builder_draft", JSON.stringify(draftEv));
     setEvents((prev) => {
