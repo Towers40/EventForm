@@ -131,7 +131,7 @@ export default function LoginPage() {
             <div style={{ marginTop: 28, textAlign: "center" }}>
               <p style={{ color: "#8fa3b1", fontSize: 14 }}>
                 ¿No tienes cuenta?{" "}
-                <Link to="/app" style={{ color: "#6b9fd4", fontWeight: 700, textDecoration: "underline", textUnderlineOffset: 3 }}>
+                <Link to="/app?register=1" style={{ color: "#6b9fd4", fontWeight: 700, textDecoration: "underline", textUnderlineOffset: 3 }}>
                   Crear una gratis
                 </Link>
               </p>

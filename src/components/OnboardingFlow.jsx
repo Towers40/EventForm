@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { COLOMBIA_CITIES } from "../lib/colombia.js";
 import { EVENT_TYPE_OTHER, EVENT_TYPE_PRESETS } from "../lib/colombia.js";
@@ -286,8 +286,9 @@ function splitLocalDateTime(value) {
 export default function OnboardingFlow({ onDraftReady }) {
   const { register, loginWithToken } = useAuth();
   const nav = useNavigate();
+  const [searchParams] = useSearchParams();
 
-  const [phase, setPhase] = useState(0);
+  const [phase, setPhase] = useState(() => searchParams.get("register") === "1" ? 7 : 0);
   const [animClass, setAnimClass] = useState("tf-fade");
 
   const [draft, setDraft] = useState({
