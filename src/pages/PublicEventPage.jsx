@@ -233,7 +233,6 @@ export default function PublicEventPage() {
                 {event.city && event.address && event.city !== locName && (
                   <p style={{ margin: "2px 0 0", fontSize: 13, color: SUB }}>{event.city}</p>
                 )}
-                {hasCoords && <DirectionButtons lat={event.lat} lng={event.lng} />}
               </div>
             </div>
           )}
