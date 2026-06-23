@@ -58,6 +58,7 @@ function IconKeyboard({ size }) { return <svg {...svgBase(size)}><rect x="2" y="
 function IconScan({ size = 16 }) { return <svg {...svgBase(size)}><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2" /><path d="M3 12h18" /></svg>; }
 function IconTicket({ size }) { return <svg {...svgBase(size)}><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2 2 2 0 0 0 0 4 2 2 0 0 1-2 2H5a2 2 0 0 1-2-2 2 2 0 0 0 0-4z" /><path d="M13 7v10" strokeDasharray="2 2" /></svg>; }
 function IconUser({ size }) { return <svg {...svgBase(size)}><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></svg>; }
+function IconCompass({ size }) { return <svg {...svgBase(size)}><circle cx="12" cy="12" r="10" /><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" /></svg>; }
 
 const FIELD_TYPES = [
   { type: "text", label: "Texto corto", icon: "✏️" },
@@ -495,7 +496,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
   const BOTTOM_NAV = [
     { key: "mis_eventos", label: "Mis eventos", icon: <IconCalendar /> },
     { key: "mis_tickets", label: "Tickets",     icon: <IconTicket /> },
-    { key: "mi_cuenta",   label: "Mi cuenta",   icon: <IconUser /> },
+    { key: "discover",    label: "Descubrir",   icon: <IconCompass />, to: "/discover" },
   ];
 
   const searchResults = searchQuery.trim()
@@ -656,10 +657,10 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
             borderRadius: 24, padding: 8,
             boxShadow: "0 8px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.12)",
           }}>
-            {BOTTOM_NAV.map(({ key, label, icon }) => {
+            {BOTTOM_NAV.map(({ key, label, icon, to }) => {
               const active = view === key;
               return (
-                <button key={key} type="button" onClick={() => go(key)}
+                <button key={key} type="button" onClick={() => (to ? (window.location.href = to) : go(key))}
                   style={{
                     flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3,
                     background: active ? "rgba(107,159,212,0.22)" : "transparent",
