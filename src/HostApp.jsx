@@ -24,6 +24,7 @@ import {
   buildParticipant,
 } from "./lib/tickets.js";
 import { isSoldOut, capacityLabel, getCapacityMax } from "./lib/capacity.js";
+import { compressAvatar } from "./lib/images.js";
 import {
   EVENT_TYPE_OTHER,
   EVENT_TYPE_PRESETS,
@@ -171,6 +172,15 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
     try { return localStorage.getItem("ef_avatar") || null; } catch { return null; }
   });
   const avatarInputRef = useRef(null);
+
+  // Carga la foto de perfil del usuario actual (clave por cuenta) al iniciar sesión.
+  useEffect(() => {
+    if (!user) return;
+    try {
+      const key = `ef_avatar_${user.id || user.email}`;
+      setAvatarUrl(localStorage.getItem(key) || localStorage.getItem("ef_avatar") || null);
+    } catch {}
+  }, [user]);
 
   useEffect(() => {
     localStorage.removeItem("ef_pending_draft");
@@ -477,16 +487,17 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
     ? user.name.split(" ").slice(0, 2).map(w => w[0]).join("").toUpperCase()
     : "?";
 
-  const handleAvatarChange = (e) => {
+  const handleAvatarChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const url = ev.target.result;
+    try {
+      const url = await compressAvatar(file);
       setAvatarUrl(url);
-      try { localStorage.setItem("ef_avatar", url); } catch {}
-    };
-    reader.readAsDataURL(file);
+      const key = user ? `ef_avatar_${user.id || user.email}` : "ef_avatar";
+      try { localStorage.setItem(key, url); } catch {}
+    } catch (err) {
+      alert(err?.message || "No se pudo procesar la imagen.");
+    }
   };
 
   return (
@@ -639,9 +650,6 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
 
       {/* ── NAVEGACIÓN COMPACTA ── */}
       <nav style={{ background: "rgba(18,20,34,0.82)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderBottom: "1px solid rgba(255,255,255,0.08)", padding: "0 20px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10, boxShadow: "0 1px 8px rgba(0,0,0,0.4)" }}>
-        <button type="button" onClick={() => go("inicio")} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontWeight: 800, fontSize: 17, color: "#e8eaf0" }}>
-          <span style={{ color: VERDE_CORPORATIVO, fontSize: 20 }}>●</span> EventForm
-        </button>
         {/* Profile circle */}
         <button
           type="button"
@@ -662,6 +670,9 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
             ? <img src={avatarUrl} alt="perfil" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             : initials
           }
+        </button>
+        <button type="button" onClick={() => go("inicio")} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontWeight: 800, fontSize: 17, color: "#e8eaf0" }}>
+          <span style={{ color: VERDE_CORPORATIVO, fontSize: 20 }}>●</span> EventForm
         </button>
       </nav>
 

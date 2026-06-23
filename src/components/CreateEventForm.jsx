@@ -425,13 +425,6 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
                 <span style={{ fontSize: 15, color: startLabel ? TEXT : SUB, fontWeight: startLabel ? 600 : 400 }}>{startLabel || "Seleccionar fecha"}</span>
               </div>
             </button>
-            {startPicker && (
-              <div style={{ padding: "0 12px 8px" }}>
-                <WheelPanel date={draft.startDate} time={draft.startTime} minDate={today}
-                  onChange={({ date, time }) => setDraft(p => ({ ...p, startDate: date, startTime: time, date, endDate: p.endDate || date }))}
-                  onClose={() => setStartPicker(false)} />
-              </div>
-            )}
             {/* Fin */}
             <button type="button" onClick={() => { setEndPicker(v => !v); setStartPicker(false); }}
               style={{ width: "100%", background: "none", border: "none", padding: 0, cursor: "pointer", display: "block", textAlign: "left" }}>
@@ -443,14 +436,31 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
                 <span style={{ fontSize: 15, color: endLabel ? TEXT : SUB, fontWeight: endLabel ? 600 : 400 }}>{endLabel || "Seleccionar fecha"}</span>
               </div>
             </button>
-            {endPicker && (
-              <div style={{ padding: "0 12px 8px" }}>
-                <WheelPanel date={draft.endDate} time={draft.endTime} minDate={draft.startDate || today}
-                  onChange={({ date, time }) => setDraft(p => ({ ...p, endDate: date, endTime: time }))}
-                  onClose={() => setEndPicker(false)} />
-              </div>
-            )}
           </div>
+
+          {/* ── Date picker modal (centrado, mobile-first) ── */}
+          {(startPicker || endPicker) && (
+            <div
+              onClick={() => { setStartPicker(false); setEndPicker(false); }}
+              style={{ position: "fixed", inset: 0, zIndex: 400, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(3px)", WebkitBackdropFilter: "blur(3px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+            >
+              <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 420, maxHeight: "90vh", overflowY: "auto" }}>
+                <p style={{ margin: "0 0 4px", textAlign: "center", fontWeight: 700, fontSize: 15, color: TEXT }}>
+                  {startPicker ? "Fecha de inicio" : "Fecha de fin"}
+                </p>
+                {startPicker && (
+                  <WheelPanel date={draft.startDate} time={draft.startTime} minDate={today}
+                    onChange={({ date, time }) => setDraft(p => ({ ...p, startDate: date, startTime: time, date, endDate: p.endDate || date }))}
+                    onClose={() => setStartPicker(false)} />
+                )}
+                {endPicker && (
+                  <WheelPanel date={draft.endDate} time={draft.endTime} minDate={draft.startDate || today}
+                    onChange={({ date, time }) => setDraft(p => ({ ...p, endDate: date, endTime: time }))}
+                    onClose={() => setEndPicker(false)} />
+                )}
+              </div>
+            </div>
+          )}
 
           {/* ── Location ── */}
           <div style={cardStyle}>
@@ -587,7 +597,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
           )}
 
           {/* Bottom CTA */}
-          <button type="button" onClick={handleSubmit} style={{ width: "100%", marginTop: 20, padding: 16, background: "rgba(107,159,212,0.25)", border: "1px solid rgba(107,159,212,0.4)", borderRadius: RADIUS, color: TEXT, fontWeight: 700, fontSize: 16, cursor: "pointer", letterSpacing: "0.02em" }}>
+          <button type="button" onClick={handleSubmit} style={{ width: "100%", marginTop: 20, padding: 16, background: "rgba(52,199,89,0.18)", border: "1px solid rgba(52,199,89,0.45)", borderRadius: RADIUS, color: "#5ee07f", fontWeight: 800, fontSize: 16, cursor: "pointer", letterSpacing: "0.02em" }}>
             Continuar →
           </button>
         </div>
