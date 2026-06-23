@@ -84,6 +84,7 @@ export async function initDb() {
     "ALTER TABLE events ADD COLUMN is_paid INTEGER NOT NULL DEFAULT 0",
     "ALTER TABLE events ADD COLUMN price REAL",
     "ALTER TABLE registrations ADD COLUMN cancelled INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE users ADD COLUMN avatar TEXT",
   ];
   for (const sql of migrations) {
     try {

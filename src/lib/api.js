@@ -52,8 +52,8 @@ export const api = {
     request("/api/auth/forgot-password", { method: "POST", body: JSON.stringify({ email }) }),
   resetPassword: (email, code, newPassword) =>
     request("/api/auth/reset-password", { method: "POST", body: JSON.stringify({ email, code, newPassword }) }),
-  updateMe: (token, name) =>
-    request("/api/auth/me", { method: "PATCH", body: JSON.stringify({ name }) }, token),
+  updateMe: (token, fields) =>
+    request("/api/auth/me", { method: "PATCH", body: JSON.stringify(typeof fields === "string" ? { name: fields } : fields) }, token),
   changePassword: (token, currentPassword, newPassword) =>
     request("/api/auth/change-password", { method: "POST", body: JSON.stringify({ currentPassword, newPassword }) }, token),
   deleteAccount: (token) =>

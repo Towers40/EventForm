@@ -24,7 +24,6 @@ import {
   buildParticipant,
 } from "./lib/tickets.js";
 import { isSoldOut, capacityLabel, getCapacityMax } from "./lib/capacity.js";
-import { compressAvatar } from "./lib/images.js";
 import {
   EVENT_TYPE_OTHER,
   EVENT_TYPE_PRESETS,
@@ -56,6 +55,8 @@ function IconPencil({ size = 11 }) { return <svg {...svgBase(size)}><path d="M12
 function IconCamera({ size }) { return <svg {...svgBase(size)}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-3h8l2 3h3a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg>; }
 function IconKeyboard({ size }) { return <svg {...svgBase(size)}><rect x="2" y="5" width="20" height="14" rx="2" /><path d="M6 9h0M10 9h0M14 9h0M18 9h0M6 13h0M10 13h0M14 13h0M18 13h0M8 17h8" /></svg>; }
 function IconScan({ size = 16 }) { return <svg {...svgBase(size)}><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2" /><path d="M3 12h18" /></svg>; }
+function IconTicket({ size }) { return <svg {...svgBase(size)}><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2 2 2 0 0 0 0 4 2 2 0 0 1-2 2H5a2 2 0 0 1-2-2 2 2 0 0 0 0-4z" /><path d="M13 7v10" strokeDasharray="2 2" /></svg>; }
+function IconUser({ size }) { return <svg {...svgBase(size)}><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></svg>; }
 
 const FIELD_TYPES = [
   { type: "text", label: "Texto corto", icon: "✏️" },
@@ -141,7 +142,7 @@ const CAPACITY_OPTIONS = [
 
 // ─── COMPONENTE PRINCIPAL ──────────────────────────────────────────────────────
 export default function HostApp({ initialDraft = null, onDraftConsumed }) {
-  const { user, token, logout, isSuperAdmin, apiEnabled: apiOn } = useAuth();
+  const { user, token, logout, isSuperAdmin, apiEnabled: apiOn, patchUser } = useAuth();
 
   const _pendingSaved = localStorage.getItem("ef_pending_draft");
   const _pendingParsed = _pendingSaved ? (() => { try { return JSON.parse(_pendingSaved); } catch { return null; } })() : null;
@@ -167,18 +168,24 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
   const [vCode, setVCode] = useState("");
   const [vResult, setVResult] = useState(null);
   const [wizardStep, setWizardStep] = useState(1);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [avatarUrl, setAvatarUrl] = useState(() => {
     try { return localStorage.getItem("ef_avatar") || null; } catch { return null; }
   });
-  const avatarInputRef = useRef(null);
 
-  // Carga la foto de perfil del usuario actual (clave por cuenta) al iniciar sesión.
+  // Foto de perfil: prioriza la guardada en el servidor (cross-device);
+  // si no, usa la copia local en caché por cuenta.
   useEffect(() => {
     if (!user) return;
     try {
       const key = `ef_avatar_${user.id || user.email}`;
-      setAvatarUrl(localStorage.getItem(key) || localStorage.getItem("ef_avatar") || null);
+      if (user.avatar) {
+        setAvatarUrl(user.avatar);
+        try { localStorage.setItem(key, user.avatar); } catch {}
+      } else {
+        setAvatarUrl(localStorage.getItem(key) || null);
+      }
     } catch {}
   }, [user]);
 
@@ -476,29 +483,23 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
 
   const showScannerNav = ["inicio", "mis_eventos", "detail", "validate"].includes(view);
 
-  const NAV_ITEMS = [
-    { key: "inicio", label: "Inicio", icon: <IconHome /> },
-    { key: "mis_eventos", label: "Mis eventos", icon: <IconCalendar /> },
-    { key: "stats", label: "Dashboard", icon: <IconChart /> },
-    { key: "mi_cuenta", label: "Mi cuenta", icon: <IconGear /> },
-  ];
-
   const initials = user?.name
     ? user.name.split(" ").slice(0, 2).map(w => w[0]).join("").toUpperCase()
     : "?";
 
-  const handleAvatarChange = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      const url = await compressAvatar(file);
-      setAvatarUrl(url);
-      const key = user ? `ef_avatar_${user.id || user.email}` : "ef_avatar";
-      try { localStorage.setItem(key, url); } catch {}
-    } catch (err) {
-      alert(err?.message || "No se pudo procesar la imagen.");
-    }
-  };
+  // Items de la barra inferior tipo liquid glass.
+  const BOTTOM_NAV = [
+    { key: "mis_eventos", label: "Mis eventos", icon: <IconCalendar /> },
+    { key: "stats",       label: "Tickets",     icon: <IconTicket /> },
+    { key: "mi_cuenta",   label: "Mi cuenta",   icon: <IconUser /> },
+  ];
+
+  const searchResults = searchQuery.trim()
+    ? events.filter((e) => {
+        const q = searchQuery.trim().toLowerCase();
+        return (e.title || "").toLowerCase().includes(q) || (e.city || "").toLowerCase().includes(q) || (e.location || "").toLowerCase().includes(q);
+      })
+    : events;
 
   return (
     <div
@@ -512,148 +513,12 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
         textAlign: "left",
       }}
     >
-      {/* ── SIDEBAR OVERLAY ── */}
-      {sidebarOpen && (
-        <div
-          onClick={() => setSidebarOpen(false)}
-          style={{
-            position: "fixed", inset: 0, zIndex: 40,
-            background: "rgba(0,0,0,0.55)", backdropFilter: "blur(2px)",
-          }}
-        />
-      )}
-
-      {/* ── SIDEBAR ── */}
-      <div style={{
-        position: "fixed", top: 0, left: 0, bottom: 0, zIndex: 50,
-        width: 280, background: "rgba(14,16,30,0.96)",
-        backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
-        borderRight: "1px solid rgba(255,255,255,0.08)",
-        transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)",
-        transition: "transform 0.28s cubic-bezier(.4,0,.2,1)",
-        display: "flex", flexDirection: "column",
-        overflowY: "auto",
-      }}>
-        {/* Close button */}
-        <button
-          type="button"
-          onClick={() => setSidebarOpen(false)}
-          style={{ position: "absolute", top: 14, right: 14, background: "rgba(255,255,255,0.06)", border: "none", borderRadius: "50%", width: 32, height: 32, cursor: "pointer", color: "#8fa3b1", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center" }}
-        >
-          ×
-        </button>
-
-        {/* Profile section */}
-        <div style={{ padding: "40px 24px 28px", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
-          <div style={{ position: "relative", width: 72, height: 72, marginBottom: 14 }}>
-            <div
-              onClick={() => avatarInputRef.current?.click()}
-              title="Cambiar foto de perfil"
-              style={{
-                width: 72, height: 72, borderRadius: "50%",
-                background: avatarUrl ? "transparent" : "linear-gradient(135deg, #0d3b66, #1a5f8a)",
-                border: "3px solid rgba(107,159,212,0.4)",
-                cursor: "pointer", overflow: "hidden",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 26, fontWeight: 800, color: "#fff",
-                boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
-              }}
-            >
-              {avatarUrl
-                ? <img src={avatarUrl} alt="avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                : initials
-              }
-            </div>
-            <div
-              onClick={() => avatarInputRef.current?.click()}
-              style={{
-                position: "absolute", bottom: 0, right: 0,
-                width: 22, height: 22, borderRadius: "50%",
-                background: "#1a5f8a", border: "2px solid #111315",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                cursor: "pointer", fontSize: 11, color: "#fff",
-              }}
-            >
-              <IconPencil size={11} />
-            </div>
-            <input ref={avatarInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleAvatarChange} />
-          </div>
-          <div style={{ fontWeight: 700, fontSize: 16, color: "#e8eaf0", marginBottom: 2 }}>
-            {user?.name || "Usuario"}
-          </div>
-          <div style={{ fontSize: 12, color: "#6b9fd4" }}>{user?.email || ""}</div>
-        </div>
-
-        {/* Nav items */}
-        <nav style={{ padding: "16px 12px", flex: 1 }}>
-          {NAV_ITEMS.map(({ key, label, icon }) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => { go(key); setSidebarOpen(false); }}
-              style={{
-                width: "100%", textAlign: "left",
-                padding: "12px 16px", borderRadius: 12,
-                background: view === key ? "rgba(107,159,212,0.12)" : "transparent",
-                border: "none", cursor: "pointer",
-                color: view === key ? "#6b9fd4" : "#c4cad6",
-                fontWeight: view === key ? 700 : 500, fontSize: 15,
-                display: "flex", alignItems: "center", gap: 12,
-                marginBottom: 4,
-                borderLeft: view === key ? "3px solid #1a5f8a" : "3px solid transparent",
-              }}
-            >
-              <span style={{ display: "flex" }}>{icon}</span> {label}
-            </button>
-          ))}
-          <a
-            href="/discover"
-            onClick={() => setSidebarOpen(false)}
-            style={{
-              display: "flex", alignItems: "center", gap: 12,
-              padding: "12px 16px", borderRadius: 12, marginBottom: 4,
-              color: "#c4cad6", fontWeight: 500, fontSize: 15, textDecoration: "none",
-              borderLeft: "3px solid transparent",
-            }}
-          >
-            <span style={{ display: "flex" }}><IconSearch /></span> Descubrir eventos
-          </a>
-          <button
-            type="button"
-            onClick={() => { startNew(); setSidebarOpen(false); }}
-            style={{
-              width: "100%", textAlign: "left",
-              padding: "12px 16px", borderRadius: 12,
-              background: "rgba(26,95,138,0.2)",
-              border: "1px solid rgba(107,159,212,0.2)",
-              cursor: "pointer", color: "#6b9fd4",
-              fontWeight: 700, fontSize: 15,
-              display: "flex", alignItems: "center", gap: 12,
-              marginTop: 8,
-            }}
-          >
-            <span style={{ display: "flex" }}><IconPlus /></span> Crear evento
-          </button>
-        </nav>
-
-        {/* Logout */}
-        <div style={{ padding: "16px 24px", borderTop: "1px solid rgba(255,255,255,0.07)" }}>
-          <button
-            type="button"
-            onClick={() => { logout(); setSidebarOpen(false); }}
-            style={{ background: "none", border: "none", color: "#8fa3b1", cursor: "pointer", fontSize: 13, fontWeight: 600, padding: 0, display: "flex", alignItems: "center", gap: 8 }}
-          >
-            ← Cerrar sesión
-          </button>
-        </div>
-      </div>
-
       {/* ── NAVEGACIÓN COMPACTA ── */}
       <nav style={{ background: "rgba(18,20,34,0.82)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderBottom: "1px solid rgba(255,255,255,0.08)", padding: "0 20px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10, boxShadow: "0 1px 8px rgba(0,0,0,0.4)" }}>
-        {/* Profile circle */}
+        {/* Profile circle → Mi cuenta */}
         <button
           type="button"
-          onClick={() => setSidebarOpen(true)}
+          onClick={() => go("mi_cuenta")}
           style={{
             width: 42, height: 42, borderRadius: "50%",
             background: avatarUrl ? "transparent" : "linear-gradient(135deg, #0d3b66, #1a5f8a)",
@@ -664,7 +529,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
             boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
             flexShrink: 0,
           }}
-          title="Menú de perfil"
+          title="Mi cuenta"
         >
           {avatarUrl
             ? <img src={avatarUrl} alt="perfil" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -705,6 +570,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
             setDraft={setDraft}
             onDone={generatePreliminaryForm}
             onCancel={() => (evId ? go("mis_eventos") : go("inicio"))}
+            onHome={() => go("inicio")}
             isEditing={Boolean(evId)}
             user={user}
             avatarUrl={avatarUrl}
@@ -764,9 +630,87 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
       </main>
 
       {view !== "create_wizard" && (
-        <footer style={{ background: "transparent", borderTop: "1px solid rgba(255,255,255,0.07)", padding: 20, textAlign: "center", fontSize: 12, color: "rgba(232,234,240,0.3)", marginTop: 48 }}>
+        <footer style={{ background: "transparent", borderTop: "1px solid rgba(255,255,255,0.07)", padding: 20, textAlign: "center", fontSize: 12, color: "rgba(232,234,240,0.3)", marginTop: 48, paddingBottom: 110 }}>
           EventForm Colombia © 2026
         </footer>
+      )}
+
+      {/* ── BARRA INFERIOR LIQUID GLASS ── */}
+      {view !== "create_wizard" && (
+        <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 60, display: "flex", justifyContent: "center", padding: "0 12px 14px", pointerEvents: "none" }}>
+          <div style={{
+            pointerEvents: "auto",
+            display: "flex", alignItems: "stretch", gap: 4,
+            width: "100%", maxWidth: 440,
+            background: "rgba(28,32,54,0.55)",
+            backdropFilter: "blur(22px) saturate(160%)", WebkitBackdropFilter: "blur(22px) saturate(160%)",
+            border: "1px solid rgba(255,255,255,0.14)",
+            borderRadius: 24, padding: 8,
+            boxShadow: "0 8px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.12)",
+          }}>
+            {BOTTOM_NAV.map(({ key, label, icon }) => {
+              const active = view === key;
+              return (
+                <button key={key} type="button" onClick={() => go(key)}
+                  style={{
+                    flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3,
+                    background: active ? "rgba(107,159,212,0.22)" : "transparent",
+                    border: active ? "1px solid rgba(107,159,212,0.35)" : "1px solid transparent",
+                    borderRadius: 16, padding: "9px 4px", cursor: "pointer",
+                    color: active ? "#c8dff0" : "rgba(232,234,240,0.6)",
+                  }}>
+                  <span style={{ display: "flex" }}>{icon}</span>
+                  <span style={{ fontSize: 10.5, fontWeight: active ? 700 : 600, letterSpacing: "0.01em" }}>{label}</span>
+                </button>
+              );
+            })}
+            {/* Separador + buscar */}
+            <div style={{ width: 1, background: "rgba(255,255,255,0.12)", margin: "8px 2px" }} />
+            <button type="button" onClick={() => { setSearchOpen(true); setSearchQuery(""); }} title="Buscar eventos"
+              style={{
+                flex: "0 0 auto", width: 54, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3,
+                background: "transparent", border: "1px solid transparent", borderRadius: 16, padding: "9px 4px", cursor: "pointer",
+                color: "rgba(232,234,240,0.6)",
+              }}>
+              <span style={{ display: "flex" }}><IconSearch /></span>
+              <span style={{ fontSize: 10.5, fontWeight: 600 }}>Buscar</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL DE BÚSQUEDA DE EVENTOS ── */}
+      {searchOpen && (
+        <div onClick={() => setSearchOpen(false)}
+          style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "10vh 16px 16px" }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 460, maxHeight: "78vh", display: "flex", flexDirection: "column", background: "rgba(20,23,40,0.98)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 20, overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+              <span style={{ display: "flex", color: "#6b9fd4" }}><IconSearch /></span>
+              <input autoFocus type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Buscar mis eventos…"
+                style={{ flex: 1, background: "none", border: "none", outline: "none", color: "#e8eaf0", fontSize: 16, fontFamily: "inherit" }} />
+              <button type="button" onClick={() => setSearchOpen(false)} style={{ background: "none", border: "none", color: "#8fa3b1", cursor: "pointer", fontSize: 20, lineHeight: 1, padding: 4 }}>×</button>
+            </div>
+            <div style={{ overflowY: "auto", padding: 8 }}>
+              {searchResults.length === 0 ? (
+                <p style={{ textAlign: "center", color: "rgba(232,234,240,0.5)", fontSize: 14, padding: "28px 12px" }}>Sin resultados.</p>
+              ) : (
+                searchResults.map((e) => (
+                  <button key={e.id} type="button"
+                    onClick={() => { setSearchOpen(false); if (e.isDraft) editEvent(e); else go("crm", e.id); }}
+                    style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 12, padding: "11px 12px", borderRadius: 12, background: "transparent", border: "none", cursor: "pointer", color: "#e8eaf0" }}>
+                    <span style={{ width: 38, height: 38, borderRadius: 9, flexShrink: 0, overflow: "hidden", background: "rgba(107,159,212,0.18)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      {e.headerImage ? <img src={e.headerImage} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <IconCalendar />}
+                    </span>
+                    <span style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ display: "block", fontWeight: 700, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{e.title || "Sin título"}</span>
+                      <span style={{ display: "block", fontSize: 12, color: "rgba(232,234,240,0.5)" }}>{e.isDraft ? "Borrador" : (e.city || e.location || "Evento")}</span>
+                    </span>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -51,6 +51,8 @@ export function AuthProvider({ children }) {
 
   const loginWithToken = (t, u) => persist(t, u);
 
+  const patchUser = (partial) => setUser((prev) => (prev ? { ...prev, ...partial } : prev));
+
   return (
     <AuthContext.Provider
       value={{
@@ -62,6 +64,7 @@ export function AuthProvider({ children }) {
         register,
         logout,
         loginWithToken,
+        patchUser,
         isSuperAdmin: user?.role === "super_admin",
         isHost: user?.role === "host" || user?.role === "super_admin",
       }}

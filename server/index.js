@@ -81,7 +81,7 @@ async function uniqueSlug(title, excludeId = null) {
 
 function rowToUser(row) {
   if (!row) return null;
-  return { id: row.id, email: row.email, name: row.name, role: row.role, createdAt: row.created_at };
+  return { id: row.id, email: row.email, name: row.name, role: row.role, avatar: row.avatar || null, createdAt: row.created_at };
 }
 
 async function getRegsForEvent(eventId) {
@@ -274,8 +274,14 @@ app.get("/api/auth/me", requireDb, authMiddleware, async (req, res) => {
 
 app.patch("/api/auth/me", requireDb, authMiddleware, async (req, res) => {
   try {
-    const { name } = req.body || {};
+    const body = req.body || {};
+    const { name } = body;
     if (name?.trim()) await db.execute({ sql: "UPDATE users SET name = ? WHERE id = ?", args: [name.trim(), req.user.sub] });
+    // Foto de perfil: cadena = guardar, null/"" = eliminar
+    if (Object.prototype.hasOwnProperty.call(body, "avatar")) {
+      const avatar = body.avatar ? String(body.avatar) : null;
+      await db.execute({ sql: "UPDATE users SET avatar = ? WHERE id = ?", args: [avatar, req.user.sub] });
+    }
     const { rows } = await db.execute({ sql: "SELECT * FROM users WHERE id = ?", args: [req.user.sub] });
     res.json({ user: rowToUser(rows[0]) });
   } catch (e) { res.status(500).json({ error: e.message }); }

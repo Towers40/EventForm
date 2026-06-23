@@ -1,10 +1,47 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { api } from "../lib/api.js";
 import { useAuth } from "../context/AuthContext.jsx";
+import { compressAvatar } from "../lib/images.js";
 import "../styles/typeform.css";
 
 export default function MiCuentaView() {
-  const { user, token, logout, loginWithToken } = useAuth();
+  const { user, token, logout, loginWithToken, patchUser } = useAuth();
+
+  const avatarInputRef = useRef(null);
+  const [avatarBusy, setAvatarBusy] = useState(false);
+  const initials = user?.name ? user.name.split(" ").slice(0, 2).map(w => w[0]).join("").toUpperCase() : "?";
+
+  const avatarKey = user ? `ef_avatar_${user.id || user.email}` : "ef_avatar";
+  const avatar = user?.avatar || (() => { try { return localStorage.getItem(avatarKey); } catch { return null; } })();
+
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarBusy(true);
+    try {
+      const url = await compressAvatar(file);
+      try { localStorage.setItem(avatarKey, url); } catch {}
+      const { user: u } = await api.updateMe(token, { avatar: url });
+      patchUser?.(u || { avatar: url });
+    } catch (ex) {
+      alert(ex?.message || "No se pudo guardar la foto.");
+    } finally {
+      setAvatarBusy(false);
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    setAvatarBusy(true);
+    try {
+      try { localStorage.removeItem(avatarKey); } catch {}
+      const { user: u } = await api.updateMe(token, { avatar: null });
+      patchUser?.(u || { avatar: null });
+    } catch (ex) {
+      alert(ex?.message || "No se pudo quitar la foto.");
+    } finally {
+      setAvatarBusy(false);
+    }
+  };
 
   const [name, setName] = useState(user?.name || "");
   const [nameMsg, setNameMsg] = useState("");
@@ -74,6 +111,29 @@ export default function MiCuentaView() {
   return (
     <div style={{ maxWidth: 560, margin: "0 auto" }}>
       <h1 style={{ fontSize: 24, fontWeight: 700, color: "#e8eaf0", marginBottom: 28 }}>Mi cuenta</h1>
+
+      {/* Foto de perfil */}
+      <div className="panel-card" style={{ marginBottom: 20 }}>
+        <div className="panel-card-header">
+          <h2 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "#e8eaf0" }}>Foto de perfil</h2>
+        </div>
+        <div style={{ padding: 20, display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap" }}>
+          <div style={{ width: 76, height: 76, borderRadius: "50%", flexShrink: 0, overflow: "hidden", background: avatar ? "transparent" : "linear-gradient(135deg, #0d3b66, #1a5f8a)", border: "3px solid rgba(107,159,212,0.4)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, fontWeight: 800, color: "#fff" }}>
+            {avatar ? <img src={avatar} alt="avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : initials}
+          </div>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <button type="button" className="soft-btn soft-btn-primary" style={{ fontSize: 13 }} disabled={avatarBusy} onClick={() => avatarInputRef.current?.click()}>
+              {avatarBusy ? "Guardando…" : avatar ? "Cambiar foto" : "Subir foto"}
+            </button>
+            {avatar && (
+              <button type="button" className="soft-btn" style={{ fontSize: 13, background: "rgba(220,38,38,0.12)", color: "#fca5a5", border: "1px solid rgba(220,38,38,0.3)", borderRadius: 10 }} disabled={avatarBusy} onClick={handleRemoveAvatar}>
+                Quitar foto
+              </button>
+            )}
+            <input ref={avatarInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleAvatarChange} />
+          </div>
+        </div>
+      </div>
 
       {/* Info de cuenta */}
       <div className="panel-card" style={{ marginBottom: 20 }}>

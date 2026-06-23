@@ -260,10 +260,11 @@ const I = {
   Plus:      () => <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
   X:         () => <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
   Video:     () => <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>,
+  Home:      () => <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M3 9.5 12 3l9 6.5"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>,
 };
 
 // ── MAIN COMPONENT ───────────────────────────────────────────────────────────
-export default function CreateEventForm({ draft, setDraft, onDone, onCancel, user, avatarUrl, isEditing }) {
+export default function CreateEventForm({ draft, setDraft, onDone, onCancel, user, avatarUrl, isEditing, onHome }) {
   const today = new Date().toISOString().split("T")[0];
 
   const [startPicker, setStartPicker] = useState(false);
@@ -357,6 +358,13 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
         </div>
 
         <div className="ce-scroll">
+          {/* ── Inicio (acción translúcida) ── */}
+          {onHome && (
+            <button type="button" onClick={onHome}
+              style={{ display: "inline-flex", alignItems: "center", gap: 7, marginTop: 16, padding: "9px 16px", background: "rgba(107,159,212,0.16)", border: "1px solid rgba(107,159,212,0.32)", borderRadius: 999, color: "#c8dff0", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+              <I.Home /> Inicio
+            </button>
+          )}
           {/* ── Cover image ── */}
           <div
             style={{ position: "relative", margin: "20px 0 12px", borderRadius: 20, overflow: "hidden", aspectRatio: "16/10", background: draft.headerImage ? "none" : "rgba(255,255,255,0.05)", border: BORDER, cursor: draft.headerImage ? (isDragging ? "grabbing" : "grab") : "default", touchAction: draft.headerImage ? "none" : "auto", userSelect: "none" }}
