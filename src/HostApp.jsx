@@ -13,6 +13,7 @@ import DateTimePicker from "./components/DateTimePicker.jsx";
 import CreateEventForm from "./components/CreateEventForm.jsx";
 import InicioView from "./pages/InicioView.jsx";
 import MisEventosView from "./pages/MisEventosView.jsx";
+import MisTicketsView from "./pages/MisTicketsView.jsx";
 import DashboardView from "./pages/DashboardView.jsx";
 import MiCuentaView from "./pages/MiCuentaView.jsx";
 import { useAuth } from "./context/AuthContext.jsx";
@@ -170,6 +171,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
   const [wizardStep, setWizardStep] = useState(1);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [createReturn, setCreateReturn] = useState("inicio");
   const [avatarUrl, setAvatarUrl] = useState(() => {
     try { return localStorage.getItem("ef_avatar") || null; } catch { return null; }
   });
@@ -327,6 +329,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
       visibility: "public",
     });
     setEvId(null);
+    setCreateReturn(view === "create_wizard" || view === "builder" ? "inicio" : view);
     setView("create_wizard");
   };
 
@@ -334,6 +337,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
     setDraft({ ...event, fields: [...(event.fields || [])], registrations: [...(event.registrations || [])] });
     setEvId(event.id);
     if (event.isDraft) localStorage.removeItem("ef_builder_draft");
+    setCreateReturn(view === "create_wizard" || view === "builder" ? "mis_eventos" : view);
     setView("create_wizard"); // passes through CreateEventForm for consistent UX
   };
 
@@ -490,7 +494,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
   // Items de la barra inferior tipo liquid glass.
   const BOTTOM_NAV = [
     { key: "mis_eventos", label: "Mis eventos", icon: <IconCalendar /> },
-    { key: "stats",       label: "Tickets",     icon: <IconTicket /> },
+    { key: "mis_tickets", label: "Tickets",     icon: <IconTicket /> },
     { key: "mi_cuenta",   label: "Mi cuenta",   icon: <IconUser /> },
   ];
 
@@ -563,14 +567,14 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
           />
         )}
         {view === "stats" && <DashboardView events={events} />}
+        {view === "mis_tickets" && <MisTicketsView onHome={() => go("inicio")} />}
         {view === "mi_cuenta" && <MiCuentaView />}
         {view === "create_wizard" && (
           <CreateEventForm
             draft={draft}
             setDraft={setDraft}
             onDone={generatePreliminaryForm}
-            onCancel={() => (evId ? go("mis_eventos") : go("inicio"))}
-            onHome={() => go("inicio")}
+            onCancel={() => go(createReturn || "inicio")}
             isEditing={Boolean(evId)}
             user={user}
             avatarUrl={avatarUrl}

@@ -25,18 +25,20 @@ export default function MisEventosView({ events, onNew, onOpen, onEdit, onValida
 
   return (
     <div style={{ maxWidth: 760, margin: "0 auto" }}>
-      {onHome && (
-        <button type="button" onClick={onHome} style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(107,159,212,0.25)", borderRadius: 10, color: "#c8dff0", cursor: "pointer", fontSize: 13, fontWeight: 700, padding: "8px 14px", marginBottom: 16 }}>
-          <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M3 9.5 12 3l9 6.5" /><path d="M5 10v10h14V10" /><path d="M9 20v-6h6v6" /></svg>
-          Inicio
-        </button>
-      )}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0, color: "#e8eaf0" }}>Mis eventos</h1>
-        <button type="button" className="soft-btn soft-btn-primary" onClick={onNew} style={{ fontSize: 13 }}>
-          + Crear evento
+      {/* Acciones simétricas: Inicio (izq) · Nuevo evento (der) */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18, gap: 12 }}>
+        {onHome ? (
+          <button type="button" onClick={onHome} style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(107,159,212,0.25)", borderRadius: 10, color: "#c8dff0", cursor: "pointer", fontSize: 13, fontWeight: 700, padding: "8px 14px" }}>
+            <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M3 9.5 12 3l9 6.5" /><path d="M5 10v10h14V10" /><path d="M9 20v-6h6v6" /></svg>
+            Inicio
+          </button>
+        ) : <span />}
+        <button type="button" onClick={onNew} style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(107,159,212,0.16)", border: "1px solid rgba(107,159,212,0.32)", borderRadius: 10, color: "#c8dff0", cursor: "pointer", fontSize: 13, fontWeight: 700, padding: "8px 14px" }}>
+          <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
+          Nuevo evento
         </button>
       </div>
+      <h1 style={{ fontSize: 24, fontWeight: 700, margin: "0 0 24px", color: "#e8eaf0" }}>Mis eventos</h1>
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: 8, marginBottom: 24, flexWrap: "wrap" }}>
@@ -170,10 +172,10 @@ function EventCard({ ev, onOpen, onEdit, onValidate, onDelete, onShare, onToggle
       {/* Acciones — centradas */}
       <div style={{ padding: "14px 16px", borderTop: "1px solid rgba(255,255,255,0.07)", display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
         <button type="button" className="soft-btn soft-btn-primary" style={{ fontSize: 12, padding: "8px 14px" }} onClick={onOpen}>
-          Ver inscritos
+          Inscritos
         </button>
-        <button type="button" className="soft-btn soft-btn-secondary" style={{ fontSize: 12, padding: "8px 14px" }} onClick={onShare}>
-          Compartir
+        <button type="button" className="soft-btn soft-btn-secondary" title="Compartir" aria-label="Compartir" style={{ fontSize: 12, padding: "8px 12px", display: "inline-flex", alignItems: "center", justifyContent: "center" }} onClick={onShare}>
+          <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg>
         </button>
         <button type="button" className="soft-btn soft-btn-secondary" style={{ fontSize: 12, padding: "8px 14px", display: "inline-flex", alignItems: "center", gap: 6 }} onClick={onValidate}>
           Verificar
@@ -181,13 +183,6 @@ function EventCard({ ev, onOpen, onEdit, onValidate, onDelete, onShare, onToggle
         </button>
         <button type="button" className="soft-btn soft-btn-secondary" style={{ fontSize: 12, padding: "8px 14px" }} onClick={onEdit}>
           Editar
-        </button>
-        <button type="button"
-          className="soft-btn"
-          style={{ fontSize: 12, padding: "8px 14px", background: sold ? "rgba(52,199,89,0.12)" : "rgba(234,88,12,0.12)", color: sold ? "#86efac" : "#fdba74", border: `1px solid ${sold ? "rgba(52,199,89,0.3)" : "rgba(234,88,12,0.3)"}`, borderRadius: 10 }}
-          onClick={() => onToggleSoldOut(!ev.manualSoldOut)}
-        >
-          {sold ? "Reabrir" : "Sold out"}
         </button>
         <button type="button"
           className="soft-btn"

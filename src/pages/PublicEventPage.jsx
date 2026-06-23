@@ -117,7 +117,8 @@ export default function PublicEventPage() {
   const handleSubmit = async (payload) => {
     if (apiEnabled) {
       const { registration } = await api.publicRegister(slug, payload);
-      localStorage.setItem(`ef_ticket_${slug}`, JSON.stringify(registration));
+      const snap = event ? { title: event.title, slug, startDate: event.startDate, date: event.date, headerImage: event.headerImage, city: event.city, location: event.location } : null;
+      localStorage.setItem(`ef_ticket_${slug}`, JSON.stringify({ ...registration, _event: snap }));
       setReg(registration); setPhase("ticket"); return;
     }
     const ev   = loadEvents().find(e => e.slug === slug);

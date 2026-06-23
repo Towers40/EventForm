@@ -335,36 +335,16 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
       `}</style>
 
       <div className="ce-bg">
-        {/* ── Sticky header ── */}
-        <div style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(18,20,34,0.82)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderBottom: "1px solid rgba(255,255,255,0.07)", padding: "0 16px" }}>
-          <div className="ce-header-inner" style={{ display: "flex", alignItems: "center", height: 60, gap: 12 }}>
-            {!user || isEditing ? (
-              <button type="button" onClick={onCancel} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", padding: "8px 4px", color: SUB, fontSize: isEditing ? 15 : 22, fontWeight: isEditing ? 700 : 400, lineHeight: 1 }}>
-                {isEditing ? "← Volver" : "←"}
-              </button>
-            ) : (
-              <button type="button" onClick={onCancel} style={{ display: "flex", alignItems: "center", gap: 4, background: "none", border: "none", cursor: "pointer", padding: 0 }}>
-                <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(107,159,212,0.3)", border: "1px solid rgba(107,159,212,0.4)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", fontSize: 13, fontWeight: 700, color: ACCENT }}>
-                  {avatarUrl ? <img src={avatarUrl} alt="perfil" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : initials}
-                </div>
-                <span style={{ color: SUB }}><I.ChevronDown /></span>
-              </button>
-            )}
-            <p style={{ flex: 1, textAlign: "center", fontWeight: 700, fontSize: 17, color: TEXT, margin: 0 }}>{isEditing ? "Editar evento" : "Crear evento"}</p>
-            <button type="button" onClick={handleSubmit} style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(232,234,240,0.15)", border: "1px solid rgba(255,255,255,0.25)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: TEXT, flexShrink: 0 }}>
-              <I.Check />
-            </button>
-          </div>
-        </div>
-
         <div className="ce-scroll">
-          {/* ── Inicio (acción translúcida) ── */}
-          {onHome && (
-            <button type="button" onClick={onHome}
-              style={{ display: "inline-flex", alignItems: "center", gap: 7, marginTop: 16, padding: "9px 16px", background: "rgba(107,159,212,0.16)", border: "1px solid rgba(107,159,212,0.32)", borderRadius: 999, color: "#c8dff0", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
-              <I.Home /> Inicio
+          {/* ── Volver (acción translúcida) — regresa a la pantalla anterior ── */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginTop: 16 }}>
+            <button type="button" onClick={onCancel}
+              style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "9px 16px", background: "rgba(107,159,212,0.16)", border: "1px solid rgba(107,159,212,0.32)", borderRadius: 999, color: "#c8dff0", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+              <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
+              Volver
             </button>
-          )}
+            <span style={{ fontWeight: 700, fontSize: 15, color: TEXT }}>{isEditing ? "Editar evento" : "Crear evento"}</span>
+          </div>
           {/* ── Cover image ── */}
           <div
             style={{ position: "relative", margin: "20px 0 12px", borderRadius: 20, overflow: "hidden", aspectRatio: "16/10", background: draft.headerImage ? "none" : "rgba(255,255,255,0.05)", border: BORDER, cursor: draft.headerImage ? (isDragging ? "grabbing" : "grab") : "default", touchAction: draft.headerImage ? "none" : "auto", userSelect: "none" }}
@@ -545,6 +525,17 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
               <span style={{ flex: 1, fontSize: 15, color: TEXT }}>Requerir aprobación</span>
               <Toggle value={Boolean(draft.requireApproval)} onChange={v => up("requireApproval", v)} />
             </div>
+
+            {/* Sold out — solo al editar */}
+            {isEditing && (
+              <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "15px 18px", ...rowDivider }}>
+                <span style={{ color: SUB, display: "flex" }}>
+                  <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></svg>
+                </span>
+                <span style={{ flex: 1, fontSize: 15, color: TEXT }}>Marcar como agotado</span>
+                <Toggle value={Boolean(draft.manualSoldOut)} onChange={v => up("manualSoldOut", v)} />
+              </div>
+            )}
 
             {/* Price */}
             <button type="button"
