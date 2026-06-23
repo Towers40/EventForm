@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Html5Qrcode } from "html5-qrcode";
 import { NEGRO_PURO, NEGRO_MUTED_70, VERDE_PASTEL_BG } from "../lib/theme.js";
+import { ensureCameraPermission } from "../lib/nativeCamera.js";
 
 const SCANNER_ID = "eventform-qr-reader";
 
@@ -40,12 +41,15 @@ export default function QrScanner({ active, onScan, onError }) {
     setStatus("starting");
     setMessage("Solicitando acceso a la cámara…");
 
-    html5
-      .start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 240, height: 240 }, aspectRatio: 1 },
-        onSuccess,
-        () => {}
+    // En nativo, pide permiso vía Capacitor antes de iniciar (no-op en web).
+    ensureCameraPermission()
+      .then(() =>
+        html5.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 240, height: 240 }, aspectRatio: 1 },
+          onSuccess,
+          () => {}
+        )
       )
       .then(() => {
         if (!cancelled) {
@@ -58,8 +62,8 @@ export default function QrScanner({ active, onScan, onError }) {
         setStatus("error");
         const msg =
           err?.name === "NotAllowedError"
-            ? "Permiso de cámara denegado. Actívalo en ajustes del navegador."
-            : "No se pudo iniciar la cámara. Usa entrada manual o HTTPS.";
+            ? "Permiso de cámara denegado. Actívalo en los ajustes."
+            : "No se pudo iniciar la cámara. Usa entrada manual.";
         setMessage(msg);
         onErrorRef.current?.(msg);
       });

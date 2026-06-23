@@ -8,6 +8,7 @@ import LoginPage from "./pages/LoginPage.jsx";
 import PrivacyPage from "./pages/PrivacyPage.jsx";
 import VerifyEmailPage from "./pages/VerifyEmailPage.jsx";
 import DiscoverPage from "./pages/DiscoverPage.jsx";
+import DeepLinks from "./lib/useDeepLinks.js";
 import { apiEnabled } from "./lib/api.js";
 
 function AppGate() {
@@ -29,6 +30,7 @@ export default function AppRouter() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        <DeepLinks />
         <Routes>
           <Route path="/e/:slug" element={<PublicEventPage />} />
           <Route path="/privacidad" element={<PrivacyPage />} />
