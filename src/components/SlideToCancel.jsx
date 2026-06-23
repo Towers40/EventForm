@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 
 // Barra deslizable para cancelar la asistencia.
-export default function SlideToCancel({ onComplete, disabled, label = "Desliza para cancelar asistencia  →" }) {
+export default function SlideToCancel({ onComplete, disabled, label = "Cancelar asistencia" }) {
   const trackRef = useRef(null);
   const [dragX, setDragX] = useState(0);
   const draggingRef = useRef(false);

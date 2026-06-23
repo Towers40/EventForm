@@ -86,7 +86,7 @@ function rowToUser(row) {
 
 async function getRegsForEvent(eventId) {
   const { rows } = await db.execute({
-    sql: "SELECT * FROM registrations WHERE event_id = ? ORDER BY created_at DESC",
+    sql: "SELECT * FROM registrations WHERE event_id = ? AND cancelled = 0 ORDER BY created_at DESC",
     args: [eventId],
   });
   return rows.map((r) => ({
