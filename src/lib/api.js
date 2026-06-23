@@ -34,6 +34,7 @@ export const api = {
   registerHost: (email, password, name) =>
     request("/api/auth/register", { method: "POST", body: JSON.stringify({ email, password, name }) }),
   me: (token) => request("/api/auth/me", {}, token),
+  myTickets: (token) => request("/api/auth/my-tickets", {}, token),
   events: (token) => request("/api/events", {}, token),
   saveEvent: (token, event) =>
     event.id && event._persisted

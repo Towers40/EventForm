@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { api, apiEnabled } from "../lib/api.js";
 import { loadEvents } from "../lib/storage.js";
+import { useAuth } from "../context/AuthContext.jsx";
 import "../styles/typeform.css";
 
 const DAYS_ES   = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
@@ -25,6 +26,7 @@ function qrFor(id) {
 }
 
 export default function MisTicketsView({ onHome }) {
+  const { token } = useAuth();
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("proximos");
@@ -32,7 +34,20 @@ export default function MisTicketsView({ onHome }) {
 
   useEffect(() => {
     (async () => {
-      // Recolecta entradas guardadas en este dispositivo (ef_ticket_<slug>).
+      const byId = new Map();
+
+      // 1) Entradas vinculadas a la cuenta (cruce por email en el servidor) —
+      //    funcionan en cualquier dispositivo.
+      if (apiEnabled && token) {
+        try {
+          const { tickets: serverTickets } = await api.myTickets(token);
+          for (const t of serverTickets || []) {
+            byId.set(t.id, { slug: t.event?.slug, id: t.id, used: t.used, event: t.event || { title: "Evento", slug: t.event?.slug } });
+          }
+        } catch { /* sigue con las locales */ }
+      }
+
+      // 2) Entradas guardadas en este dispositivo (ef_ticket_<slug>).
       const entries = [];
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
@@ -40,11 +55,11 @@ export default function MisTicketsView({ onHome }) {
         const slug = key.slice("ef_ticket_".length);
         try {
           const reg = JSON.parse(localStorage.getItem(key));
-          if (reg && !reg.cancelled) entries.push({ slug, reg });
+          if (reg && !reg.cancelled && !byId.has(reg.id)) entries.push({ slug, reg });
         } catch { /* ignorar */ }
       }
 
-      const withEvents = await Promise.all(entries.map(async ({ slug, reg }) => {
+      await Promise.all(entries.map(async ({ slug, reg }) => {
         let event = reg._event || null;
         try {
           if (apiEnabled) {
@@ -54,17 +69,17 @@ export default function MisTicketsView({ onHome }) {
             event = loadEvents().find(e => e.slug === slug) || event;
           }
         } catch { /* usa snapshot si falla */ }
-        return { slug, reg, event: event || { title: "Evento", slug } };
+        byId.set(reg.id, { slug, id: reg.id, used: Boolean(reg.used), event: event || { title: "Evento", slug } });
       }));
 
-      setTickets(withEvents);
+      setTickets(Array.from(byId.values()));
       setLoading(false);
     })();
-  }, []);
+  }, [token]);
 
   const proximos = tickets.filter(t => !isPast(t.event));
   const pasados  = tickets.filter(t => isPast(t.event));
-  const usados   = tickets.filter(t => t.reg?.used).length;
+  const usados   = tickets.filter(t => t.used).length;
   const lista    = tab === "proximos" ? proximos : pasados;
 
   return (
@@ -118,7 +133,7 @@ export default function MisTicketsView({ onHome }) {
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {lista.map(({ slug, reg, event }) => {
+          {lista.map(({ slug, id, used, event }) => {
             const past = isPast(event);
             return (
               <div key={slug} className="panel-card" style={{ padding: 0, overflow: "hidden" }}>
@@ -131,7 +146,7 @@ export default function MisTicketsView({ onHome }) {
                     <div style={{ fontSize: 12.5, color: "rgba(232,234,240,0.55)", marginTop: 2 }}>{fmt(event.startDate || event.date)}</div>
                     <div style={{ display: "flex", gap: 6, marginTop: 7, flexWrap: "wrap" }}>
                       <span style={{ fontSize: 10.5, fontWeight: 700, padding: "3px 9px", borderRadius: 100, background: past ? "rgba(220,38,38,0.18)" : "rgba(52,199,89,0.16)", color: past ? "#fca5a5" : "#5ee07f" }}>{past ? "Pasado" : "Próximo"}</span>
-                      {reg?.used && <span style={{ fontSize: 10.5, fontWeight: 700, padding: "3px 9px", borderRadius: 100, background: "rgba(107,159,212,0.2)", color: "#c8dff0" }}>QR usado</span>}
+                      {used && <span style={{ fontSize: 10.5, fontWeight: 700, padding: "3px 9px", borderRadius: 100, background: "rgba(107,159,212,0.2)", color: "#c8dff0" }}>QR usado</span>}
                     </div>
                   </div>
                   <button type="button" onClick={() => setOpenQr(openQr === slug ? null : slug)}
@@ -142,9 +157,9 @@ export default function MisTicketsView({ onHome }) {
                 </div>
                 {openQr === slug && (
                   <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", padding: 20, textAlign: "center", background: "rgba(0,0,0,0.2)" }}>
-                    <img src={qrFor(reg.id)} alt="QR de acceso" style={{ width: 200, height: 200, borderRadius: 14, background: "#1a1c1e" }} />
+                    <img src={qrFor(id)} alt="QR de acceso" style={{ width: 200, height: 200, borderRadius: 14, background: "#1a1c1e" }} />
                     <p style={{ fontSize: 12, color: "rgba(232,234,240,0.5)", margin: "12px 0 4px" }}>Presenta este QR en la entrada. Solo permite un ingreso.</p>
-                    <p style={{ fontFamily: "monospace", fontSize: 13, color: "#c8dff0", margin: 0 }}>{reg.id}</p>
+                    <p style={{ fontFamily: "monospace", fontSize: 13, color: "#c8dff0", margin: 0 }}>{id}</p>
                     <a href={`/e/${slug}`} className="soft-btn soft-btn-secondary" style={{ display: "inline-block", marginTop: 14, textDecoration: "none", fontSize: 13 }}>Ver evento</a>
                   </div>
                 )}

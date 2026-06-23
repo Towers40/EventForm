@@ -272,6 +272,52 @@ app.get("/api/auth/me", requireDb, authMiddleware, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// Cruza el email del usuario autenticado con las inscripciones (entradas).
+app.get("/api/auth/my-tickets", requireDb, authMiddleware, async (req, res) => {
+  try {
+    const email = String(req.user.email || "").trim().toLowerCase();
+    if (!email) return res.json({ tickets: [] });
+    // Prefiltro por SQL (el email está dentro del payload JSON de la inscripción)
+    const { rows } = await db.execute({
+      sql: `SELECT r.ticket_id, r.payload AS reg_payload, r.used, r.checked_in_at, r.created_at,
+                   e.slug, e.payload AS event_payload, e.manual_sold_out
+            FROM registrations r
+            JOIN events e ON e.id = r.event_id
+            WHERE r.cancelled = 0 AND lower(r.payload) LIKE ?
+            ORDER BY r.created_at DESC`,
+      args: [`%${email}%`],
+    });
+    const tickets = [];
+    for (const row of rows) {
+      let data = {};
+      try { data = JSON.parse(row.reg_payload); } catch { continue; }
+      // Verifica coincidencia exacta del email en algún valor del formulario
+      const match = Object.values(data).some(
+        (v) => typeof v === "string" && v.trim().toLowerCase() === email
+      );
+      if (!match) continue;
+      let ev = {};
+      try { ev = JSON.parse(row.event_payload); } catch { ev = {}; }
+      tickets.push({
+        id: row.ticket_id,
+        used: Boolean(row.used),
+        checkedInAt: row.checked_in_at,
+        createdAt: row.created_at,
+        event: {
+          slug: row.slug,
+          title: ev.title || "Evento",
+          startDate: ev.startDate || "",
+          date: ev.date || "",
+          headerImage: ev.headerImage || "",
+          city: ev.city || "",
+          location: ev.location || "",
+        },
+      });
+    }
+    res.json({ tickets });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.patch("/api/auth/me", requireDb, authMiddleware, async (req, res) => {
   try {
     const body = req.body || {};
