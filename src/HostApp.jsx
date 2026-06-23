@@ -536,7 +536,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
           title="Mi cuenta"
         >
           {avatarUrl
-            ? <img src={avatarUrl} alt="perfil" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            ? <img src={avatarUrl} alt="perfil" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
             : initials
           }
         </button>
@@ -564,6 +564,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
             onShare={(ev) => setShareEv(ev)}
             onToggleSoldOut={toggleSoldOut}
             onHome={() => go("inicio")}
+            onDashboard={() => go("stats")}
           />
         )}
         {view === "stats" && <DashboardView events={events} />}

@@ -31,6 +31,19 @@ export default function MisTicketsView({ onHome }) {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("proximos");
   const [openQr, setOpenQr] = useState(null);
+  const [eventModal, setEventModal] = useState(null); // { slug, event, loading }
+
+  const openEvent = async (slug, fallback) => {
+    setEventModal({ slug, event: fallback, loading: apiEnabled });
+    if (apiEnabled) {
+      try {
+        const { event } = await api.publicEvent(slug);
+        setEventModal({ slug, event, loading: false });
+      } catch {
+        setEventModal({ slug, event: fallback, loading: false });
+      }
+    }
+  };
 
   useEffect(() => {
     (async () => {
@@ -136,7 +149,7 @@ export default function MisTicketsView({ onHome }) {
           {lista.map(({ slug, id, used, event }) => {
             const past = isPast(event);
             return (
-              <div key={slug} className="panel-card" style={{ padding: 0, overflow: "hidden" }}>
+              <div key={id} className="panel-card" style={{ padding: 0, overflow: "hidden" }}>
                 <div style={{ display: "flex", gap: 14, padding: 16, alignItems: "center" }}>
                   <div style={{ width: 56, height: 56, borderRadius: 12, flexShrink: 0, overflow: "hidden", background: "rgba(107,159,212,0.18)" }}>
                     {event.headerImage && <img src={event.headerImage} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
@@ -149,23 +162,55 @@ export default function MisTicketsView({ onHome }) {
                       {used && <span style={{ fontSize: 10.5, fontWeight: 700, padding: "3px 9px", borderRadius: 100, background: "rgba(107,159,212,0.2)", color: "#c8dff0" }}>QR usado</span>}
                     </div>
                   </div>
-                  <button type="button" onClick={() => setOpenQr(openQr === slug ? null : slug)}
-                    style={{ flexShrink: 0, display: "inline-flex", flexDirection: "column", alignItems: "center", gap: 3, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(107,159,212,0.3)", borderRadius: 12, padding: "8px 10px", color: "#c8dff0", cursor: "pointer", fontSize: 11, fontWeight: 700 }}>
+                  <button type="button" onClick={() => setOpenQr(openQr === id ? null : id)}
+                    style={{ flexShrink: 0, display: "inline-flex", flexDirection: "column", alignItems: "center", gap: 3, background: openQr === id ? "rgba(107,159,212,0.22)" : "rgba(255,255,255,0.06)", border: "1px solid rgba(107,159,212,0.3)", borderRadius: 12, padding: "8px 10px", color: "#c8dff0", cursor: "pointer", fontSize: 11, fontWeight: 700 }}>
                     <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M21 21v.01M21 14v.01M14 21v.01"/></svg>
                     QR
                   </button>
                 </div>
-                {openQr === slug && (
+                {openQr === id && (
                   <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", padding: 20, textAlign: "center", background: "rgba(0,0,0,0.2)" }}>
                     <img src={qrFor(id)} alt="QR de acceso" style={{ width: 200, height: 200, borderRadius: 14, background: "#1a1c1e" }} />
                     <p style={{ fontSize: 12, color: "rgba(232,234,240,0.5)", margin: "12px 0 4px" }}>Presenta este QR en la entrada. Solo permite un ingreso.</p>
                     <p style={{ fontFamily: "monospace", fontSize: 13, color: "#c8dff0", margin: 0 }}>{id}</p>
-                    <a href={`/e/${slug}`} className="soft-btn soft-btn-secondary" style={{ display: "inline-block", marginTop: 14, textDecoration: "none", fontSize: 13 }}>Ver evento</a>
+                    <button type="button" onClick={() => openEvent(slug, event)} className="soft-btn soft-btn-secondary" style={{ marginTop: 14, fontSize: 13 }}>Ver evento</button>
                   </div>
                 )}
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Modal de información del evento (X regresa al QR desplegado) */}
+      {eventModal && (
+        <div onClick={() => setEventModal(null)}
+          style={{ position: "fixed", inset: 0, zIndex: 250, background: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "6vh 16px 16px", overflowY: "auto" }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 480, background: "rgba(20,23,40,0.98)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 20, overflow: "hidden", boxShadow: "0 24px 70px rgba(0,0,0,0.55)" }}>
+            <div style={{ position: "relative" }}>
+              {eventModal.event?.headerImage
+                ? <img src={eventModal.event.headerImage} alt="" style={{ width: "100%", aspectRatio: "16/9", objectFit: "cover", display: "block" }} />
+                : <div style={{ width: "100%", aspectRatio: "16/7", background: "linear-gradient(135deg, #0d3b66, #1a5f8a)" }} />}
+              <button type="button" onClick={() => setEventModal(null)} aria-label="Cerrar"
+                style={{ position: "absolute", top: 12, right: 12, width: 36, height: 36, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.25)", background: "rgba(0,0,0,0.5)", color: "#fff", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(6px)" }}>
+                <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+              </button>
+            </div>
+            <div style={{ padding: 20 }}>
+              <h2 style={{ fontSize: 20, fontWeight: 800, color: "#e8eaf0", margin: "0 0 10px" }}>{eventModal.event?.title || "Evento"}</h2>
+              <p style={{ fontSize: 14, color: "#c8dff0", margin: "0 0 6px", fontWeight: 600 }}>{fmt(eventModal.event?.startDate || eventModal.event?.date)}</p>
+              {(eventModal.event?.city || eventModal.event?.location) && (
+                <p style={{ fontSize: 13.5, color: "rgba(232,234,240,0.6)", margin: "0 0 14px" }}>
+                  {[eventModal.event?.location, eventModal.event?.city].filter(Boolean).join(" — ")}
+                </p>
+              )}
+              {eventModal.loading && <p style={{ fontSize: 13, color: "rgba(232,234,240,0.5)" }}>Cargando detalles…</p>}
+              {eventModal.event?.eventDescription && (
+                <p style={{ fontSize: 14, color: "rgba(232,234,240,0.8)", lineHeight: 1.55, margin: "0 0 16px", whiteSpace: "pre-wrap" }}>{eventModal.event.eventDescription}</p>
+              )}
+              <a href={`/e/${eventModal.slug}`} className="soft-btn soft-btn-primary" style={{ display: "inline-block", textDecoration: "none", fontSize: 13 }}>Abrir página del evento</a>
+            </div>
+          </div>
         </div>
       )}
     </div>
