@@ -1,7 +1,8 @@
+import { publicBaseUrl } from "../lib/platform.js";
 import "../styles/typeform.css";
 
 export default function ShareEventModal({ event, onClose }) {
-  const url = `${window.location.origin}/e/${event.slug || event.id}`;
+  const url = `${publicBaseUrl()}/e/${event.slug || event.id}`;
   const text = encodeURIComponent(`¡Inscríbete a ${event.title}!`);
   const links = {
     whatsapp: `https://wa.me/?text=${text}%20${encodeURIComponent(url)}`,

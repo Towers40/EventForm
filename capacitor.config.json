@@ -1,0 +1,16 @@
+{
+  "appId": "co.eventform.app",
+  "appName": "EventForm",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https",
+    "iosScheme": "capacitor"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1200,
+      "backgroundColor": "#131628",
+      "showSpinner": false
+    }
+  }
+}

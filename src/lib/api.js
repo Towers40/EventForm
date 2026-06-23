@@ -1,6 +1,11 @@
-// VITE_API_URL = URL del backend externo (Railway/local).
-// Si está vacío, las llamadas van a /api/* en el mismo dominio (Vercel Functions).
-const API = import.meta.env.VITE_API_URL ?? "";
+import { isNative, PUBLIC_WEB_URL } from "./platform.js";
+
+// VITE_API_URL = URL del backend externo (Vercel/local).
+// - Web: si está vacío, las llamadas van a /api/* en el mismo dominio (Vercel).
+// - Nativo (Capacitor): no existe "mismo dominio", así que se usa la URL
+//   absoluta de producción (PUBLIC_WEB_URL) cuando no hay VITE_API_URL.
+const ENV_API = import.meta.env.VITE_API_URL || "";
+const API = ENV_API || (isNative ? PUBLIC_WEB_URL : "");
 
 function headers(token) {
   const h = { "Content-Type": "application/json" };

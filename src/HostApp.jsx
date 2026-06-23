@@ -26,6 +26,7 @@ import {
   buildParticipant,
 } from "./lib/tickets.js";
 import { isSoldOut, capacityLabel, getCapacityMax } from "./lib/capacity.js";
+import { publicBaseUrl } from "./lib/platform.js";
 import {
   EVENT_TYPE_OTHER,
   EVENT_TYPE_PRESETS,
@@ -123,7 +124,7 @@ function makeSlug(title) {
 }
 
 function publicUrl(ev) {
-  return ev.publicUrl || `${window.location.origin}/e/${ev.slug || ev.id}`;
+  return ev.publicUrl || `${publicBaseUrl()}/e/${ev.slug || ev.id}`;
 }
 
 function formatEventSchedule(ev) {
@@ -619,7 +620,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
             onValidate={() => openValidate(ev.id)}
             onCrm={() => go("crm", ev.id)}
             onShare={() => setShareEv(ev)}
-            publicUrl={`${window.location.origin}/e/${ev.slug || ev.id}`}
+            publicUrl={`${publicBaseUrl()}/e/${ev.slug || ev.id}`}
           />
         )}
         {view === "register" && ev && (

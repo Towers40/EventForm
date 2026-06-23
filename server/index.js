@@ -40,6 +40,8 @@ if (APP_URL) configuredOrigins.add(APP_URL);
 const isAllowedOrigin = (origin) => {
   if (!origin) return true;
   if (configuredOrigins.has(origin)) return true;
+  // Orígenes del WebView de la app nativa (Capacitor / Ionic)
+  if (origin === "capacitor://localhost" || origin === "ionic://localhost") return true;
   if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) return true;
   try {
     const { hostname } = new URL(origin);
