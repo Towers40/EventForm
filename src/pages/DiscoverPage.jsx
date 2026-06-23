@@ -220,7 +220,7 @@ function CategoryPill({ cat, count, active, onClick }) {
   );
 }
 
-export default function DiscoverPage() {
+export default function DiscoverPage({ embedded = false }) {
   const [events,         setEvents]         = useState([]);
   const [loading,        setLoading]        = useState(true);
   const [error,          setError]          = useState(null);
@@ -274,28 +274,34 @@ export default function DiscoverPage() {
   const activeCat = DISCOVER_CATEGORIES.find(c => c.slug === activeCategory);
 
   return (
-    <div style={{ minHeight: "100vh", background: "linear-gradient(170deg, #1d2340 0%, #131628 100%)", backgroundAttachment: "fixed", color: "#e8eaf0", fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>
+    <div style={embedded
+      ? { color: "#e8eaf0", fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }
+      : { minHeight: "100vh", background: "linear-gradient(170deg, #1d2340 0%, #131628 100%)", backgroundAttachment: "fixed", color: "#e8eaf0", fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>
 
-      {/* ── Nav ── */}
-      <nav style={{
-        padding: "0 24px", height: 56,
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        borderBottom: "1px solid rgba(255,255,255,0.08)",
-        position: "sticky", top: 0, zIndex: 20,
-        background: "rgba(18,20,34,0.82)", backdropFilter: "blur(16px)",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <a href="/app" style={{ display: "flex", alignItems: "center", gap: 4, textDecoration: "none", color: "rgba(232,234,240,0.55)", fontSize: 13, fontWeight: 600 }}>
+      {/* ── Nav (solo en página independiente) ── */}
+      {!embedded && (
+        <nav style={{
+          padding: "0 16px", height: 56,
+          display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center",
+          borderBottom: "1px solid rgba(255,255,255,0.08)",
+          position: "sticky", top: 0, zIndex: 20,
+          background: "rgba(18,20,34,0.82)", backdropFilter: "blur(16px)",
+        }}>
+          <a href="/app" style={{
+            justifySelf: "start",
+            display: "inline-flex", alignItems: "center", gap: 5, textDecoration: "none",
+            background: "rgba(107,159,212,0.25)", color: "#e8eaf0",
+            border: "1px solid rgba(107,159,212,0.4)",
+            borderRadius: 20, padding: "7px 16px", fontSize: 13, fontWeight: 700,
+          }}>
             ← Inicio
           </a>
-          <a href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
+          <a href="/" style={{ justifySelf: "center", display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
             <span style={{ color: "#22c55e", fontSize: 18 }}>●</span>
             <span style={{ fontWeight: 800, fontSize: 16, color: "#e8eaf0" }}>EventForm</span>
           </a>
-        </div>
-        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-          <span style={{ fontSize: 13, color: "#6b7280", display: "none" }} className="hide-mobile">¿Organizas eventos?</span>
           <a href="/app" style={{
+            justifySelf: "end",
             background: "rgba(107,159,212,0.25)", color: "#e8eaf0",
             border: "1px solid rgba(107,159,212,0.4)",
             borderRadius: 20, padding: "7px 16px",
@@ -303,8 +309,8 @@ export default function DiscoverPage() {
           }}>
             Empieza gratis →
           </a>
-        </div>
-      </nav>
+        </nav>
+      )}
 
       {/* ── Hero ── */}
       <div style={{ padding: "56px 24px 44px", textAlign: "center", maxWidth: 680, margin: "0 auto" }}>

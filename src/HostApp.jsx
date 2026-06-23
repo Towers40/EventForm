@@ -14,6 +14,7 @@ import CreateEventForm from "./components/CreateEventForm.jsx";
 import InicioView from "./pages/InicioView.jsx";
 import MisEventosView from "./pages/MisEventosView.jsx";
 import MisTicketsView from "./pages/MisTicketsView.jsx";
+import DiscoverPage from "./pages/DiscoverPage.jsx";
 import DashboardView from "./pages/DashboardView.jsx";
 import MiCuentaView from "./pages/MiCuentaView.jsx";
 import { useAuth } from "./context/AuthContext.jsx";
@@ -173,6 +174,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [createReturn, setCreateReturn] = useState("inicio");
+  const [accountReturn, setAccountReturn] = useState("inicio");
   const [avatarUrl, setAvatarUrl] = useState(() => {
     try { return localStorage.getItem("ef_avatar") || null; } catch { return null; }
   });
@@ -496,7 +498,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
   const BOTTOM_NAV = [
     { key: "mis_eventos", label: "Mis eventos", icon: <IconCalendar /> },
     { key: "mis_tickets", label: "Tickets",     icon: <IconTicket /> },
-    { key: "discover",    label: "Descubrir",   icon: <IconCompass />, to: "/discover" },
+    { key: "discover",    label: "Descubrir",   icon: <IconCompass /> },
   ];
 
   const searchResults = searchQuery.trim()
@@ -523,7 +525,10 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
         {/* Profile circle → Mi cuenta */}
         <button
           type="button"
-          onClick={() => go("mi_cuenta")}
+          onClick={() => {
+            if (view === "mi_cuenta") { go(accountReturn || "inicio"); }
+            else { setAccountReturn(view); go("mi_cuenta"); }
+          }}
           style={{
             width: 42, height: 42, borderRadius: "50%",
             boxSizing: "border-box",
@@ -573,6 +578,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
         )}
         {view === "stats" && <DashboardView events={events} />}
         {view === "mis_tickets" && <MisTicketsView onHome={() => go("inicio")} />}
+        {view === "discover" && <DiscoverPage embedded />}
         {view === "mi_cuenta" && <MiCuentaView />}
         {view === "create_wizard" && (
           <CreateEventForm
@@ -660,7 +666,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
             {BOTTOM_NAV.map(({ key, label, icon, to }) => {
               const active = view === key;
               return (
-                <button key={key} type="button" onClick={() => (to ? (window.location.href = to) : go(key))}
+                <button key={key} type="button" onClick={() => go(key)}
                   style={{
                     flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3,
                     background: active ? "rgba(107,159,212,0.22)" : "transparent",
