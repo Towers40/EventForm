@@ -111,9 +111,27 @@ Stripe/Apple Pay/Google Pay (exentas de IAP), pero hay que encuadrarlo bien.
 
 ---
 
-# Fase 4 — Assets y ficha (pendiente)
+# Fase 4 — Assets y ficha
 
-- Íconos (1024×1024) y splash: `npm i -D @capacitor/assets` y generar desde un
-  PNG maestro (`npx capacitor-assets generate`).
-- Capturas de pantalla por dispositivo + textos de ficha.
-- Formularios de privacidad / Data Safety.
+Ya creado en el repo:
+- `assets/logo.svg` — ícono maestro (lo usa `@capacitor/assets`).
+- `public/icon.svg` + `public/manifest.webmanifest` — ícono/manifest web/PWA
+  (ya enlazados en `index.html`).
+- `STORE_LISTING.md` — todos los textos de la ficha (App Store + Play).
+
+## Generar íconos y splash nativos
+
+```bash
+npm install -D @capacitor/assets
+npx @capacitor/assets generate --assetPath assets
+npx cap sync
+```
+
+Esto produce todos los tamaños de ícono y splash para iOS y Android a partir de
+`assets/logo.svg` (fondo `#131628`, ya configurado en `capacitor.config.json`).
+
+## Falta (manual)
+
+- **Capturas de pantalla** por dispositivo (ver tamaños en `STORE_LISTING.md`).
+- Rellenar **URLs** (privacidad/soporte) y el **formulario de privacidad / Data
+  Safety** en cada consola.
