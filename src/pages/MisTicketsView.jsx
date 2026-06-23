@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { api, apiEnabled } from "../lib/api.js";
 import { loadEvents } from "../lib/storage.js";
 import { useAuth } from "../context/AuthContext.jsx";
+import SlideToCancel from "../components/SlideToCancel.jsx";
 import "../styles/typeform.css";
 
 const DAYS_ES   = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
@@ -32,6 +33,25 @@ export default function MisTicketsView({ onHome }) {
   const [tab, setTab] = useState("proximos");
   const [openQr, setOpenQr] = useState(null);
   const [eventModal, setEventModal] = useState(null); // { slug, event, loading }
+  const [confirmCancel, setConfirmCancel] = useState(null); // { id, slug }
+  const [cancelling, setCancelling] = useState(false);
+
+  const doCancel = async () => {
+    if (!confirmCancel) return;
+    const { id, slug } = confirmCancel;
+    setCancelling(true);
+    try {
+      if (apiEnabled) await api.cancelRegistration(id);
+      try { localStorage.removeItem(`ef_ticket_${slug}`); } catch { /* noop */ }
+      setTickets(prev => prev.filter(t => t.id !== id));
+      setOpenQr(null);
+      setConfirmCancel(null);
+    } catch (e) {
+      alert("No se pudo cancelar: " + (e?.message || "error"));
+    } finally {
+      setCancelling(false);
+    }
+  };
 
   const openEvent = async (slug, fallback) => {
     setEventModal({ slug, event: fallback, loading: apiEnabled });
@@ -174,11 +194,40 @@ export default function MisTicketsView({ onHome }) {
                     <p style={{ fontSize: 12, color: "rgba(232,234,240,0.5)", margin: "12px 0 4px" }}>Presenta este QR en la entrada. Solo permite un ingreso.</p>
                     <p style={{ fontFamily: "monospace", fontSize: 13, color: "#c8dff0", margin: 0 }}>{id}</p>
                     <button type="button" onClick={() => openEvent(slug, event)} className="soft-btn soft-btn-secondary" style={{ marginTop: 14, fontSize: 13 }}>Ver evento</button>
+                    {!past && (
+                      <div style={{ marginTop: 16, maxWidth: 320, marginLeft: "auto", marginRight: "auto" }}>
+                        <SlideToCancel onComplete={() => setConfirmCancel({ id, slug })} disabled={cancelling && confirmCancel?.id === id} />
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Confirmación de cancelación */}
+      {confirmCancel && (
+        <div onClick={() => !cancelling && setConfirmCancel(null)}
+          style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 380, background: "rgba(20,23,40,0.98)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 20, padding: 24, textAlign: "center", boxShadow: "0 24px 70px rgba(0,0,0,0.55)" }}>
+            <div style={{ width: 52, height: 52, borderRadius: "50%", background: "rgba(248,113,113,0.15)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+              <svg width={26} height={26} viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+            <h3 style={{ fontSize: 18, fontWeight: 800, color: "#e8eaf0", margin: "0 0 8px" }}>¿Estás seguro que quieres cancelar tu participación?</h3>
+            <p style={{ fontSize: 13.5, color: "rgba(232,234,240,0.6)", margin: "0 0 22px", lineHeight: 1.5 }}>Tu entrada quedará anulada y perderás tu lugar en este evento.</p>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button type="button" onClick={() => setConfirmCancel(null)} disabled={cancelling}
+                style={{ flex: 1, padding: 13, borderRadius: 12, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.18)", color: "#e8eaf0", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+                No, volver
+              </button>
+              <button type="button" onClick={doCancel} disabled={cancelling}
+                style={{ flex: 1, padding: 13, borderRadius: 12, background: "rgba(248,113,113,0.18)", border: "1px solid rgba(248,113,113,0.45)", color: "#fca5a5", fontWeight: 800, fontSize: 14, cursor: cancelling ? "not-allowed" : "pointer" }}>
+                {cancelling ? "Cancelando…" : "Sí, cancelar"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
