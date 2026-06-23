@@ -525,20 +525,23 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
           onClick={() => go("mi_cuenta")}
           style={{
             width: 42, height: 42, borderRadius: "50%",
-            background: avatarUrl ? "transparent" : "linear-gradient(135deg, #0d3b66, #1a5f8a)",
+            boxSizing: "border-box",
+            backgroundColor: "#0d3b66",
+            backgroundImage: avatarUrl ? `url("${avatarUrl}")` : "linear-gradient(135deg, #0d3b66, #1a5f8a)",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
             border: "2px solid rgba(107,159,212,0.35)",
             cursor: "pointer", overflow: "hidden",
             display: "flex", alignItems: "center", justifyContent: "center",
             fontSize: 15, fontWeight: 800, color: "#fff",
             boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
             flexShrink: 0,
+            padding: 0,
           }}
           title="Mi cuenta"
         >
-          {avatarUrl
-            ? <img src={avatarUrl} alt="perfil" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-            : initials
-          }
+          {!avatarUrl && initials}
         </button>
         <button type="button" onClick={() => go("inicio")} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontWeight: 800, fontSize: 17, color: "#e8eaf0" }}>
           <span style={{ color: VERDE_CORPORATIVO, fontSize: 20 }}>●</span> EventForm

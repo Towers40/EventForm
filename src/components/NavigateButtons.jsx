@@ -1,5 +1,4 @@
 import { getNavigationLinks } from "../lib/navigation.js";
-import { NEGRO_PURO, BLANCO_CONTRASTE, AZUL_OSCURO, AZUL_CLARO_MEDIO } from "../lib/theme.js";
 
 export default function NavigateButtons({ lat, lng, label }) {
   const links = getNavigationLinks(lat, lng, label);
@@ -9,9 +8,11 @@ export default function NavigateButtons({ lat, lng, label }) {
     flex: 1,
     minWidth: 100,
     padding: "12px 10px",
-    borderRadius: 10,
-    border: `2px solid ${NEGRO_PURO}`,
-    fontWeight: 800,
+    borderRadius: 12,
+    border: "1px solid rgba(107,159,212,0.35)",
+    background: "rgba(107,159,212,0.14)",
+    color: "#6b9fd4",
+    fontWeight: 700,
     fontSize: 12,
     cursor: "pointer",
     textAlign: "center",
@@ -22,17 +23,17 @@ export default function NavigateButtons({ lat, lng, label }) {
 
   return (
     <div style={{ marginTop: 16 }}>
-      <p style={{ fontSize: 12, fontWeight: 800, marginBottom: 10, textTransform: "uppercase" }}>
+      <p style={{ fontSize: 12, fontWeight: 800, marginBottom: 10, textTransform: "uppercase", color: "#8fa3b1" }}>
         Cómo llegar
       </p>
       <div className="nav-links-row" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        <a href={links.apple} target="_blank" rel="noopener noreferrer" style={{ ...btn, background: AZUL_OSCURO, color: BLANCO_CONTRASTE }}>
-           Mapas
+        <a href={links.apple} target="_blank" rel="noopener noreferrer" style={btn}>
+          Mapas
         </a>
-        <a href={links.google} target="_blank" rel="noopener noreferrer" style={{ ...btn, background: AZUL_CLARO_MEDIO, color: BLANCO_CONTRASTE }}>
+        <a href={links.google} target="_blank" rel="noopener noreferrer" style={btn}>
           Google Maps
         </a>
-        <a href={links.waze} target="_blank" rel="noopener noreferrer" style={{ ...btn, background: AZUL_OSCURO, color: BLANCO_CONTRASTE }}>
+        <a href={links.waze} target="_blank" rel="noopener noreferrer" style={btn}>
           Waze
         </a>
       </div>

@@ -161,7 +161,8 @@ export default function PublicEventPage() {
   );
 
   if (phase === "ticket") return (
-    <ConfirmTicket ev={event} reg={reg} standalone onCancel={handleCancel} cancelling={cancelling} />
+    <ConfirmTicket ev={event} reg={reg} standalone onCancel={handleCancel} cancelling={cancelling}
+      onBack={() => { if (window.history.length > 1) window.history.back(); else window.location.href = "/app"; }} />
   );
 
   const soldOut   = isSoldOut(event);
@@ -183,6 +184,12 @@ export default function PublicEventPage() {
 
   return (
     <div style={{ minHeight: "100dvh", background: BG, paddingBottom: 60 }}>
+      {/* Volver a la ventana anterior */}
+      <button type="button" onClick={() => { if (window.history.length > 1) window.history.back(); else window.location.href = "/app"; }}
+        style={{ position: "fixed", top: 14, left: 14, zIndex: 20, display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 20, color: "#fff", cursor: "pointer", fontSize: 13, fontWeight: 700, padding: "8px 14px" }}>
+        <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
+        Volver
+      </button>
       <div style={{ maxWidth: 520, margin: "0 auto" }}>
 
         {/* ── Cover image ── */}
