@@ -1,7 +1,7 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
-import { nanoid } from "nanoid";
+import { customAlphabet } from "nanoid";
 import { db, dbReady, initDb, parseEvent, slugify } from "./db.js";
 
 // Middleware: rechaza rutas de DB si no está configurada
@@ -61,7 +61,10 @@ app.use(cors({
 }));
 app.use(express.json({ limit: "6mb" }));
 
-function uid() { return nanoid(10).toUpperCase(); }
+// Alfabeto solo alfanumérico (sin "_" ni "-") para IDs/tickets legibles y
+// sin caracteres que compliquen el parseo del QR.
+const nano = customAlphabet("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", 10);
+function uid() { return nano(); }
 function gen4() { return String(Math.floor(1000 + Math.random() * 9000)); }
 
 function uniqueSlugBase(title) {

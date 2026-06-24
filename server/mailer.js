@@ -101,11 +101,13 @@ export async function sendRegistrationConfirmation(email, name, ticketId, event)
         <p style="margin:0 0 6px;font-size:14px;color:#0d3b66;font-weight:700">📅 ${dateStr}</p>
         <p style="margin:0;font-size:14px;color:#0d3b66;font-weight:700">📍 ${loc}</p>
       </div>
-      <div style="text-align:center;margin:0 0 28px">
-        <img src="${qrSrc}" alt="QR de acceso" width="180" height="180" style="width:180px;height:180px;border-radius:12px;border:2px solid #0d3b66;display:block;margin:0 auto;background:#fff"/>
-        <p style="font-family:monospace;font-weight:800;font-size:13px;color:#0d3b66;margin:12px 0 4px;letter-spacing:1px">${ticketId}</p>
-        <p style="color:#718096;font-size:12px;margin:0">Presenta este QR en la entrada. Solo permite un ingreso.</p>
-      </div>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 28px">
+        <tr><td align="center" style="text-align:center">
+          <img src="${qrSrc}" alt="QR de acceso" width="180" height="180" style="width:180px;height:180px;border-radius:12px;border:2px solid #0d3b66;background:#fff;display:inline-block"/>
+          <p style="font-family:monospace;font-weight:800;font-size:13px;color:#0d3b66;margin:12px 0 4px;letter-spacing:1px">${ticketId}</p>
+          <p style="color:#718096;font-size:12px;margin:0">Presenta este QR en la entrada. Solo permite un ingreso.</p>
+        </td></tr>
+      </table>
     `),
   });
 }

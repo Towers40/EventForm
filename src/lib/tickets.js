@@ -23,7 +23,8 @@ export function parseTicketCode(raw) {
     if (part) return parseTicketCode(decodeURIComponent(part));
   }
 
-  const match = upper.match(/TICKET-[A-Z0-9]+/);
+  // El ID puede contener "_" y "-" (alfabeto de nanoid), así que se incluyen.
+  const match = upper.match(/TICKET-[A-Z0-9_-]+/);
   return match ? match[0] : upper.replace(/\s/g, "");
 }
 
