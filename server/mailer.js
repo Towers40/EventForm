@@ -76,9 +76,9 @@ export async function sendRegistrationConfirmation(email, name, ticketId, event)
     replyTo: REPLY_TO,
     to: email,
     subject: `Tu entrada para ${event.title} — EventForm`,
-    text: `¡Hola ${firstName}, estás inscrito!\n\nEvento: ${event.title}\nFecha: ${dateStr}\nLugar: ${loc}\n\nID de tu entrada: ${ticketId}\nPresenta el código QR de este correo en la entrada. Solo permite un ingreso.`,
+    text: `¡Hola ${firstName}, tu lugar está confirmado!\n\nEvento: ${event.title}\nFecha: ${dateStr}\nLugar: ${loc}\n\nID de tu entrada: ${ticketId}\nPresenta el código QR de este correo en la entrada. Solo permite un ingreso.`,
     html: emailLayout(`
-      <h2 style="color:#0d1b2a;font-size:20px;font-weight:700;margin:0 0 12px">¡Hola ${firstName}, estás inscrito! 🎉</h2>
+      <h2 style="color:#0d1b2a;font-size:20px;font-weight:700;margin:0 0 12px">¡Hola ${firstName}, tu lugar está confirmado! 🎉</h2>
       <p style="color:#4a5568;font-size:15px;line-height:1.6;margin:0 0 24px">
         Tu registro para <strong>${event.title}</strong> ha sido confirmado. Guarda este correo.
       </p>
