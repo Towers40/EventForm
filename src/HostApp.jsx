@@ -24,6 +24,7 @@ import {
   performCheckIn,
   validateRegistrationForm,
   buildParticipant,
+  parseTicketCode,
 } from "./lib/tickets.js";
 import { isSoldOut, capacityLabel, getCapacityMax } from "./lib/capacity.js";
 import { publicBaseUrl } from "./lib/platform.js";
@@ -218,17 +219,19 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
     if (!apiOn) saveEvents(events);
   }, [events, apiOn]);
 
-  useEffect(() => {
+  const refreshEvents = useCallback(async () => {
     if (!apiOn || !token) return;
-    (async () => {
-      try {
-        const { events: list } = await api.events(token);
-        setEvents(list.map((e) => ({ ...e, _persisted: true })));
-      } catch (e) {
-        console.error(e);
-      }
-    })();
-  }, [apiOn, token, isSuperAdmin]);
+    try {
+      const { events: list } = await api.events(token);
+      setEvents(list.map((e) => ({ ...e, _persisted: true })));
+    } catch (e) {
+      console.error(e);
+    }
+  }, [apiOn, token]);
+
+  useEffect(() => {
+    refreshEvents();
+  }, [refreshEvents, isSuperAdmin]);
 
   const ev = events.find((e) => e.id === evId);
 
@@ -264,6 +267,8 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
     setView("validate");
     setVResult(null);
     setVCode("");
+    // Trae las inscripciones más recientes para que el escáner las encuentre.
+    refreshEvents();
   };
 
   const deleteEvent = async (id) => {
@@ -485,26 +490,62 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
     } catch { /* sin conexión: queda el estado local */ }
   }, [apiOn, token]);
 
-  const runCheckIn = useCallback((rawCode) => {
-    const result = performCheckIn(
-      eventsRef.current,
-      rawCode || vCode,
-      evIdRef.current || null
-    );
+  // Validación contra el servidor (fuente de verdad en vivo): encuentra el
+  // ticket aunque la persona se haya inscrito después de abrir la app.
+  const finishWithServer = useCallback(async (ticketId, ev) => {
+    try {
+      const res = await api.checkIn(token, ev.id, ticketId);
+      const reg = res.reg
+        ? { id: res.reg.id, data: res.reg.data, used: true, checkedInAt: res.reg.checkedInAt }
+        : null;
+      const participant = reg ? buildParticipant(ev, reg) : null;
+      if (res.status === "ok") {
+        setEvents((prev) => prev.map((e) => {
+          if (e.id !== ev.id) return e;
+          const has = e.registrations.some((r) => r.id === ticketId);
+          return {
+            ...e,
+            registrations: has
+              ? e.registrations.map((r) => r.id === ticketId ? { ...r, used: true, checkedInAt: res.reg.checkedInAt } : r)
+              : [...e.registrations, { id: ticketId, data: res.reg.data, used: true, checkedInAt: res.reg.checkedInAt }],
+          };
+        }));
+        setVResult({ s: "ok", ticketId, event: ev, reg, participant, checkedInAt: res.reg?.checkedInAt });
+      } else if (res.status === "used") {
+        setVResult({ s: "used", ticketId, event: ev, reg, participant });
+      } else {
+        // nf / cancelled
+        setVResult({ s: "nf", ticketId });
+      }
+      return true;
+    } catch {
+      return false; // sin conexión → usar validación local
+    }
+  }, [token]);
+
+  const validateTicket = useCallback(async (rawCode) => {
+    const ticketId = parseTicketCode(rawCode);
+    if (!ticketId) { setVResult({ s: "nf", ticketId: "" }); return; }
+    const evId = evIdRef.current;
+    const ev = evId ? eventsRef.current.find((e) => e.id === evId) : null;
+    if (apiOn && token && evId && ev) {
+      const ok = await finishWithServer(ticketId, ev);
+      if (ok) return;
+    }
+    // Fallback local (sin API o escaneo de "todos los eventos")
+    const result = performCheckIn(eventsRef.current, ticketId, evId || null);
     applyCheckInResult(result);
     persistCheckIn(result);
-  }, [vCode, persistCheckIn]);
+  }, [apiOn, token, finishWithServer, persistCheckIn]);
+
+  const runCheckIn = useCallback((rawCode) => {
+    validateTicket(rawCode || vCode);
+  }, [vCode, validateTicket]);
 
   const handleQrScan = useCallback((decoded) => {
     setVCode(decoded);
-    const result = performCheckIn(
-      eventsRef.current,
-      decoded,
-      evIdRef.current || null
-    );
-    applyCheckInResult(result);
-    persistCheckIn(result);
-  }, [persistCheckIn]);
+    validateTicket(decoded);
+  }, [validateTicket]);
 
   const confirmEv = events.find((e) => e.id === evId);
   const confirmReg = confirmEv?.registrations.find((r) => r.id === regId);

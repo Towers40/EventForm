@@ -77,7 +77,7 @@ export async function sendRegistrationConfirmation(email, name, ticketId, event)
   let attachments = [];
   let qrSrc = qrRemote;
   try {
-    const r = await fetch(qrRemote);
+    const r = await fetch(qrRemote, { signal: AbortSignal.timeout(5000) });
     if (r.ok) {
       const buf = Buffer.from(await r.arrayBuffer());
       attachments = [{ filename: "entrada-qr.png", content: buf, cid: "qrticket", contentType: "image/png" }];
