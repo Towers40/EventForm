@@ -467,6 +467,23 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
     setVResult({ s: "nf", ticketId: result.ticketId });
   };
 
+  // Persiste el check-in en el servidor para que no se pierda al cerrar la app.
+  const persistCheckIn = useCallback(async (result) => {
+    if (!apiOn || !token) return;
+    if (result.status !== "ok" || !result.event) return;
+    try {
+      const res = await api.checkIn(token, result.event.id, result.ticketId);
+      if (res?.status === "used") {
+        // Ya estaba usado en el servidor (doble escaneo) → acceso denegado.
+        setVResult((prev) =>
+          prev && prev.ticketId === result.ticketId
+            ? { ...prev, s: "used", checkedInAt: undefined }
+            : prev
+        );
+      }
+    } catch { /* sin conexión: queda el estado local */ }
+  }, [apiOn, token]);
+
   const runCheckIn = useCallback((rawCode) => {
     const result = performCheckIn(
       eventsRef.current,
@@ -474,7 +491,8 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
       evIdRef.current || null
     );
     applyCheckInResult(result);
-  }, [vCode]);
+    persistCheckIn(result);
+  }, [vCode, persistCheckIn]);
 
   const handleQrScan = useCallback((decoded) => {
     setVCode(decoded);
@@ -484,7 +502,8 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
       evIdRef.current || null
     );
     applyCheckInResult(result);
-  }, []);
+    persistCheckIn(result);
+  }, [persistCheckIn]);
 
   const confirmEv = events.find((e) => e.id === evId);
   const confirmReg = confirmEv?.registrations.find((r) => r.id === regId);
@@ -1839,8 +1858,9 @@ function Validate({ event, scopeLabel, code, setCode, result, onCheck, onScan, o
           <div
             style={{
               padding: 20,
-              background: result.s === "ok" ? VERDE_PASTEL_BG : result.s === "used" ? "#FEF3C7" : ROJO_SUAVE,
-              border: `2px solid ${NEGRO_PURO}`,
+              background: result.s === "ok" ? VERDE_PASTEL_BG : "rgba(220,38,38,0.15)",
+              border: result.s === "ok" ? `2px solid ${NEGRO_PURO}` : "2px solid rgba(220,38,38,0.5)",
+              color: result.s === "ok" ? NEGRO_PURO : "#dc2626",
               borderRadius: 10,
               fontWeight: 900,
               fontSize: 16,

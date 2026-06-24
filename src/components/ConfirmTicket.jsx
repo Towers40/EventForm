@@ -2,10 +2,11 @@ import { useState } from "react";
 import NavigateButtons from "./NavigateButtons.jsx";
 import LocationMap from "./LocationMap.jsx";
 import SlideToCancel from "./SlideToCancel.jsx";
+import { publicBaseUrl } from "../lib/platform.js";
 import "../styles/typeform.css";
 
 export default function ConfirmTicket({ ev, reg, onDone, standalone, onCancel, cancelling, onBack }) {
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(reg.id)}&bgcolor=1a1c1e&color=e8eaf0&margin=10`;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(reg.id)}&bgcolor=ffffff&color=000000&margin=12&qzone=2`;
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   const inner = (
@@ -50,7 +51,7 @@ export default function ConfirmTicket({ ev, reg, onDone, standalone, onCancel, c
         <img
           src={qrUrl}
           alt="QR de acceso"
-          style={{ width: 180, height: 180, borderRadius: 12, display: "block", margin: "0 auto" }}
+          style={{ width: 200, height: 200, borderRadius: 12, display: "block", margin: "0 auto", background: "#fff", padding: 10 }}
         />
         <p style={{
           fontFamily: "monospace", fontWeight: 700, marginTop: 16,
@@ -66,8 +67,8 @@ export default function ConfirmTicket({ ev, reg, onDone, standalone, onCancel, c
             type="button"
             onClick={() => navigator.share({
               title: `Mi entrada: ${ev.title}`,
-              text: `Tengo entrada para ${ev.title} — ID: ${reg.id}`,
-              url: window.location.href,
+              text: `Mi entrada (QR) para ${ev.title} — ID: ${reg.id}`,
+              url: `${publicBaseUrl()}/t/${reg.id}`,
             }).catch(() => {})}
             style={{
               marginTop: 16, width: "100%",

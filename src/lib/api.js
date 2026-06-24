@@ -66,6 +66,7 @@ export const api = {
     request("/api/auth/me", { method: "DELETE" }, token),
   verifyEmail: (token) => request(`/api/auth/verify-email/${token}`),
   publicEvent: (slug) => request(`/api/public/events/${slug}`),
+  publicTicket: (ticketId) => request(`/api/public/tickets/${ticketId}`),
   publicRegister: (slug, body) =>
     request(`/api/public/events/${slug}/register`, { method: "POST", body: JSON.stringify(body) }),
   cancelRegistration: (ticketId) =>

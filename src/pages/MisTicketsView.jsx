@@ -23,7 +23,7 @@ function isPast(ev) {
 }
 
 function qrFor(id) {
-  return `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(id)}&bgcolor=1a1c1e&color=e8eaf0&margin=12`;
+  return `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(id)}&bgcolor=ffffff&color=000000&margin=12&qzone=2`;
 }
 
 export default function MisTicketsView({ onHome }) {
@@ -190,7 +190,7 @@ export default function MisTicketsView({ onHome }) {
                 </div>
                 {openQr === id && (
                   <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", padding: 20, textAlign: "center", background: "rgba(0,0,0,0.2)" }}>
-                    <img src={qrFor(id)} alt="QR de acceso" style={{ width: 200, height: 200, borderRadius: 14, background: "#1a1c1e" }} />
+                    <img src={qrFor(id)} alt="QR de acceso" style={{ width: 220, height: 220, borderRadius: 14, background: "#fff", padding: 8 }} />
                     <p style={{ fontSize: 12, color: "rgba(232,234,240,0.5)", margin: "12px 0 4px" }}>Presenta este QR en la entrada. Solo permite un ingreso.</p>
                     <p style={{ fontFamily: "monospace", fontSize: 13, color: "#c8dff0", margin: 0 }}>{id}</p>
                     <button type="button" onClick={() => openEvent(slug, event)} className="soft-btn soft-btn-secondary" style={{ marginTop: 14, fontSize: 13 }}>Ver evento</button>

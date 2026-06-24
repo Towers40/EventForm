@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
 import HostApp from "./HostApp.jsx";
 import OnboardingFlow from "./components/OnboardingFlow.jsx";
 import PublicEventPage from "./pages/PublicEventPage.jsx";
+import TicketPage from "./pages/TicketPage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 import PrivacyPage from "./pages/PrivacyPage.jsx";
 import VerifyEmailPage from "./pages/VerifyEmailPage.jsx";
@@ -33,6 +34,7 @@ export default function AppRouter() {
         <DeepLinks />
         <Routes>
           <Route path="/e/:slug" element={<PublicEventPage />} />
+          <Route path="/t/:ticketId" element={<TicketPage />} />
           <Route path="/privacidad" element={<PrivacyPage />} />
           <Route path="/verify-email" element={<VerifyEmailPage />} />
           <Route path="/login" element={<LoginPage />} />

@@ -410,6 +410,41 @@ app.patch("/api/public/registrations/:ticketId/cancel", requireDb, async (req, r
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// Información pública de una entrada por su ticket_id (para la página /t/:id).
+app.get("/api/public/tickets/:ticketId", requireDb, async (req, res) => {
+  try {
+    const tid = String(req.params.ticketId || "").trim().toUpperCase();
+    const { rows } = await db.execute({
+      sql: `SELECT r.ticket_id, r.used, r.checked_in_at, r.cancelled, e.slug, e.payload AS event_payload
+            FROM registrations r JOIN events e ON e.id = r.event_id
+            WHERE r.ticket_id = ?`,
+      args: [tid],
+    });
+    if (!rows[0]) return res.status(404).json({ error: "Entrada no encontrada" });
+    const row = rows[0];
+    let ev = {};
+    try { ev = JSON.parse(row.event_payload); } catch { ev = {}; }
+    res.json({
+      ticket: {
+        id: row.ticket_id,
+        used: Boolean(row.used),
+        cancelled: Boolean(row.cancelled),
+        checkedInAt: row.checked_in_at,
+        event: {
+          slug: row.slug,
+          title: ev.title || "Evento",
+          startDate: ev.startDate || "",
+          date: ev.date || "",
+          startTime: ev.startTime || "",
+          headerImage: ev.headerImage || "",
+          city: ev.city || "",
+          location: ev.location || "",
+        },
+      },
+    });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.post("/api/public/events/:slug/register", requireDb, async (req, res) => {
   try {
     const { rows: evRows } = await db.execute({ sql: "SELECT * FROM events WHERE slug = ?", args: [req.params.slug] });

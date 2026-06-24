@@ -20,6 +20,13 @@ const transporter = emailEnabled
     })
   : null;
 
+// Remitente: SIEMPRE el correo autenticado (SMTP_USER) para que SPF/DKIM de
+// Gmail validen y el mensaje no caiga en spam. (Usar un dominio sin autenticar
+// como noreply@eventform.co haría fallar SPF → spam.) Para mejorar aún más la
+// entregabilidad conviene publicar SPF, DKIM y DMARC del dominio remitente.
+const FROM = `EventForm <${SMTP_USER}>`;
+const REPLY_TO = EMAIL_FROM || SMTP_USER;
+
 function emailLayout(content) {
   return `<!DOCTYPE html><html lang="es"><body style="margin:0;padding:0;background:#f5f7fa;font-family:system-ui,sans-serif">
   <div style="max-width:480px;margin:40px auto;background:#fff;border-radius:16px;overflow:hidden;border:1px solid #e2e8f0">
@@ -35,9 +42,11 @@ export async function sendVerificationCode(email, name, code) {
   if (!emailEnabled) return;
   const firstName = (name || "anfitrión").split(" ")[0];
   await transporter.sendMail({
-    from: `EventForm Colombia <${SMTP_USER}>`,
+    from: FROM,
+    replyTo: REPLY_TO,
     to: email,
     subject: "Tu código de verificación — EventForm",
+    text: `Hola ${firstName},\n\nTu código de verificación de EventForm es: ${code}\nVálido por 15 minutos.\n\nSi no creaste esta cuenta, ignora este mensaje.`,
     html: emailLayout(`
       <h2 style="color:#0d1b2a;font-size:20px;font-weight:700;margin:0 0 12px">Hola ${firstName} 👋</h2>
       <p style="color:#4a5568;font-size:15px;line-height:1.6;margin:0 0 28px">
@@ -57,15 +66,17 @@ export async function sendVerificationCode(email, name, code) {
 export async function sendRegistrationConfirmation(email, name, ticketId, event) {
   if (!emailEnabled) return;
   const firstName = (name || "asistente").split(" ")[0];
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(ticketId)}&bgcolor=ffffff&color=0d3b66&margin=10`;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(ticketId)}&bgcolor=ffffff&color=000000&margin=12&qzone=2`;
   const dateStr = event.startDate && event.startTime
     ? `${event.startDate} · ${event.startTime}`
     : event.startDate || "Fecha por confirmar";
   const loc = [event.city, event.location || event.address].filter(Boolean).join(" — ") || "Lugar por confirmar";
   await transporter.sendMail({
-    from: `EventForm Colombia <${SMTP_USER}>`,
+    from: FROM,
+    replyTo: REPLY_TO,
     to: email,
     subject: `Tu entrada para ${event.title} — EventForm`,
+    text: `¡Hola ${firstName}, estás inscrito!\n\nEvento: ${event.title}\nFecha: ${dateStr}\nLugar: ${loc}\n\nID de tu entrada: ${ticketId}\nPresenta el código QR de este correo en la entrada. Solo permite un ingreso.`,
     html: emailLayout(`
       <h2 style="color:#0d1b2a;font-size:20px;font-weight:700;margin:0 0 12px">¡Hola ${firstName}, estás inscrito! 🎉</h2>
       <p style="color:#4a5568;font-size:15px;line-height:1.6;margin:0 0 24px">
@@ -88,9 +99,11 @@ export async function sendPasswordResetCode(email, name, code) {
   if (!emailEnabled) return;
   const firstName = (name || "usuario").split(" ")[0];
   await transporter.sendMail({
-    from: `EventForm Colombia <${SMTP_USER}>`,
+    from: FROM,
+    replyTo: REPLY_TO,
     to: email,
     subject: "Código para restablecer tu contraseña — EventForm",
+    text: `Hola ${firstName},\n\nUsa este código para restablecer tu contraseña de EventForm: ${code}\nVálido por 15 minutos.\n\nSi no solicitaste esto, ignora este mensaje.`,
     html: emailLayout(`
       <h2 style="color:#0d1b2a;font-size:20px;font-weight:700;margin:0 0 12px">Hola ${firstName}</h2>
       <p style="color:#4a5568;font-size:15px;line-height:1.6;margin:0 0 28px">
