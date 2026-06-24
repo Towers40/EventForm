@@ -118,6 +118,12 @@ const VISIBLE = 5;
 const MAX_YEAR = 2080;
 const pad2 = (n) => String(n).padStart(2, "0");
 function daysInMonth(y, m) { return new Date(y, m, 0).getDate(); } // m: 1-12
+function addOneHour(t) {
+  const [h, m] = String(t || "").split(":").map(Number);
+  if (Number.isNaN(h)) return t;
+  if (h >= 23) return "23:59";
+  return `${pad2(h + 1)}:${pad2(m || 0)}`;
+}
 
 const HOURS   = Array.from({ length: 24 }, (_, i) => ({ value: i, label: String(i).padStart(2, "0") }));
 const MINUTES = [0, 15, 30, 45].map(m => ({ value: m, label: String(m).padStart(2, "0") }));
@@ -317,6 +323,13 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
     if (!draft.title?.trim()) { setErr("Ingresa el nombre del evento."); return; }
     if (!draft.startDate)     { setErr("Selecciona la fecha de inicio."); return; }
     if (!draft.startTime)     { setErr("Selecciona la hora de inicio."); return; }
+    // La fecha/hora de fin no puede ser anterior ni igual a la de inicio.
+    if (draft.endDate) {
+      if (draft.endDate < draft.startDate) { setErr("La fecha de fin no puede ser anterior a la de inicio."); return; }
+      if (draft.endDate === draft.startDate && draft.endTime && draft.startTime && draft.endTime <= draft.startTime) {
+        setErr("La hora de fin debe ser posterior a la hora de inicio."); return;
+      }
+    }
     setErr("");
     onDone({ ...draft, capacity: draft.capacityNum ? String(draft.capacityNum) : "" });
   }
@@ -438,12 +451,23 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
                 </p>
                 {startPicker && (
                   <WheelPanel date={draft.startDate} time={draft.startTime} minDate={today}
-                    onChange={({ date, time }) => setDraft(p => ({ ...p, startDate: date, startTime: time, date, endDate: p.endDate || date }))}
+                    onChange={({ date, time }) => setDraft(p => {
+                      const endDate = p.endDate || date;
+                      let endTime = p.endTime;
+                      // Si el fin queda el mismo día y su hora ya no es posterior, ajústala.
+                      if (endDate === date && endTime && time && endTime <= time) endTime = addOneHour(time);
+                      return { ...p, startDate: date, startTime: time, date, endDate, endTime };
+                    })}
                     onClose={() => setStartPicker(false)} />
                 )}
                 {endPicker && (
                   <WheelPanel date={draft.endDate} time={draft.endTime} minDate={draft.startDate || today}
-                    onChange={({ date, time }) => setDraft(p => ({ ...p, endDate: date, endTime: time }))}
+                    onChange={({ date, time }) => setDraft(p => {
+                      // No permitir hora de fin igual o anterior a la de inicio el mismo día.
+                      let endTime = time;
+                      if (date === p.startDate && p.startTime && time && time <= p.startTime) endTime = addOneHour(p.startTime);
+                      return { ...p, endDate: date, endTime };
+                    })}
                     onClose={() => setEndPicker(false)} />
                 )}
               </div>

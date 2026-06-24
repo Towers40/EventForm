@@ -28,6 +28,7 @@ import {
 } from "./lib/tickets.js";
 import { isSoldOut, capacityLabel, getCapacityMax } from "./lib/capacity.js";
 import { publicBaseUrl } from "./lib/platform.js";
+import SlideToCancel from "./components/SlideToCancel.jsx";
 import {
   EVENT_TYPE_OTHER,
   EVENT_TYPE_PRESETS,
@@ -64,16 +65,27 @@ function IconTicket({ size }) { return <svg {...svgBase(size)}><path d="M3 9a2 2
 function IconUser({ size }) { return <svg {...svgBase(size)}><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></svg>; }
 function IconCompass({ size }) { return <svg {...svgBase(size)}><circle cx="12" cy="12" r="10" /><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" /></svg>; }
 
+// Iconos del catálogo de campos (adaptados a cada tipo)
+function IconFieldText({ size = 16 }) { return <svg {...svgBase(size)}><rect x="3" y="8" width="18" height="8" rx="2" /><path d="M7 11v2" /></svg>; }
+function IconFieldEmail({ size = 16 }) { return <svg {...svgBase(size)}><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" /></svg>; }
+function IconFieldPhone({ size = 16 }) { return <svg {...svgBase(size)}><path d="M5 4h4l2 5-3 2a14 14 0 0 0 6 6l2-3 5 2v4a2 2 0 0 1-2 2A18 18 0 0 1 3 6a2 2 0 0 1 2-2z" /></svg>; }
+function IconFieldAge({ size = 16 }) { return <svg {...svgBase(size)}><circle cx="12" cy="7" r="4" /><path d="M5.5 21a6.5 6.5 0 0 1 13 0" /></svg>; }
+function IconFieldNumber({ size = 16 }) { return <svg {...svgBase(size)}><path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18" /></svg>; }
+function IconFieldTextarea({ size = 16 }) { return <svg {...svgBase(size)}><path d="M4 6h16M4 10h16M4 14h12M4 18h8" /></svg>; }
+function IconFieldSelect({ size = 16 }) { return <svg {...svgBase(size)}><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="3.2" fill="currentColor" stroke="none" /></svg>; }
+function IconFieldMulti({ size = 16 }) { return <svg {...svgBase(size)}><path d="M9 6h11M9 12h11M9 18h11" /><path d="m3 6 1.4 1.4L6.5 5" /><path d="m3 12 1.4 1.4L6.5 11" /><path d="m3 18 1.4 1.4L6.5 17" /></svg>; }
+function IconFieldCheck({ size = 16 }) { return <svg {...svgBase(size)}><rect x="3" y="3" width="18" height="18" rx="4" /><path d="m8 12 3 3 5-6" /></svg>; }
+
 const FIELD_TYPES = [
-  { type: "text", label: "Texto corto", icon: "✏️" },
-  { type: "email", label: "Email", icon: "✉️" },
-  { type: "phone", label: "Teléfono", icon: "📱" },
-  { type: "age", label: "Edad", icon: "👤" },
-  { type: "number", label: "Número", icon: "#️⃣" },
-  { type: "textarea", label: "Texto largo", icon: "📝" },
-  { type: "select", label: "Selección única", icon: "🔘" },
-  { type: "multi_select", label: "Selección múltiple", icon: "☑️" },
-  { type: "checkbox", label: "Verificación", icon: "✅" },
+  { type: "text", label: "Texto corto", icon: <IconFieldText /> },
+  { type: "email", label: "Email", icon: <IconFieldEmail /> },
+  { type: "phone", label: "Teléfono", icon: <IconFieldPhone /> },
+  { type: "age", label: "Edad", icon: <IconFieldAge /> },
+  { type: "number", label: "Número", icon: <IconFieldNumber /> },
+  { type: "textarea", label: "Texto largo", icon: <IconFieldTextarea /> },
+  { type: "select", label: "Selección única", icon: <IconFieldSelect /> },
+  { type: "multi_select", label: "Selección múltiple", icon: <IconFieldMulti /> },
+  { type: "checkbox", label: "Verificación", icon: <IconFieldCheck /> },
 ];
 
 const DEFAULTS = {
@@ -1409,19 +1421,14 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
         </div>
       </div>
 
-      {/* ── Encabezado de campos + acción publicar ── */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <div>
-          <h2 style={{ fontSize: 17, fontWeight: 700, margin: 0, color: "#e8eaf0" }}>
-            Campos del formulario
-          </h2>
-          <p style={{ fontSize: 13, color: "#8fa3b1", margin: "3px 0 0" }}>
-            {draft.fields.length} campo{draft.fields.length !== 1 ? "s" : ""} · Edita, reordena o añade más
-          </p>
-        </div>
-        <button onClick={onPublish} style={{ padding: "12px 20px", background: "rgba(107,159,212,0.22)", border: "1px solid rgba(107,159,212,0.4)", borderRadius: 14, color: "#e8eaf0", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
-          Publicar evento →
-        </button>
+      {/* ── Encabezado de campos ── */}
+      <div style={{ marginBottom: 16 }}>
+        <h2 style={{ fontSize: 17, fontWeight: 700, margin: 0, color: "#e8eaf0" }}>
+          Campos del formulario
+        </h2>
+        <p style={{ fontSize: 13, color: "#8fa3b1", margin: "3px 0 0" }}>
+          {draft.fields.length} campo{draft.fields.length !== 1 ? "s" : ""} · Edita, reordena o añade más
+        </p>
       </div>
 
       {/* ── Lista de campos ── */}
@@ -1565,8 +1572,8 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
               <button key={ft.type} type="button"
                 onClick={() => { onAdd(ft.type); setShowTools(false); }}
                 className="soft-btn soft-btn-secondary"
-                style={{ textAlign: "left", fontSize: 13, padding: "10px 14px" }}>
-                {ft.icon} {ft.label}
+                style={{ textAlign: "left", fontSize: 13, padding: "10px 14px", display: "inline-flex", alignItems: "center", gap: 8 }}>
+                <span style={{ display: "inline-flex", color: "#6b9fd4" }}>{ft.icon}</span> {ft.label}
               </button>
             ))}
           </div>
@@ -1669,6 +1676,17 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
             </div>
           )}
         </div>
+      </div>
+
+      {/* ── Publicar (deslizable) ── */}
+      <div style={{ marginTop: 24 }}>
+        <SlideToCancel
+          onComplete={onPublish}
+          label="Publicar"
+          accent="#34c759"
+          bg="rgba(52,199,89,0.14)"
+          border="rgba(52,199,89,0.4)"
+        />
       </div>
     </div>
   );
@@ -1855,7 +1873,9 @@ function Validate({ event, scopeLabel, code, setCode, result, onCheck, onScan, o
   const total = regs.length;
   const scanned = regs.filter((r) => r.used || r.checkedInAt).length;
   const capMax = event ? getCapacityMax(event.capacity, event) : null;
-  const aforoPct = capMax != null && capMax > 0 ? Math.min(100, Math.round((total / capMax) * 100)) : 0;
+  // La barra se llena (verde) según los escaneados se acercan a la capacidad.
+  const fillBase = capMax != null && capMax > 0 ? capMax : total;
+  const scanPct = fillBase > 0 ? Math.min(100, Math.round((scanned / fillBase) * 100)) : 0;
 
   return (
     <div style={{ position: "relative", border: "1px solid rgba(107,159,212,0.3)", borderRadius: 16, padding: 24, background: "rgba(107,159,212,0.10)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}>
@@ -1922,19 +1942,19 @@ function Validate({ event, scopeLabel, code, setCode, result, onCheck, onScan, o
           </div>
 
           {result.participant && result.s !== "nf" && (
-            <div style={{ textAlign: "left", border: `2px solid ${NEGRO_PURO}`, borderRadius: 12, padding: 16, marginBottom: 16, background: BLANCO_CONTRASTE }}>
-              <div style={{ fontWeight: 900, fontSize: 18, marginBottom: 8 }}>{result.participant.name}</div>
+            <div style={{ textAlign: "left", border: `2px solid ${NEGRO_PURO}`, borderRadius: 12, padding: 16, marginBottom: 16, background: BLANCO_CONTRASTE, color: NEGRO_PURO }}>
+              <div style={{ fontWeight: 900, fontSize: 18, marginBottom: 8, color: NEGRO_PURO }}>{result.participant.name}</div>
               {result.event && (
-                <p style={{ fontSize: 13, color: NEGRO_MUTED_70, margin: "0 0 12px" }}>
+                <p style={{ fontSize: 13, color: NEGRO_PURO, margin: "0 0 12px" }}>
                   Evento: <strong>{result.event.title}</strong>
                 </p>
               )}
               {result.participant.rows.map((row) => (
-                <div key={row.label} style={{ fontSize: 13, marginBottom: 6, borderBottom: `1px solid ${VERDE_PASTEL_BG}`, paddingBottom: 4 }}>
+                <div key={row.label} style={{ fontSize: 13, marginBottom: 6, borderBottom: `1px solid rgba(0,0,0,0.12)`, paddingBottom: 4, color: NEGRO_PURO }}>
                   <span style={{ fontWeight: 800 }}>{row.label}:</span> {row.value}
                 </div>
               ))}
-              <div style={{ fontSize: 12, fontFamily: "monospace", marginTop: 12, color: NEGRO_MUTED_50 }}>{result.ticketId}</div>
+              <div style={{ fontSize: 12, fontFamily: "monospace", marginTop: 12, color: NEGRO_MUTED_70 }}>{result.ticketId}</div>
               {result.s === "used" && result.reg?.checkedInAt && (
                 <p style={{ fontSize: 12, marginTop: 8, color: NEGRO_MUTED_70 }}>
                   Primer ingreso: {new Date(result.reg.checkedInAt).toLocaleString("es-MX")}
@@ -1954,8 +1974,8 @@ function Validate({ event, scopeLabel, code, setCode, result, onCheck, onScan, o
             </p>
           )}
 
-          <button type="button" onClick={onReset} style={{ background: NEGRO_PURO, color: BLANCO_CONTRASTE, padding: "12px 24px", border: "none", borderRadius: 8, cursor: "pointer", fontWeight: 700, width: "100%" }}>
-            Escanear siguiente entrada
+          <button type="button" onClick={onReset} style={{ background: "rgba(52,199,89,0.16)", color: "#5ee07f", padding: "16px 24px", border: "1px solid rgba(52,199,89,0.45)", borderRadius: 12, cursor: "pointer", fontWeight: 800, fontSize: 15, width: "auto", maxWidth: 240, margin: "0 auto", display: "block" }}>
+            Escanear
           </button>
         </div>
       )}
@@ -1972,7 +1992,7 @@ function Validate({ event, scopeLabel, code, setCode, result, onCheck, onScan, o
             <span style={{ fontSize: 14, fontWeight: 800, color: "#c8dff0" }}>{capMax != null ? `${total} / ${capMax}` : `${total} inscritos`}</span>
           </div>
           <div style={{ height: 10, borderRadius: 6, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
-            <div style={{ height: "100%", width: `${aforoPct}%`, background: "linear-gradient(90deg, #1a5f8a, #6b9fd4)", borderRadius: 6, transition: "width 0.3s" }} />
+            <div style={{ height: "100%", width: `${scanPct}%`, background: "linear-gradient(90deg, #16a34a, #4ade80)", borderRadius: 6, transition: "width 0.4s" }} />
           </div>
         </div>
       )}
