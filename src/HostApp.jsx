@@ -33,6 +33,7 @@ import {
   formatEventType,
 } from "./lib/colombia.js";
 import { DISCOVER_CATEGORIES } from "./lib/categories.js";
+import { CAT_ICONS } from "./lib/categoryIcons.jsx";
 import {
   VERDE_PASTEL_BG,
   VERDE_CORPORATIVO,
@@ -1565,21 +1566,28 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
         {/* Category */}
         <div style={{ marginBottom: 20 }}>
           <label style={bldLabel}>Categoría</label>
-          <select
-            value={draft.category || ""}
-            onChange={e => setDraft(p => ({ ...p, category: e.target.value || null }))}
-            style={{
-              width: "100%", border: "1px solid rgba(255,255,255,0.11)", borderRadius: 10,
-              padding: "11px 14px", fontSize: 14, color: "#e8eaf0",
-              background: "rgba(255,255,255,0.06)", outline: "none", cursor: "pointer",
-              fontFamily: "inherit",
-            }}
-          >
-            <option value="">Sin categoría</option>
-            {DISCOVER_CATEGORIES.map(c => (
-              <option key={c.slug} value={c.slug}>{c.emoji} {c.label}</option>
-            ))}
-          </select>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(104px, 1fr))", gap: 8 }}>
+            {DISCOVER_CATEGORIES.map(c => {
+              const active = draft.category === c.slug;
+              return (
+                <button
+                  key={c.slug}
+                  type="button"
+                  onClick={() => setDraft(p => ({ ...p, category: active ? null : c.slug }))}
+                  style={{
+                    display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6,
+                    padding: "12px 6px", borderRadius: 12, cursor: "pointer",
+                    background: active ? `${c.color}22` : "rgba(255,255,255,0.06)",
+                    border: `1px solid ${active ? c.color : "rgba(255,255,255,0.1)"}`,
+                    color: active ? "#e8eaf0" : "rgba(232,234,240,0.7)",
+                  }}
+                >
+                  <span style={{ display: "flex" }}>{CAT_ICONS[c.slug]?.(active ? c.color : "rgba(232,234,240,0.7)", 24)}</span>
+                  <span style={{ fontSize: 11.5, fontWeight: active ? 700 : 600 }}>{c.label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Price */}

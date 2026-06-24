@@ -103,11 +103,14 @@ export default function PublicEventPage() {
           if (!ev) { setErr("Evento no encontrado"); return; }
         }
         setEvent(ev);
+        // Si ya hay una entrada guardada, la recordamos pero NO saltamos al QR:
+        // el enlace siempre abre la página del evento (con la info editada) y
+        // se ofrece un botón para ver la entrada.
         const saved = localStorage.getItem(`ef_ticket_${slug}`);
         if (saved) {
           try {
             const parsed = JSON.parse(saved);
-            if (!parsed.cancelled) { setReg(parsed); setPhase("ticket"); }
+            if (!parsed.cancelled) setReg(parsed);
           } catch {}
         }
       } catch { setErr("Evento no encontrado o no disponible"); }
@@ -248,7 +251,14 @@ export default function PublicEventPage() {
           {/* Registration card */}
           <div style={{ background: CARD, border: BORDER, borderRadius: 20, padding: "20px", marginBottom: 28 }}>
             <p style={{ margin: "0 0 8px", fontSize: 13, fontWeight: 600, color: SUB, textTransform: "uppercase", letterSpacing: "0.08em" }}>Registro</p>
-            {soldOut ? (
+            {reg ? (
+              <>
+                <p style={{ margin: "0 0 16px", fontSize: 14, color: SUB, lineHeight: 1.5 }}>Ya tienes una entrada para este evento.</p>
+                <button onClick={() => setPhase("ticket")} style={{ width: "100%", padding: "16px", background: "rgba(107,159,212,0.25)", color: "#e8eaf0", borderRadius: 14, fontWeight: 800, fontSize: 16, border: "1px solid rgba(107,159,212,0.4)", cursor: "pointer", letterSpacing: "0.01em" }}>
+                  Ver mi entrada (QR)
+                </button>
+              </>
+            ) : soldOut ? (
               <>
                 <p style={{ margin: "0 0 16px", fontSize: 14, color: SUB, lineHeight: 1.5 }}>Las entradas para este evento se agotaron.</p>
                 <div style={{ padding: "15px", background: "rgba(255,255,255,0.05)", borderRadius: 14, textAlign: "center", color: SUB, fontWeight: 700, fontSize: 15 }}>Entradas agotadas</div>
