@@ -11,7 +11,10 @@ export function getCapacityMax(capacity, event) {
     const custom = Number(event?.capacityCustom);
     return custom > 0 && custom < 50 ? custom : CAPACITY_MAX[capacity];
   }
-  return CAPACITY_MAX[capacity] ?? null;
+  if (capacity in CAPACITY_MAX) return CAPACITY_MAX[capacity];
+  // Capacidad numérica del formulario nuevo (ej. "50" → 50)
+  const n = Number(capacity);
+  return Number.isFinite(n) && n > 0 ? n : null;
 }
 
 export function getRegistrationCount(event) {

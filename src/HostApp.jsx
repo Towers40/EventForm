@@ -1922,46 +1922,51 @@ function Validate({ event, scopeLabel, code, setCode, result, onCheck, onScan, o
         </>
       )}
 
-      {result && (
+      {result && (() => {
+        const ok = result.s === "ok";
+        const accent = ok ? "#4ade80" : "#f87171";
+        const cardBg = ok ? "rgba(52,199,89,0.15)" : "rgba(220,38,38,0.15)";
+        const cardBorder = ok ? "rgba(52,199,89,0.5)" : "rgba(220,38,38,0.5)";
+        return (
         <div style={{ textAlign: "center" }}>
           <div
             style={{
               padding: 20,
-              background: result.s === "ok" ? VERDE_PASTEL_BG : "rgba(220,38,38,0.15)",
-              border: result.s === "ok" ? `2px solid ${NEGRO_PURO}` : "2px solid rgba(220,38,38,0.5)",
-              color: result.s === "ok" ? NEGRO_PURO : "#dc2626",
+              background: cardBg,
+              border: `2px solid ${cardBorder}`,
+              color: accent,
               borderRadius: 10,
               fontWeight: 900,
               fontSize: 16,
               marginBottom: 16,
             }}
           >
-            {result.s === "ok" && "✓ CHECK-IN EXITOSO — ACCESO CONCEDIDO"}
+            {ok && "✓ CHECK-IN EXITOSO — ACCESO CONCEDIDO"}
             {result.s === "used" && "⚠️ BOLETO YA UTILIZADO — ACCESO DENEGADO"}
             {result.s === "nf" && "✕ BOLETO NO ENCONTRADO"}
           </div>
 
           {result.participant && result.s !== "nf" && (
-            <div style={{ textAlign: "left", border: `2px solid ${NEGRO_PURO}`, borderRadius: 12, padding: 16, marginBottom: 16, background: BLANCO_CONTRASTE, color: NEGRO_PURO }}>
-              <div style={{ fontWeight: 900, fontSize: 18, marginBottom: 8, color: NEGRO_PURO }}>{result.participant.name}</div>
+            <div style={{ textAlign: "left", border: `1.5px solid ${cardBorder}`, borderRadius: 12, padding: 16, marginBottom: 16, background: cardBg, color: "#e8eaf0" }}>
+              <div style={{ fontWeight: 900, fontSize: 18, marginBottom: 8, color: "#fff" }}>{result.participant.name}</div>
               {result.event && (
-                <p style={{ fontSize: 13, color: NEGRO_PURO, margin: "0 0 12px" }}>
-                  Evento: <strong>{result.event.title}</strong>
+                <p style={{ fontSize: 13, color: "rgba(232,234,240,0.85)", margin: "0 0 12px" }}>
+                  Evento: <strong style={{ color: "#fff" }}>{result.event.title}</strong>
                 </p>
               )}
               {result.participant.rows.map((row) => (
-                <div key={row.label} style={{ fontSize: 13, marginBottom: 6, borderBottom: `1px solid rgba(0,0,0,0.12)`, paddingBottom: 4, color: NEGRO_PURO }}>
-                  <span style={{ fontWeight: 800 }}>{row.label}:</span> {row.value}
+                <div key={row.label} style={{ fontSize: 13, marginBottom: 6, borderBottom: "1px solid rgba(255,255,255,0.15)", paddingBottom: 4, color: "rgba(232,234,240,0.9)" }}>
+                  <span style={{ fontWeight: 800, color: "#fff" }}>{row.label}:</span> {row.value}
                 </div>
               ))}
-              <div style={{ fontSize: 12, fontFamily: "monospace", marginTop: 12, color: NEGRO_MUTED_70 }}>{result.ticketId}</div>
+              <div style={{ fontSize: 12, fontFamily: "monospace", marginTop: 12, color: "rgba(232,234,240,0.6)" }}>{result.ticketId}</div>
               {result.s === "used" && result.reg?.checkedInAt && (
-                <p style={{ fontSize: 12, marginTop: 8, color: NEGRO_MUTED_70 }}>
+                <p style={{ fontSize: 12, marginTop: 8, color: "rgba(232,234,240,0.7)" }}>
                   Primer ingreso: {new Date(result.reg.checkedInAt).toLocaleString("es-MX")}
                 </p>
               )}
-              {result.s === "ok" && result.checkedInAt && (
-                <p style={{ fontSize: 12, marginTop: 8, color: VERDE_CORPORATIVO, fontWeight: 700 }}>
+              {ok && result.checkedInAt && (
+                <p style={{ fontSize: 12, marginTop: 8, color: "#4ade80", fontWeight: 700 }}>
                   Registrado: {new Date(result.checkedInAt).toLocaleString("es-MX")}
                 </p>
               )}
@@ -1969,7 +1974,7 @@ function Validate({ event, scopeLabel, code, setCode, result, onCheck, onScan, o
           )}
 
           {result.s === "nf" && (
-            <p style={{ fontSize: 13, color: NEGRO_MUTED_70, marginBottom: 16 }}>
+            <p style={{ fontSize: 13, color: "rgba(232,234,240,0.6)", marginBottom: 16 }}>
               Verifica que el código sea del evento correcto{event ? ` (${event.title})` : ""} y que la inscripción exista.
             </p>
           )}
@@ -1978,7 +1983,8 @@ function Validate({ event, scopeLabel, code, setCode, result, onCheck, onScan, o
             Escanear
           </button>
         </div>
-      )}
+        );
+      })()}
 
       {/* ── Conteo de escaneados y aforo ── */}
       {event && (
