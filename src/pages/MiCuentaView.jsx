@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { api } from "../lib/api.js";
 import { useAuth } from "../context/AuthContext.jsx";
-import { compressAvatar } from "../lib/images.js";
+import { uploadImage } from "../lib/upload.js";
 import "../styles/typeform.css";
 
 export default function MiCuentaView() {
@@ -19,7 +19,7 @@ export default function MiCuentaView() {
     if (!file) return;
     setAvatarBusy(true);
     try {
-      const url = await compressAvatar(file);
+      const url = await uploadImage(file, { square: true });
       try { localStorage.setItem(avatarKey, url); } catch {}
       const { user: u } = await api.updateMe(token, { avatar: url });
       patchUser?.(u || { avatar: url });

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { compressHeaderImage } from "../lib/images.js";
+import { uploadImage } from "../lib/upload.js";
 
 function ImageIcon() {
   return (
@@ -21,8 +21,8 @@ export default function HeaderImageUpload({ image, onChange }) {
     setErr("");
     setBusy(true);
     try {
-      const dataUrl = await compressHeaderImage(file);
-      onChange(dataUrl);
+      const url = await uploadImage(file);
+      onChange(url);
     } catch (ex) {
       setErr(ex.message || "Error al procesar la imagen.");
     } finally {

@@ -6,12 +6,16 @@ const {
   SMTP_USER,
   SMTP_PASS,
   EMAIL_FROM,
+  RESEND_API_KEY,
+  RESEND_FROM,
   APP_URL = "http://localhost:5173",
 } = process.env;
 
-export const emailEnabled = Boolean(SMTP_HOST && SMTP_USER && SMTP_PASS);
+const smtpConfigured = Boolean(SMTP_HOST && SMTP_USER && SMTP_PASS);
+// Habilitado si hay Resend (preferido) o SMTP.
+export const emailEnabled = Boolean(RESEND_API_KEY) || smtpConfigured;
 
-const transporter = emailEnabled
+const transporter = smtpConfigured
   ? nodemailer.createTransport({
       host: SMTP_HOST,
       port: Number(SMTP_PORT) || 587,
@@ -20,12 +24,39 @@ const transporter = emailEnabled
     })
   : null;
 
-// Remitente: SIEMPRE el correo autenticado (SMTP_USER) para que SPF/DKIM de
-// Gmail validen y el mensaje no caiga en spam. (Usar un dominio sin autenticar
-// como noreply@eventform.co haría fallar SPF → spam.) Para mejorar aún más la
-// entregabilidad conviene publicar SPF, DKIM y DMARC del dominio remitente.
-const FROM = `EventForm <${SMTP_USER}>`;
-const REPLY_TO = EMAIL_FROM || SMTP_USER;
+// Remitente. Con Resend debe ser un dominio verificado (RESEND_FROM).
+// Con SMTP (Gmail), el correo autenticado para que SPF/DKIM validen.
+const FROM = RESEND_API_KEY
+  ? (RESEND_FROM || EMAIL_FROM || "EventForm <onboarding@resend.dev>")
+  : `EventForm <${SMTP_USER}>`;
+const REPLY_TO = EMAIL_FROM || SMTP_USER || undefined;
+
+// Envío unificado: usa Resend (HTTP API) si hay API key; si no, SMTP.
+// attachments: [{ filename, content: Buffer, cid, contentType }]
+async function deliver({ to, subject, html, text, attachments = [] }) {
+  if (!emailEnabled) return;
+  if (RESEND_API_KEY) {
+    const body = {
+      from: FROM,
+      to: [to],
+      subject,
+      html,
+      text,
+      ...(REPLY_TO ? { reply_to: REPLY_TO } : {}),
+      ...(attachments.length
+        ? { attachments: attachments.map((a) => ({ filename: a.filename, content: a.content.toString("base64"), content_id: a.cid })) }
+        : {}),
+    };
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(`Resend ${res.status}: ${await res.text()}`);
+    return;
+  }
+  await transporter.sendMail({ from: FROM, replyTo: REPLY_TO, to, subject, html, text, attachments });
+}
 
 function emailLayout(content) {
   return `<!DOCTYPE html><html lang="es"><body style="margin:0;padding:0;background:#f5f7fa;font-family:system-ui,sans-serif">
@@ -41,9 +72,7 @@ function emailLayout(content) {
 export async function sendVerificationCode(email, name, code) {
   if (!emailEnabled) return;
   const firstName = (name || "anfitrión").split(" ")[0];
-  await transporter.sendMail({
-    from: FROM,
-    replyTo: REPLY_TO,
+  await deliver({
     to: email,
     subject: "Tu código de verificación — EventForm",
     text: `Hola ${firstName},\n\nTu código de verificación de EventForm es: ${code}\nVálido por 15 minutos.\n\nSi no creaste esta cuenta, ignora este mensaje.`,
@@ -85,9 +114,7 @@ export async function sendRegistrationConfirmation(email, name, ticketId, event)
     }
   } catch { /* fallback a URL remota */ }
 
-  await transporter.sendMail({
-    from: FROM,
-    replyTo: REPLY_TO,
+  await deliver({
     to: email,
     subject: `Tu entrada para ${event.title} — EventForm`,
     attachments,
@@ -115,9 +142,7 @@ export async function sendRegistrationConfirmation(email, name, ticketId, event)
 export async function sendPasswordResetCode(email, name, code) {
   if (!emailEnabled) return;
   const firstName = (name || "usuario").split(" ")[0];
-  await transporter.sendMail({
-    from: FROM,
-    replyTo: REPLY_TO,
+  await deliver({
     to: email,
     subject: "Código para restablecer tu contraseña — EventForm",
     text: `Hola ${firstName},\n\nUsa este código para restablecer tu contraseña de EventForm: ${code}\nVálido por 15 minutos.\n\nSi no solicitaste esto, ignora este mensaje.`,

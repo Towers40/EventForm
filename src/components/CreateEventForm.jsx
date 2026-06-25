@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { compressHeaderImage } from "../lib/images.js";
+import { uploadImage } from "../lib/upload.js";
 
 // ── Tokens ──────────────────────────────────────────────────────────────────
 const BG     = "linear-gradient(170deg, #1d2340 0%, #131628 100%)";
@@ -314,7 +314,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
     const file = e.target.files?.[0];
     if (!file) return;
     setImgBusy(true);
-    try { up("headerImage", await compressHeaderImage(file)); }
+    try { up("headerImage", await uploadImage(file)); }
     catch (ex) { alert(ex.message); }
     finally { setImgBusy(false); e.target.value = ""; }
   }
