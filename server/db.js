@@ -85,6 +85,7 @@ export async function initDb() {
     "ALTER TABLE events ADD COLUMN price REAL",
     "ALTER TABLE registrations ADD COLUMN cancelled INTEGER NOT NULL DEFAULT 0",
     "ALTER TABLE users ADD COLUMN avatar TEXT",
+    "ALTER TABLE registrations ADD COLUMN email TEXT",
   ];
   for (const sql of migrations) {
     try {
@@ -94,6 +95,11 @@ export async function initDb() {
       if (!m.includes("duplicate column") && !m.includes("already has")) throw e;
     }
   }
+
+  // Índice para buscar entradas por email del asistente (vista "Mis tickets")
+  try {
+    await db.execute({ sql: "CREATE INDEX IF NOT EXISTS idx_reg_email ON registrations(email)", args: [] });
+  } catch { /* noop */ }
 }
 
 export function parseEvent(row) {

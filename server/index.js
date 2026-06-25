@@ -282,15 +282,17 @@ app.get("/api/auth/my-tickets", requireDb, authMiddleware, async (req, res) => {
   try {
     const email = String(req.user.email || "").trim().toLowerCase();
     if (!email) return res.json({ tickets: [] });
-    // Prefiltro por SQL (el email está dentro del payload JSON de la inscripción)
+    // Usa la columna indexada `email` (rápida) y, solo para registros antiguos
+    // sin esa columna, recae en el escaneo del payload (no pierde trazabilidad).
     const { rows } = await db.execute({
       sql: `SELECT r.ticket_id, r.payload AS reg_payload, r.used, r.checked_in_at, r.created_at,
                    e.slug, e.payload AS event_payload, e.manual_sold_out
             FROM registrations r
             JOIN events e ON e.id = r.event_id
-            WHERE r.cancelled = 0 AND lower(r.payload) LIKE ?
+            WHERE r.cancelled = 0
+              AND (lower(r.email) = ? OR (r.email IS NULL AND lower(r.payload) LIKE ?))
             ORDER BY r.created_at DESC`,
-      args: [`%${email}%`],
+      args: [email, `%${email}%`],
     });
     const tickets = [];
     for (const row of rows) {
@@ -399,6 +401,7 @@ app.get("/api/public/events/:slug", requireDb, async (req, res) => {
     const { rows: hostRows } = await db.execute({ sql: "SELECT name, email FROM users WHERE id = ?", args: [ev.hostId] });
     ev.hostName = hostRows[0]?.name || "";
     ev.hostEmail = hostRows[0]?.email || "";
+    res.set("Cache-Control", "public, s-maxage=20, stale-while-revalidate=40");
     res.json({ event: ev });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -448,41 +451,81 @@ app.get("/api/public/tickets/:ticketId", requireDb, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// Calcula la capacidad máxima (rangos antiguos o número del formulario nuevo)
+function capacityMaxOf(ev) {
+  const maxMap = { "under-50": 49, "0-50": 50, "50-100": 100, "100-300": 300, "300+": 10000 };
+  if (ev.capacity === "under-50") { const c = Number(ev.capacityCustom); return c > 0 && c < 50 ? c : 49; }
+  if (ev.capacity in maxMap) return maxMap[ev.capacity];
+  const n = Number(ev.capacity);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
 app.post("/api/public/events/:slug/register", requireDb, async (req, res) => {
   try {
     const { rows: evRows } = await db.execute({ sql: "SELECT * FROM events WHERE slug = ?", args: [req.params.slug] });
     if (!evRows[0]) return res.status(404).json({ error: "Evento no encontrado" });
-    const ev = await attachRegs(parseEvent(evRows[0]));
+    const ev = parseEvent(evRows[0]);
     if (ev.manualSoldOut) return res.status(403).json({ error: "sold_out" });
     const { form, consentPrivacy, consentMarketing } = req.body || {};
     if (!consentPrivacy) return res.status(400).json({ error: "Debes aceptar la política de privacidad" });
-    const maxMap = { "under-50": 49, "0-50": 50, "50-100": 100, "100-300": 300, "300+": 10000 };
-    const customMax = ev.capacity === "under-50" ? Number(ev.capacityCustom) : null;
-    const max = customMax > 0 && customMax < 50 ? customMax : maxMap[ev.capacity];
-    if (max != null && ev.registrations.length >= max) return res.status(403).json({ error: "sold_out" });
+
+    const max = capacityMaxOf(ev);
     const ticketId = "TICKET-" + uid();
-    await db.execute({
-      sql: `INSERT INTO registrations (id, event_id, ticket_id, payload, used, checked_in_at, consent_privacy, consent_marketing, created_at) VALUES (?, ?, ?, ?, 0, NULL, ?, ?, ?)`,
-      args: ["R" + uid(), ev.id, ticketId, JSON.stringify(form), consentPrivacy ? 1 : 0, consentMarketing ? 1 : 0, Date.now()],
-    });
-    // Enviar correo de confirmación. IMPORTANTE: hay que AWAIT antes de
-    // responder; en Vercel serverless la función se congela tras res.json(),
-    // por lo que un envío "fire-and-forget" se cancela y el correo no llega.
-    if (emailEnabled && form) {
+    const now = Date.now();
+
+    // Email del asistente (campo tipo email o primer valor con forma de correo)
+    let recipientEmail = null, recipientName = null;
+    if (form) {
       const emailField = (ev.fields || []).find(f => f.type === "email");
+      recipientEmail = emailField ? form[emailField.id] : null;
+      if (!recipientEmail) recipientEmail = Object.values(form).find((v) => typeof v === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) || null;
       const nameField = (ev.fields || []).find(f => f.type === "text" && /nombre/i.test(f.label));
-      // Email: campo tipo email; si no, primer valor con forma de correo.
-      let recipientEmail = emailField ? form[emailField.id] : null;
-      if (!recipientEmail) {
-        recipientEmail = Object.values(form).find((v) => typeof v === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) || null;
-      }
-      const recipientName = nameField ? form[nameField.id] : null;
-      if (recipientEmail) {
-        try { await sendRegistrationConfirmation(recipientEmail, recipientName, ticketId, ev); }
-        catch (mailErr) { console.error("Error enviando correo de inscripción:", mailErr?.message); }
+      recipientName = nameField ? form[nameField.id] : null;
+    }
+    const emailNorm = recipientEmail ? String(recipientEmail).trim().toLowerCase() : null;
+
+    const insertSql = `INSERT INTO registrations (id, event_id, ticket_id, payload, used, checked_in_at, consent_privacy, consent_marketing, created_at, email) VALUES (?, ?, ?, ?, 0, NULL, ?, ?, ?, ?)`;
+    const insertArgs = ["R" + uid(), ev.id, ticketId, JSON.stringify(form), consentPrivacy ? 1 : 0, consentMarketing ? 1 : 0, now, emailNorm];
+    const countSql = "SELECT COUNT(*) AS c FROM registrations WHERE event_id = ? AND cancelled = 0";
+
+    // Chequeo de cupo + inserción ATÓMICOS (evita sobreventa en simultáneo).
+    let useFallback = false;
+    let tx = null;
+    try {
+      tx = await db.transaction("write");
+    } catch { useFallback = true; }
+
+    if (tx) {
+      try {
+        if (max != null) {
+          const { rows: cntRows } = await tx.execute({ sql: countSql, args: [ev.id] });
+          if (Number(cntRows[0]?.c || 0) >= max) { await tx.rollback(); return res.status(403).json({ error: "sold_out" }); }
+        }
+        await tx.execute({ sql: insertSql, args: insertArgs });
+        await tx.commit();
+      } catch (txErr) {
+        try { await tx.rollback(); } catch { /* noop */ }
+        // Si el driver no soporta transacciones interactivas, cae al modo simple.
+        if (/transaction|not supported|unsupported/i.test(txErr?.message || "")) useFallback = true;
+        else throw txErr;
       }
     }
-    res.status(201).json({ registration: { id: ticketId, eventId: ev.id, data: form, ts: Date.now(), used: false }, event: { id: ev.id, title: ev.title, slug: ev.slug } });
+
+    if (useFallback) {
+      if (max != null) {
+        const { rows: cntRows } = await db.execute({ sql: countSql, args: [ev.id] });
+        if (Number(cntRows[0]?.c || 0) >= max) return res.status(403).json({ error: "sold_out" });
+      }
+      await db.execute({ sql: insertSql, args: insertArgs });
+    }
+
+    // Correo de confirmación. AWAIT antes de responder: en Vercel serverless la
+    // función se congela tras res.json() y un envío fire-and-forget se cancela.
+    if (emailEnabled && recipientEmail) {
+      try { await sendRegistrationConfirmation(recipientEmail, recipientName, ticketId, ev); }
+      catch (mailErr) { console.error("Error enviando correo de inscripción:", mailErr?.message); }
+    }
+    res.status(201).json({ registration: { id: ticketId, eventId: ev.id, data: form, ts: now, used: false }, event: { id: ev.id, title: ev.title, slug: ev.slug } });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -493,11 +536,33 @@ app.get("/api/events", requireDb, authMiddleware, async (req, res) => {
       ? { sql: "SELECT * FROM events ORDER BY updated_at DESC", args: [] }
       : { sql: "SELECT * FROM events WHERE host_id = ? ORDER BY updated_at DESC", args: [req.user.sub] };
     const { rows } = await db.execute(sql);
-    const events = await Promise.all(rows.map(async (r) => {
-      const ev = await attachRegs(parseEvent(r));
+    const events = rows.map((r) => {
+      const ev = parseEvent(r);
       ev.publicUrl = `${APP_URL}/e/${ev.slug}`;
+      ev.registrations = [];
       return ev;
-    }));
+    });
+
+    // Inscripciones en UNA sola consulta agrupada (evita N+1). Se conservan
+    // completas para no perder trazabilidad en CRM/Detalle/Dashboard.
+    if (events.length) {
+      const ids = events.map((e) => e.id);
+      const placeholders = ids.map(() => "?").join(",");
+      const { rows: regRows } = await db.execute({
+        sql: `SELECT * FROM registrations WHERE cancelled = 0 AND event_id IN (${placeholders}) ORDER BY created_at DESC`,
+        args: ids,
+      });
+      const byEvent = new Map(events.map((e) => [e.id, e]));
+      for (const r of regRows) {
+        const ev = byEvent.get(r.event_id);
+        if (!ev) continue;
+        ev.registrations.push({
+          id: r.ticket_id, eventId: r.event_id, data: JSON.parse(r.payload),
+          ts: r.created_at, used: Boolean(r.used), checkedInAt: r.checked_in_at,
+          consentPrivacy: Boolean(r.consent_privacy), consentMarketing: Boolean(r.consent_marketing),
+        });
+      }
+    }
     res.json({ events });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -663,7 +728,7 @@ app.get("/api/public/events", requireDb, async (req, res) => {
     const total = Number(countRows[0]?.total || 0);
 
     const { rows } = await db.execute({
-      sql: `SELECT *, (SELECT COUNT(*) FROM registrations r WHERE r.event_id = events.id) as reg_count
+      sql: `SELECT *, (SELECT COUNT(*) FROM registrations r WHERE r.event_id = events.id AND r.cancelled = 0) as reg_count
             FROM events ${where}
             ORDER BY COALESCE(json_extract(payload, '$.startDate'), '9999-99-99') ASC
             LIMIT ? OFFSET ?`,
@@ -678,6 +743,7 @@ app.get("/api/public/events", requireDb, async (req, res) => {
       return ev;
     });
 
+    res.set("Cache-Control", "public, s-maxage=60, stale-while-revalidate=120");
     res.json({ events, total, page: Number(page), limit: Number(limit) });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -694,6 +760,7 @@ app.get("/api/public/categories", requireDb, async (req, res) => {
             GROUP BY category ORDER BY count DESC`,
       args: [today, today, today],
     });
+    res.set("Cache-Control", "public, s-maxage=120, stale-while-revalidate=300");
     res.json({ categories: rows.map(r => ({ slug: r.category, count: Number(r.count) })) });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });

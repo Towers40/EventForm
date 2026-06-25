@@ -1,6 +1,6 @@
 # 🚀 EventForm — Manual de Contexto y Desarrollo
 
-Instrucciones de arquitectura, stack y estilo para el asistente de IA.
+Instrucciones de arquitectura, stack y estilo para el asistente de IA. 
 
 ## 🌐 Stack e Infraestructura
 * **Frontend:** React 19 + Vite, SPA. React Router v7.
