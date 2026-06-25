@@ -10,7 +10,12 @@ export async function uploadImage(file, { square = false } = {}) {
   // Comprimir/redimensionar en el cliente antes de subir (subida más liviana).
   const dataUrl = square ? await compressAvatar(file) : await compressHeaderImage(file);
 
-  if (!CLOUD || !PRESET) return dataUrl; // sin Cloudinary → base64
+  // Diagnóstico temporal: avisa si las variables no llegaron al build.
+  if (!CLOUD || !PRESET) {
+    console.warn("[Cloudinary] Variables ausentes en el build", { CLOUD, PRESET });
+    alert("Cloudinary no está configurado en este build (las variables VITE_ no llegaron). Hay que redeployar SIN caché.");
+    return dataUrl;
+  }
 
   try {
     const fd = new FormData();
@@ -20,10 +25,16 @@ export async function uploadImage(file, { square = false } = {}) {
       method: "POST",
       body: fd,
     });
-    if (!res.ok) throw new Error("Cloudinary upload failed");
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const msg = data?.error?.message || `HTTP ${res.status}`;
+      console.error("[Cloudinary] Error de subida:", res.status, data);
+      alert("Cloudinary rechazó la subida: " + msg);
+      throw new Error(msg);
+    }
     return data.secure_url || dataUrl;
-  } catch {
-    return dataUrl; // si falla la subida, respaldo en base64
+  } catch (e) {
+    console.error("[Cloudinary] Falló la subida:", e);
+    return dataUrl; // respaldo en base64
   }
 }
