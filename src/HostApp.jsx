@@ -588,8 +588,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
       style={{
         fontFamily: "system-ui, -apple-system, sans-serif",
         minHeight: "100vh",
-        background: "linear-gradient(170deg, #1d2340 0%, #131628 100%)",
-        backgroundAttachment: "fixed",
+        background: "transparent",
         color: "#e8eaf0",
         textAlign: "left",
       }}

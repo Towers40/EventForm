@@ -230,7 +230,7 @@ export default function DiscoverPage({ embedded = false }) {
   return (
     <div style={embedded
       ? { color: "#e8eaf0", fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }
-      : { minHeight: "100vh", background: "linear-gradient(170deg, #1d2340 0%, #131628 100%)", backgroundAttachment: "fixed", color: "#e8eaf0", fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>
+      : { minHeight: "100vh", background: "transparent", color: "#e8eaf0", fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>
 
       {/* ── Nav (solo en página independiente) ── */}
       {!embedded && (

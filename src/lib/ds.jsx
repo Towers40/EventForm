@@ -1,7 +1,7 @@
 // Central Design System — glass/navy dark aesthetic
 
 export const DS = {
-  pageBg:       "linear-gradient(170deg, #1d2340 0%, #131628 100%)",
+  pageBg:       "transparent", // fondo global navy+verde en body (typeform.css) con --scroll-tint
   cardBg:       "rgba(255,255,255,0.08)",
   cardHover:    "rgba(255,255,255,0.11)",
   panelBg:      "rgba(255,255,255,0.05)",

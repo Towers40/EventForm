@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { uploadImage } from "../lib/upload.js";
 
 // ── Tokens ──────────────────────────────────────────────────────────────────
-const BG     = "linear-gradient(170deg, #1d2340 0%, #131628 100%)";
+const BG     = "radial-gradient(115% 85% at 85% -10%, rgba(36,116,76,0.75), transparent 62%), radial-gradient(120% 90% at -10% 110%, rgba(24,92,58,0.65), transparent 60%), linear-gradient(170deg, #1d2340 0%, #131628 100%)";
 const CARD   = "rgba(255,255,255,0.08)";
 const BORDER = "1px solid rgba(255,255,255,0.11)";
 const RADIUS = 20;
@@ -71,7 +71,7 @@ function LocationModal({ onSelect, onClose }) {
   }
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 500, background: "#131628", display: "flex", flexDirection: "column" }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 500, background: BG, display: "flex", flexDirection: "column" }}>
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.1)", flexShrink: 0 }}>
         <button type="button" onClick={onClose} style={{ background: "none", border: "none", color: "#6b9fd4", fontSize: 15, cursor: "pointer", padding: "4px 8px 4px 0", fontWeight: 600, whiteSpace: "nowrap" }}>

@@ -141,7 +141,7 @@ export default function PublicEventPage() {
     finally { setCancelling(false); }
   };
 
-  const BG   = "#0d0f10";
+  const BG   = "transparent"; // fondo global en body (typeform.css)
   const TEXT = "#e8eaf0";
   const SUB  = "rgba(232,234,240,0.5)";
   const CARD = "rgba(255,255,255,0.06)";

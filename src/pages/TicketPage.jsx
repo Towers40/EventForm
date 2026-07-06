@@ -34,7 +34,7 @@ export default function TicketPage() {
   const ev = ticket?.event;
 
   return (
-    <div className="tf-screen" style={{ display: "block", overflowY: "auto", background: "linear-gradient(170deg, #1d2340 0%, #131628 100%)", minHeight: "100dvh" }}>
+    <div className="tf-screen" style={{ display: "block", overflowY: "auto", minHeight: "100dvh" }}>
       <div style={{ maxWidth: 460, margin: "0 auto", padding: "32px 16px 60px" }}>
         <div style={{ textAlign: "center", marginBottom: 22 }}>
           <span style={{ color: "#4ade80", fontSize: 20 }}>●</span>

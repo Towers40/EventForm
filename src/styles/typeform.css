@@ -12,11 +12,45 @@
   --tf-muted:     #8fa3b1;
   --tf-accent:    #0d3b66;
   --tf-accent-lt: #6b9fd4;
+  --scroll-tint:  0; /* 0–1, lo actualiza src/lib/scrollTint.js al desplazarse */
+}
+
+/* ─── Fondo global de la app (todas las páginas) ───────────────────────────
+   Base navy con verde oscuro difuminado + capa verde más oscura que gana
+   opacidad al hacer scroll (variable --scroll-tint). Se usan pseudo-elementos
+   fijos porque background-attachment: fixed no funciona en iOS. */
+:root {
+  background: #131628; /* respaldo bajo las capas fijas (gana a --bg de index.css) */
+}
+body {
+  /* body debe quedar transparente: un fondo opaco aquí taparía los
+     pseudo-elementos ::before/::after de z-index negativo */
+  background: transparent;
+}
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background:
+    radial-gradient(115% 85% at 85% -10%, rgba(36, 116, 76, 0.75), transparent 62%),
+    radial-gradient(120% 90% at -10% 110%, rgba(24, 92, 58, 0.65), transparent 60%),
+    linear-gradient(170deg, #1d2340 0%, #131628 100%);
+}
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(10, 46, 30, 0.55) 0%, rgba(4, 26, 16, 0.95) 100%);
+  opacity: calc(var(--scroll-tint) * 0.85);
+  transition: opacity 0.25s ease-out;
 }
 
 .tf-screen {
   min-height: 100dvh;
-  background: var(--tf-bg);
+  background: transparent;
   display: flex;
   flex-direction: column;
 }
@@ -115,7 +149,7 @@
   gap: 12px;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(transparent, var(--tf-bg) 28%);
+  background: linear-gradient(transparent, rgba(8, 14, 12, 0.9) 45%);
   max-width: 720px;
   margin: 0 auto;
   box-sizing: border-box;
@@ -375,7 +409,7 @@
   gap: 12px;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(transparent, var(--tf-bg) 28%);
+  background: linear-gradient(transparent, rgba(8, 14, 12, 0.9) 45%);
   box-sizing: border-box;
   z-index: 9;
 }
