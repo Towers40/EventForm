@@ -118,10 +118,12 @@ export default function MisTicketsView({ onHome }) {
   return (
     <div style={{ maxWidth: 760, margin: "0 auto" }}>
       {onHome && (
-        <button type="button" onClick={onHome} style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(107,159,212,0.25)", borderRadius: 10, color: "#c8dff0", cursor: "pointer", fontSize: 13, fontWeight: 700, padding: "8px 14px", marginBottom: 16 }}>
-          <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M3 9.5 12 3l9 6.5" /><path d="M5 10v10h14V10" /><path d="M9 20v-6h6v6" /></svg>
-          Inicio
-        </button>
+        <div className="ef-page-actions" style={{ marginBottom: 16 }}>
+          <button type="button" className="ef-hover-fill" onClick={onHome} style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(107,159,212,0.25)", borderRadius: 10, color: "#c8dff0", cursor: "pointer", fontSize: 13, fontWeight: 700, padding: "8px 14px" }}>
+            <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M3 9.5 12 3l9 6.5" /><path d="M5 10v10h14V10" /><path d="M9 20v-6h6v6" /></svg>
+            Inicio
+          </button>
+        </div>
       )}
 
       <h1 style={{ fontSize: 24, fontWeight: 700, margin: "0 0 20px", color: "#e8eaf0" }}>Mis tickets</h1>
@@ -147,7 +149,7 @@ export default function MisTicketsView({ onHome }) {
           { key: "pasados",  label: `Historial (${pasados.length})` },
         ].map(t => (
           <button key={t.key} type="button"
-            className={`soft-btn ${tab === t.key ? "soft-btn-primary" : "soft-btn-secondary"}`}
+            className={`soft-btn ef-hover-fill ${tab === t.key ? "soft-btn-primary" : "soft-btn-secondary"}`}
             style={{ fontSize: 13, padding: "10px 18px" }}
             onClick={() => setTab(t.key)}>
             {t.label}
@@ -162,7 +164,7 @@ export default function MisTicketsView({ onHome }) {
           <p style={{ color: "#8fa3b1", fontSize: 15, margin: 0 }}>
             {tab === "proximos" ? "No tienes eventos próximos a los que te hayas registrado." : "No hay eventos pasados en tu historial."}
           </p>
-          <a href="/discover" className="soft-btn soft-btn-primary" style={{ display: "inline-block", marginTop: 20, textDecoration: "none" }}>Descubrir eventos</a>
+          <a href="/discover" className="soft-btn soft-btn-primary ef-hover-fill" style={{ display: "inline-block", marginTop: 20, textDecoration: "none" }}>Descubrir eventos</a>
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -182,7 +184,7 @@ export default function MisTicketsView({ onHome }) {
                       {used && <span style={{ fontSize: 10.5, fontWeight: 700, padding: "3px 9px", borderRadius: 100, background: "rgba(107,159,212,0.2)", color: "#c8dff0" }}>QR usado</span>}
                     </div>
                   </div>
-                  <button type="button" onClick={() => setOpenQr(openQr === id ? null : id)}
+                  <button type="button" className="ef-hover-fill" onClick={() => setOpenQr(openQr === id ? null : id)}
                     style={{ flexShrink: 0, display: "inline-flex", flexDirection: "column", alignItems: "center", gap: 3, background: openQr === id ? "rgba(107,159,212,0.22)" : "rgba(255,255,255,0.06)", border: "1px solid rgba(107,159,212,0.3)", borderRadius: 12, padding: "8px 10px", color: "#c8dff0", cursor: "pointer", fontSize: 11, fontWeight: 700 }}>
                     <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M21 21v.01M21 14v.01M14 21v.01"/></svg>
                     QR
@@ -218,11 +220,11 @@ export default function MisTicketsView({ onHome }) {
             <h3 style={{ fontSize: 18, fontWeight: 800, color: "#e8eaf0", margin: "0 0 8px" }}>¿Estás seguro que quieres cancelar tu participación?</h3>
             <p style={{ fontSize: 13.5, color: "rgba(232,234,240,0.6)", margin: "0 0 22px", lineHeight: 1.5 }}>Tu entrada quedará anulada y perderás tu lugar en este evento.</p>
             <div style={{ display: "flex", gap: 10 }}>
-              <button type="button" onClick={() => setConfirmCancel(null)} disabled={cancelling}
+              <button type="button" className="ef-hover-fill" onClick={() => setConfirmCancel(null)} disabled={cancelling}
                 style={{ flex: 1, padding: 13, borderRadius: 12, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.18)", color: "#e8eaf0", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
                 No, volver
               </button>
-              <button type="button" onClick={doCancel} disabled={cancelling}
+              <button type="button" className="ef-hover-fill" onClick={doCancel} disabled={cancelling}
                 style={{ flex: 1, padding: 13, borderRadius: 12, background: "rgba(248,113,113,0.18)", border: "1px solid rgba(248,113,113,0.45)", color: "#fca5a5", fontWeight: 800, fontSize: 14, cursor: cancelling ? "not-allowed" : "pointer" }}>
                 {cancelling ? "Cancelando…" : "Sí, cancelar"}
               </button>
@@ -240,7 +242,7 @@ export default function MisTicketsView({ onHome }) {
               {eventModal.event?.headerImage
                 ? <img src={eventModal.event.headerImage} alt="" style={{ width: "100%", aspectRatio: "16/9", objectFit: "cover", display: "block" }} />
                 : <div style={{ width: "100%", aspectRatio: "16/7", background: "linear-gradient(135deg, #0d3b66, #1a5f8a)" }} />}
-              <button type="button" onClick={() => setEventModal(null)} aria-label="Cerrar"
+              <button type="button" className="ef-hover-fill" onClick={() => setEventModal(null)} aria-label="Cerrar"
                 style={{ position: "absolute", top: 12, right: 12, width: 36, height: 36, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.25)", background: "rgba(0,0,0,0.5)", color: "#fff", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(6px)" }}>
                 <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
               </button>
@@ -257,7 +259,7 @@ export default function MisTicketsView({ onHome }) {
               {eventModal.event?.eventDescription && (
                 <p style={{ fontSize: 14, color: "rgba(232,234,240,0.8)", lineHeight: 1.55, margin: "0 0 16px", whiteSpace: "pre-wrap" }}>{eventModal.event.eventDescription}</p>
               )}
-              <a href={`/e/${eventModal.slug}`} className="soft-btn soft-btn-primary" style={{ display: "inline-block", textDecoration: "none", fontSize: 13 }}>Abrir página del evento</a>
+              <a href={`/e/${eventModal.slug}`} className="soft-btn soft-btn-primary ef-hover-fill" style={{ display: "inline-block", textDecoration: "none", fontSize: 13 }}>Abrir página del evento</a>
             </div>
           </div>
         </div>

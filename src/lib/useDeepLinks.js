@@ -10,14 +10,14 @@ export function useDeepLinks() {
 
   useEffect(() => {
     if (!isNative) return undefined;
-    let remove;
-    let activeListener;
+    let removeUrlListener;
+    let removeBackListener;
 
     (async () => {
       try {
         const spec = "@capacitor/app";
         const { App } = await import(/* @vite-ignore */ spec);
-        activeListener = await App.addListener("appUrlOpen", ({ url }) => {
+        const urlListener = await App.addListener("appUrlOpen", ({ url }) => {
           try {
             const u = new URL(url);
             const path = `${u.pathname}${u.search}`;
@@ -26,13 +26,23 @@ export function useDeepLinks() {
             /* url no parseable */
           }
         });
-        remove = () => activeListener?.remove();
+        removeUrlListener = () => urlListener?.remove();
+
+        // Botón atrás por hardware (Android): si hay un paso previo en el
+        // historial (ya sea de react-router o de las vistas internas de
+        // HostApp), retrocede un paso; si no queda nada, cierra la app en vez
+        // de dejarla en un estado roto.
+        const backListener = await App.addListener("backButton", ({ canGoBack }) => {
+          if (canGoBack) window.history.back();
+          else App.exitApp();
+        });
+        removeBackListener = () => backListener?.remove();
       } catch {
         /* plugin no instalado */
       }
     })();
 
-    return () => { remove?.(); };
+    return () => { removeUrlListener?.(); removeBackListener?.(); };
   }, [navigate]);
 }
 

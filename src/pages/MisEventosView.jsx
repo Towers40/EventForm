@@ -36,21 +36,21 @@ export default function MisEventosView({ events, onNew, onOpen, onEdit, onValida
 
   return (
     <div style={{ maxWidth: 760, margin: "0 auto" }}>
-      {/* Acciones: Inicio · Dashboard · Nuevo evento */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18, gap: 10, flexWrap: "wrap" }}>
+      {/* Acciones: Inicio · Dashboard · Nuevo evento — solo móvil (en escritorio viven en el encabezado) */}
+      <div className="ef-page-actions" style={{ justifyContent: "space-between", alignItems: "center", marginBottom: 18, gap: 10, flexWrap: "wrap" }}>
         {onHome ? (
-          <button type="button" onClick={onHome} style={pillStyle}>
+          <button type="button" className="ef-hover-fill" onClick={onHome} style={pillStyle}>
             <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M3 9.5 12 3l9 6.5" /><path d="M5 10v10h14V10" /><path d="M9 20v-6h6v6" /></svg>
             Inicio
           </button>
         ) : <span />}
         {onDashboard && (
-          <button type="button" onClick={onDashboard} style={pillStyle}>
+          <button type="button" className="ef-hover-fill" onClick={onDashboard} style={pillStyle}>
             <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></svg>
             Dashboard
           </button>
         )}
-        <button type="button" onClick={onNew} style={{ ...pillStyle, background: "rgba(107,159,212,0.16)", border: "1px solid rgba(107,159,212,0.32)" }}>
+        <button type="button" className="ef-hover-fill" onClick={onNew} style={{ ...pillStyle, background: "rgba(107,159,212,0.16)", border: "1px solid rgba(107,159,212,0.32)" }}>
           <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
           Nuevo evento
         </button>
@@ -59,7 +59,7 @@ export default function MisEventosView({ events, onNew, onOpen, onEdit, onValida
 
       {/* Filtro desplegable */}
       <div style={{ position: "relative", marginBottom: 24, display: "inline-block" }}>
-        <button type="button" onClick={() => setFilterOpen(o => !o)} style={{ ...pillStyle, padding: "10px 16px" }}>
+        <button type="button" className="ef-hover-fill" onClick={() => setFilterOpen(o => !o)} style={{ ...pillStyle, padding: "10px 16px" }}>
           <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M3 5h18M6 12h12M10 19h4" /></svg>
           {current.label} ({current.count})
           <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ transform: filterOpen ? "rotate(180deg)" : "none", transition: "transform 0.18s" }}><polyline points="6 9 12 15 18 9" /></svg>
@@ -69,7 +69,7 @@ export default function MisEventosView({ events, onNew, onOpen, onEdit, onValida
             <div onClick={() => setFilterOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 30 }} />
             <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, zIndex: 31, minWidth: 200, background: "rgba(20,23,40,0.98)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 14, padding: 6, boxShadow: "0 14px 40px rgba(0,0,0,0.5)" }}>
               {FILTERS.map(f => (
-                <button key={f.key} type="button" onClick={() => { setTab(f.key); setFilterOpen(false); }}
+                <button key={f.key} type="button" className="ef-hover-fill" onClick={() => { setTab(f.key); setFilterOpen(false); }}
                   style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 12px", borderRadius: 10, background: tab === f.key ? "rgba(107,159,212,0.2)" : "transparent", border: "none", cursor: "pointer", color: tab === f.key ? "#c8dff0" : "#c4cad6", fontSize: 14, fontWeight: tab === f.key ? 700 : 500 }}>
                   <span>{f.label}</span>
                   <span style={{ fontSize: 12, color: "rgba(232,234,240,0.45)" }}>{f.count}</span>
@@ -193,7 +193,7 @@ function EventCard({ ev, onOpen, onEdit, onValidate, onDelete, onShare, onToggle
 
       {/* Acciones — centradas */}
       <div style={{ padding: "14px 16px", borderTop: "1px solid rgba(255,255,255,0.07)", display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
-        <button type="button" className="soft-btn soft-btn-primary" style={{ fontSize: 12, padding: "8px 14px" }} onClick={onOpen}>
+        <button type="button" className="soft-btn soft-btn-primary ef-hover-fill" style={{ fontSize: 12, padding: "8px 14px" }} onClick={onOpen}>
           Inscritos
         </button>
         <button type="button" className="soft-btn soft-btn-secondary" title="Compartir" aria-label="Compartir" style={{ fontSize: 12, padding: "8px 12px", display: "inline-flex", alignItems: "center", justifyContent: "center" }} onClick={onShare}>
@@ -207,7 +207,7 @@ function EventCard({ ev, onOpen, onEdit, onValidate, onDelete, onShare, onToggle
           Editar
         </button>
         <button type="button"
-          className="soft-btn"
+          className="soft-btn ef-hover-fill"
           style={{ fontSize: 12, padding: "8px 14px", background: "rgba(220,38,38,0.12)", color: "#fca5a5", border: "1px solid rgba(220,38,38,0.3)", borderRadius: 10 }}
           onClick={onDelete}
         >
@@ -263,10 +263,10 @@ function DraftCard({ ev, onEdit, onDelete }) {
         </p>
       </div>
       <div style={{ padding: "12px 20px", borderTop: "1px solid rgba(255,255,255,0.07)", display: "flex", gap: 8 }}>
-        <button type="button" className="soft-btn soft-btn-primary" style={{ fontSize: 13 }} onClick={onEdit}>
+        <button type="button" className="soft-btn soft-btn-primary ef-hover-fill" style={{ fontSize: 13 }} onClick={onEdit}>
           Continuar editando →
         </button>
-        <button type="button" className="soft-btn" style={{ fontSize: 13, background: "rgba(220,38,38,0.12)", color: "#fca5a5", border: "1px solid rgba(220,38,38,0.3)", borderRadius: 10 }} onClick={onDelete}>
+        <button type="button" className="soft-btn ef-hover-fill" style={{ fontSize: 13, background: "rgba(220,38,38,0.12)", color: "#fca5a5", border: "1px solid rgba(220,38,38,0.3)", borderRadius: 10 }} onClick={onDelete}>
           Descartar
         </button>
       </div>

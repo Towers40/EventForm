@@ -71,41 +71,49 @@ function LocationModal({ onSelect, onClose }) {
   }
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 500, background: BG, display: "flex", flexDirection: "column" }}>
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.1)", flexShrink: 0 }}>
-        <button type="button" onClick={onClose} style={{ background: "none", border: "none", color: "#6b9fd4", fontSize: 15, cursor: "pointer", padding: "4px 8px 4px 0", fontWeight: 600, whiteSpace: "nowrap" }}>
-          ← Cancelar
-        </button>
-        <div style={{ flex: 1, position: "relative" }}>
-          <input
-            ref={inputRef}
-            type="text" value={query} onChange={handleChange}
-            placeholder="Buscar dirección o lugar…"
-            style={{ width: "100%", boxSizing: "border-box", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 12, padding: "11px 40px 11px 14px", fontSize: 16, color: "#e8eaf0", outline: "none", caretColor: "#6b9fd4", fontFamily: "inherit" }}
-          />
-          {loading && <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", fontSize: 13, color: "rgba(232,234,240,0.4)" }}>…</span>}
+    <div
+      onClick={onClose}
+      style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(3px)", WebkitBackdropFilter: "blur(3px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{ width: "100%", maxWidth: 420, maxHeight: "76vh", display: "flex", flexDirection: "column", background: "rgba(20,23,40,0.98)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 20, overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}
+      >
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", flexShrink: 0 }}>
+          <div style={{ flex: 1, position: "relative" }}>
+            <input
+              ref={inputRef}
+              type="text" value={query} onChange={handleChange}
+              placeholder="Buscar dirección o lugar…"
+              style={{ width: "100%", boxSizing: "border-box", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 12, padding: "11px 40px 11px 14px", fontSize: 15, color: "#e8eaf0", outline: "none", caretColor: "#6b9fd4", fontFamily: "inherit" }}
+            />
+            {loading && <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", fontSize: 13, color: "rgba(232,234,240,0.4)" }}>…</span>}
+          </div>
+          <button type="button" onClick={onClose} className="ef-hover-fill" style={{ background: "rgba(107,159,212,0.16)", border: "1px solid rgba(107,159,212,0.32)", borderRadius: 999, color: "#c8dff0", fontSize: 20, lineHeight: 1, width: 36, height: 36, flexShrink: 0, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
         </div>
-      </div>
 
-      {/* Suggestions */}
-      <div style={{ flex: 1, overflowY: "auto" }}>
-        {!loading && query.trim().length >= 2 && results.length === 0 && (
-          <p style={{ padding: "20px 20px", color: "rgba(232,234,240,0.4)", fontSize: 14, margin: 0 }}>Sin resultados. Intenta con otro término.</p>
-        )}
-        {results.map((item, idx) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => onSelect(item)}
-            style={{ width: "100%", background: "none", border: "none", borderBottom: "1px solid rgba(255,255,255,0.06)", padding: "16px 20px", textAlign: "left", cursor: "pointer", display: "flex", alignItems: "flex-start", gap: 12 }}
-            onMouseEnter={e => e.currentTarget.style.background = "rgba(107,159,212,0.1)"}
-            onMouseLeave={e => e.currentTarget.style.background = "none"}
-          >
-            <svg style={{ flexShrink: 0, marginTop: 1 }} width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="rgba(107,159,212,0.7)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-            <span style={{ fontSize: 15, color: "#e8eaf0", lineHeight: 1.4 }}>{item.label}</span>
-          </button>
-        ))}
+        {/* Suggestions */}
+        <div style={{ flex: 1, overflowY: "auto" }}>
+          {!loading && query.trim().length >= 2 && results.length === 0 && (
+            <p style={{ padding: "20px 20px", color: "rgba(232,234,240,0.4)", fontSize: 14, margin: 0 }}>Sin resultados. Intenta con otro término.</p>
+          )}
+          {query.trim().length < 2 && results.length === 0 && (
+            <p style={{ padding: "20px 20px", color: "rgba(232,234,240,0.4)", fontSize: 14, margin: 0 }}>Escribe al menos 2 letras para buscar una dirección o lugar.</p>
+          )}
+          {results.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => onSelect(item)}
+              className="ef-hover-fill"
+              style={{ width: "100%", background: "none", border: "none", borderBottom: "1px solid rgba(255,255,255,0.06)", padding: "14px 18px", textAlign: "left", cursor: "pointer", display: "flex", alignItems: "flex-start", gap: 12 }}
+            >
+              <svg style={{ flexShrink: 0, marginTop: 1 }} width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="rgba(107,159,212,0.7)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              <span style={{ fontSize: 14, color: "#e8eaf0", lineHeight: 1.4 }}>{item.label}</span>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -351,7 +359,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
         <div className="ce-scroll">
           {/* ── Volver (acción translúcida) — regresa a la pantalla anterior ── */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginTop: 16 }}>
-            <button type="button" onClick={onCancel}
+            <button type="button" className="ef-hover-fill" onClick={onCancel}
               style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "9px 16px", background: "rgba(107,159,212,0.16)", border: "1px solid rgba(107,159,212,0.32)", borderRadius: 999, color: "#c8dff0", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
               <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
               Volver
@@ -401,7 +409,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
               <input type="file" accept="image/*" hidden onChange={handleImage} ref={imgRef} />
             </label>
             {draft.headerImage && (
-              <button type="button" onClick={() => { up("headerImage", ""); up("imagePos", { x: 50, y: 50 }); }} style={{ position: "absolute", top: 10, right: 10, background: "rgba(0,0,0,0.55)", border: "none", borderRadius: 20, padding: "4px 10px", color: "#fff", fontSize: 11, cursor: "pointer" }}>Quitar</button>
+              <button type="button" className="ef-hover-fill" onClick={() => { up("headerImage", ""); up("imagePos", { x: 50, y: 50 }); }} style={{ position: "absolute", top: 10, right: 10, background: "rgba(0,0,0,0.55)", border: "none", borderRadius: 20, padding: "4px 10px", color: "#fff", fontSize: 11, cursor: "pointer" }}>Quitar</button>
             )}
           </div>
 
@@ -416,7 +424,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
           {/* ── Date card ── */}
           <div style={cardStyle}>
             {/* Inicio */}
-            <button type="button" onClick={() => { setStartPicker(v => !v); setEndPicker(false); }}
+            <button type="button" className="ef-hover-fill" onClick={() => { setStartPicker(v => !v); setEndPicker(false); }}
               style={{ width: "100%", background: "none", border: "none", padding: 0, cursor: "pointer", display: "block", ...rowDivider, textAlign: "left" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "15px 18px" }}>
                 <div style={{ width: 18, flexShrink: 0, display: "flex", justifyContent: "center" }}>
@@ -427,7 +435,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
               </div>
             </button>
             {/* Fin */}
-            <button type="button" onClick={() => { setEndPicker(v => !v); setStartPicker(false); }}
+            <button type="button" className="ef-hover-fill" onClick={() => { setEndPicker(v => !v); setStartPicker(false); }}
               style={{ width: "100%", background: "none", border: "none", padding: 0, cursor: "pointer", display: "block", textAlign: "left" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "15px 18px" }}>
                 <div style={{ width: 18, flexShrink: 0, display: "flex", justifyContent: "center" }}>
@@ -477,7 +485,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
           {/* ── Location ── */}
           <div style={cardStyle}>
             {/* Physical location picker */}
-            <button type="button" onClick={() => setShowLocModal(true)}
+            <button type="button" className="ef-hover-fill" onClick={() => setShowLocModal(true)}
               style={{ width: "100%", background: "none", border: "none", padding: 0, cursor: "pointer", display: "block", ...rowDivider, textAlign: "left" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "15px 18px" }}>
                 <span style={{ color: SUB }}><I.MapPin /></span>
@@ -515,7 +523,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
 
           {/* ── Description ── */}
           <div style={cardStyle}>
-            <button type="button" onClick={() => setShowDesc(v => !v)}
+            <button type="button" className="ef-hover-fill" onClick={() => setShowDesc(v => !v)}
               style={{ width: "100%", background: "none", border: "none", padding: 0, cursor: "pointer", display: "block", ...(showDesc ? rowDivider : {}), textAlign: "left" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "15px 18px" }}>
                 <span style={{ color: SUB }}><I.Text /></span>
@@ -528,7 +536,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
               </div>
             </button>
             {showDesc && (
-              <div style={{ padding: "0 16px 16px" }}>
+              <div style={{ padding: "12px 16px 16px" }}>
                 <textarea
                   value={draft.eventDescription || ""}
                   onChange={e => up("eventDescription", e.target.value)}
@@ -562,7 +570,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
             )}
 
             {/* Price */}
-            <button type="button"
+            <button type="button" className="ef-hover-fill"
               onClick={() => { if (draft.priceType !== "paid") up("priceType", "paid"); setShowPrice(true); }}
               style={{ width: "100%", background: "none", border: "none", padding: 0, cursor: "pointer", display: "block", textAlign: "left" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "15px 18px" }}>
@@ -579,7 +587,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
           <p style={{ fontSize: 13, fontWeight: 600, color: SUB, marginBottom: 8, paddingLeft: 4 }}>Opciones</p>
           <div style={cardStyle}>
             {/* Visibility */}
-            <button type="button" onClick={() => setVisSheet(v => !v)}
+            <button type="button" className="ef-hover-fill" onClick={() => setVisSheet(v => !v)}
               style={{ width: "100%", background: "none", border: "none", padding: 0, cursor: "pointer", display: "block", ...rowDivider, textAlign: "left" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "15px 18px" }}>
                 <span style={{ color: SUB }}><I.Globe /></span>
@@ -590,7 +598,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
             {visSheet && (
               <div style={{ padding: "8px 16px 12px" }}>
                 {[{ v: "public", l: "Público" }, { v: "private", l: "Privado" }].map(opt => (
-                  <button key={opt.v} type="button"
+                  <button key={opt.v} type="button" className="ef-hover-fill"
                     onClick={() => { up("visibility", opt.v); setVisSheet(false); }}
                     style={{ width: "100%", padding: "12px 14px", marginBottom: 6, background: (draft.visibility || "public") === opt.v ? "rgba(107,159,212,0.2)" : "rgba(255,255,255,0.04)", border: (draft.visibility || "public") === opt.v ? "1px solid rgba(107,159,212,0.4)" : BORDER, borderRadius: 12, color: TEXT, fontSize: 15, cursor: "pointer", textAlign: "left" }}>
                     {opt.l}
@@ -600,7 +608,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
             )}
 
             {/* Capacity */}
-            <button type="button" onClick={() => setShowCap(true)}
+            <button type="button" className="ef-hover-fill" onClick={() => setShowCap(true)}
               style={{ width: "100%", background: "none", border: "none", padding: 0, cursor: "pointer", display: "block", textAlign: "left" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "15px 18px" }}>
                 <span style={{ color: SUB }}><I.Capacity /></span>
@@ -620,7 +628,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
           )}
 
           {/* Bottom CTA */}
-          <button type="button" onClick={handleSubmit} style={{ width: "100%", marginTop: 20, padding: 16, background: "rgba(52,199,89,0.18)", border: "1px solid rgba(52,199,89,0.45)", borderRadius: RADIUS, color: "#5ee07f", fontWeight: 800, fontSize: 16, cursor: "pointer", letterSpacing: "0.02em" }}>
+          <button type="button" className="ef-hover-fill" onClick={handleSubmit} style={{ width: "100%", marginTop: 20, padding: 16, background: "rgba(52,199,89,0.18)", border: "1px solid rgba(52,199,89,0.45)", borderRadius: RADIUS, color: "#5ee07f", fontWeight: 800, fontSize: 16, cursor: "pointer", letterSpacing: "0.02em" }}>
             Continuar →
           </button>
         </div>
@@ -643,12 +651,12 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
               style={{ width: "100%", boxSizing: "border-box", background: "rgba(255,255,255,0.07)", border: BORDER, borderRadius: 16, padding: "16px 18px", fontSize: 22, color: TEXT, outline: "none", caretColor: ACCENT, fontFamily: "inherit", marginBottom: 16 }}
             />
             <div style={{ display: "flex", gap: 10 }}>
-              <button type="button"
+              <button type="button" className="ef-hover-fill"
                 onClick={() => { up("priceType", "free"); up("price", ""); setShowPrice(false); }}
                 style={{ flex: 1, padding: "14px 0", background: "rgba(255,255,255,0.07)", border: BORDER, borderRadius: 16, color: SUB, fontSize: 14, cursor: "pointer", fontWeight: 600 }}>
                 Gratis
               </button>
-              <button type="button"
+              <button type="button" className="ef-hover-fill"
                 onClick={() => setShowPrice(false)}
                 style={{ flex: 2, padding: "14px 0", background: "rgba(107,159,212,0.25)", border: "1px solid rgba(107,159,212,0.4)", borderRadius: 16, color: TEXT, fontSize: 14, cursor: "pointer", fontWeight: 700 }}>
                 Confirmar
@@ -678,12 +686,12 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
               style={{ width: "100%", boxSizing: "border-box", background: "rgba(255,255,255,0.07)", border: BORDER, borderRadius: 16, padding: "16px 18px", fontSize: 22, color: TEXT, outline: "none", caretColor: ACCENT, fontFamily: "inherit", marginBottom: 16 }}
             />
             <div style={{ display: "flex", gap: 10 }}>
-              <button type="button"
+              <button type="button" className="ef-hover-fill"
                 onClick={() => { up("capacityNum", ""); setShowCap(false); }}
                 style={{ flex: 1, padding: "14px 0", background: "rgba(255,255,255,0.07)", border: BORDER, borderRadius: 16, color: SUB, fontSize: 14, cursor: "pointer", fontWeight: 600 }}>
                 Ilimitada
               </button>
-              <button type="button"
+              <button type="button" className="ef-hover-fill"
                 onClick={() => setShowCap(false)}
                 style={{ flex: 2, padding: "14px 0", background: "rgba(107,159,212,0.25)", border: "1px solid rgba(107,159,212,0.4)", borderRadius: 16, color: TEXT, fontSize: 14, cursor: "pointer", fontWeight: 700 }}>
                 Confirmar

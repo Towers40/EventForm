@@ -25,11 +25,11 @@ export default function InicioView({ events, onNew, onGoTo }) {
         <p className="tf-hint" style={{ maxWidth: 400, margin: "0 auto 32px" }}>
           Gestiona inscripciones, controla el acceso con QR y analiza tus eventos — todo desde un solo lugar.
         </p>
-        <button type="button" className="soft-btn soft-btn-primary" onClick={onNew} style={{ fontSize: 16, padding: "16px 40px", borderRadius: 12 }}>
+        <button type="button" className="soft-btn soft-btn-primary ef-hover-fill" onClick={onNew} style={{ fontSize: 16, padding: "16px 40px", borderRadius: 12 }}>
           + Crear nuevo evento
         </button>
         <div style={{ marginTop: 16 }}>
-          <button type="button" onClick={() => nav("/discover")} style={{ background: "none", border: "none", color: "#6b9fd4", fontWeight: 700, cursor: "pointer", fontSize: 14, textDecoration: "underline", textUnderlineOffset: 3 }}>
+          <button type="button" className="ef-hover-fill" onClick={() => nav("/discover")} style={{ background: "none", border: "none", borderRadius: 8, padding: "6px 10px", color: "#6b9fd4", fontWeight: 700, cursor: "pointer", fontSize: 14, textDecoration: "underline", textUnderlineOffset: 3 }}>
             Descubrir eventos →
           </button>
         </div>

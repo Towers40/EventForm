@@ -122,11 +122,11 @@ export default function MiCuentaView() {
             {avatar ? <img src={avatar} alt="avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : initials}
           </div>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <button type="button" className="soft-btn soft-btn-primary" style={{ fontSize: 13 }} disabled={avatarBusy} onClick={() => avatarInputRef.current?.click()}>
+            <button type="button" className="soft-btn soft-btn-primary ef-hover-fill" style={{ fontSize: 13 }} disabled={avatarBusy} onClick={() => avatarInputRef.current?.click()}>
               {avatarBusy ? "Guardando…" : avatar ? "Cambiar foto" : "Subir foto"}
             </button>
             {avatar && (
-              <button type="button" className="soft-btn" style={{ fontSize: 13, background: "rgba(220,38,38,0.12)", color: "#fca5a5", border: "1px solid rgba(220,38,38,0.3)", borderRadius: 10 }} disabled={avatarBusy} onClick={handleRemoveAvatar}>
+              <button type="button" className="soft-btn ef-hover-fill" style={{ fontSize: 13, background: "rgba(220,38,38,0.12)", color: "#fca5a5", border: "1px solid rgba(220,38,38,0.3)", borderRadius: 10 }} disabled={avatarBusy} onClick={handleRemoveAvatar}>
                 Quitar foto
               </button>
             )}
@@ -163,7 +163,7 @@ export default function MiCuentaView() {
             {user?.createdAt ? new Date(user.createdAt).toLocaleDateString("es-CO", { year: "numeric", month: "long", day: "numeric" }) : "—"}
           </p>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <button type="submit" className="soft-btn soft-btn-primary" style={{ fontSize: 13 }} disabled={nameBusy}>
+            <button type="submit" className="soft-btn soft-btn-primary ef-hover-fill" style={{ fontSize: 13 }} disabled={nameBusy}>
               {nameBusy ? "Guardando…" : "Guardar nombre"}
             </button>
             {nameMsg && <span style={{ fontSize: 13, color: nameMsg.startsWith("✓") ? "#16a34a" : "#e53e3e", fontWeight: 700 }}>{nameMsg}</span>}
@@ -208,7 +208,7 @@ export default function MiCuentaView() {
             {newPw.length >= 8 && /[A-Z]/.test(newPw) ? "✓ Contraseña válida" : "Mínimo 8 caracteres · al menos una mayúscula"}
           </p>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <button type="submit" className="soft-btn soft-btn-primary" style={{ fontSize: 13 }} disabled={pwBusy || !curPw || !newPw}>
+            <button type="submit" className="soft-btn soft-btn-primary ef-hover-fill" style={{ fontSize: 13 }} disabled={pwBusy || !curPw || !newPw}>
               {pwBusy ? "Cambiando…" : "Cambiar contraseña"}
             </button>
             {pwMsg.text && <span style={{ fontSize: 13, color: pwMsg.ok ? "#16a34a" : "#e53e3e", fontWeight: 700 }}>{pwMsg.text}</span>}
@@ -222,7 +222,7 @@ export default function MiCuentaView() {
           <p style={{ margin: 0, fontWeight: 600, color: "#e8eaf0", fontSize: 14 }}>Cerrar sesión</p>
           <p style={{ margin: "2px 0 0", fontSize: 12, color: "#8fa3b1" }}>Salir de tu cuenta en este dispositivo</p>
         </div>
-        <button type="button" className="soft-btn" style={{ background: "rgba(220,38,38,0.12)", color: "#fca5a5", border: "1px solid rgba(220,38,38,0.3)", borderRadius: 10, fontSize: 13, padding: "10px 18px" }} onClick={logout}>
+        <button type="button" className="soft-btn ef-hover-fill" style={{ background: "rgba(220,38,38,0.12)", color: "#fca5a5", border: "1px solid rgba(220,38,38,0.3)", borderRadius: 10, fontSize: 13, padding: "10px 18px" }} onClick={logout}>
           Cerrar sesión
         </button>
       </div>
@@ -238,7 +238,7 @@ export default function MiCuentaView() {
           </div>
           <button
             type="button"
-            className="soft-btn"
+            className="soft-btn ef-hover-fill"
             style={{ background: "rgba(220,38,38,0.12)", color: "#fca5a5", border: "1px solid rgba(220,38,38,0.3)", borderRadius: 10, fontSize: 13, padding: "10px 18px", whiteSpace: "nowrap" }}
             onClick={() => { setDeleteModalOpen(true); setDeleteConfirmText(""); setDeleteErr(""); }}
           >

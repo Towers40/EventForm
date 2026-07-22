@@ -728,8 +728,11 @@ app.get("/api/public/events", requireDb, async (req, res) => {
     const total = Number(countRows[0]?.total || 0);
 
     const { rows } = await db.execute({
-      sql: `SELECT *, (SELECT COUNT(*) FROM registrations r WHERE r.event_id = events.id AND r.cancelled = 0) as reg_count
-            FROM events ${where}
+      sql: `SELECT events.*, u.name as host_name, u.avatar as host_avatar,
+                   (SELECT COUNT(*) FROM registrations r WHERE r.event_id = events.id AND r.cancelled = 0) as reg_count
+            FROM events
+            LEFT JOIN users u ON u.id = events.host_id
+            ${where}
             ORDER BY COALESCE(json_extract(payload, '$.startDate'), '9999-99-99') ASC
             LIMIT ? OFFSET ?`,
       args: [...args, Number(limit), offset],
@@ -738,6 +741,8 @@ app.get("/api/public/events", requireDb, async (req, res) => {
     const events = rows.map(r => {
       const ev = parseEvent(r);
       ev.regCount = Number(r.reg_count || 0);
+      ev.hostName = r.host_name || "";
+      ev.hostAvatar = r.host_avatar || null;
       ev.registrations = undefined;
       ev.fields = undefined;
       return ev;

@@ -36,6 +36,31 @@ function isLive(ev) {
   return now >= start && now <= new Date(start.getTime() + 4 * 3600000);
 }
 
+// Icono envuelto en una placa "liquid glass" (frosted, translúcida) — usado
+// para el pin de ubicación en la fila de cada evento.
+function GlassIcon({ children, size = 20 }) {
+  return (
+    <span style={{
+      display: "inline-flex", alignItems: "center", justifyContent: "center",
+      width: size, height: size, borderRadius: "50%", flexShrink: 0,
+      background: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.18)",
+      backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)",
+      color: "rgba(232,234,240,0.8)",
+    }}>
+      {children}
+    </span>
+  );
+}
+
+const PinIcon = () => (
+  <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
+  </svg>
+);
+
+// Fila compacta por evento: miniatura pequeña a la izquierda (pensado para
+// listas largas, mismo layout en móvil y escritorio), descripción sólida a
+// la derecha y metadatos (ubicación, promotor, fecha) en tono atenuado.
 function EventCard({ ev }) {
   const live  = isLive(ev);
   const cat   = DISCOVER_CATEGORIES.find(c => c.slug === ev.category);
@@ -46,87 +71,100 @@ function EventCard({ ev }) {
   return (
     <a
       href={`/e/${ev.slug}`}
+      className="ef-hover-fill"
       style={{
-        display: "block", textDecoration: "none",
-        borderRadius: 20, overflow: "hidden",
-        background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.11)",
-        backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
-        transition: "transform 0.18s, box-shadow 0.18s",
+        display: "flex", alignItems: "flex-start", gap: 14,
+        padding: 14, borderRadius: 18, textDecoration: "none",
+        background: "rgba(255,255,255,0.055)", border: "1px solid rgba(255,255,255,0.1)",
       }}
-      onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 18px 48px rgba(0,0,0,0.55)"; }}
-      onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = ""; }}
     >
-      {/* Cover */}
-      <div style={{ position: "relative", aspectRatio: "16/9", overflow: "hidden", background: "#111" }}>
-        {ev.headerImage ? (
-          <img src={ev.headerImage} alt={ev.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-        ) : (
-          <div style={{
-            width: "100%", height: "100%",
-            background: cat ? `linear-gradient(135deg, ${cat.color}33, #111)` : "linear-gradient(135deg, #1e3a5f, #0d1b2a)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            {cat && CAT_ICONS[cat.slug]
-              ? <div style={{ opacity: 0.45, transform: "scale(2.2)", transformOrigin: "center" }}>{CAT_ICONS[cat.slug](cat.color)}</div>
-              : <span style={{ fontSize: 52, opacity: 0.5 }}>🗓️</span>
-            }
-          </div>
-        )}
-        {live && (
-          <div style={{
-            position: "absolute", top: 10, left: 10,
-            background: "rgba(239,68,68,0.85)", color: "#fff",
-            backdropFilter: "blur(6px)",
-            borderRadius: 8, padding: "5px 10px",
-            fontSize: 11, fontWeight: 800, letterSpacing: "0.06em",
-            display: "flex", alignItems: "center", gap: 5,
-          }}>
-            <span style={{ width: 6, height: 6, background: "#fff", borderRadius: "50%", display: "inline-block" }} />
-            EN VIVO
-          </div>
-        )}
+      {/* Miniatura */}
+      <div style={{ position: "relative", flexShrink: 0, width: 76, height: 76 }}>
+        <div style={{ width: "100%", height: "100%", borderRadius: 14, overflow: "hidden", background: "#111" }}>
+          {ev.headerImage ? (
+            <img src={ev.headerImage} alt={ev.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          ) : (
+            <div style={{
+              width: "100%", height: "100%",
+              background: cat ? `linear-gradient(135deg, ${cat.color}44, #111)` : "linear-gradient(135deg, #1e3a5f, #0d1b2a)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              {cat && CAT_ICONS[cat.slug]
+                ? <div style={{ opacity: 0.55 }}>{CAT_ICONS[cat.slug](cat.color, 30)}</div>
+                : <span style={{ fontSize: 26, opacity: 0.5 }}>🗓️</span>
+              }
+            </div>
+          )}
+        </div>
+        {/* Categoría — sale al borde derecho de la miniatura (antes iba dentro de la imagen) */}
         {cat && CAT_ICONS[cat.slug] && (
           <div style={{
-            position: "absolute", top: 10, right: 10,
-            background: live ? "rgba(220,38,38,0.22)" : `${cat.color}28`,
-            border: live ? "1px solid rgba(220,38,38,0.45)" : `1px solid ${cat.color}55`,
-            backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
-            borderRadius: 12, padding: 8,
+            position: "absolute", top: "50%", right: -9, transform: "translateY(-50%)",
+            width: 24, height: 24, borderRadius: "50%",
+            background: live ? "rgba(220,38,38,0.92)" : "rgba(20,23,40,0.92)",
+            border: `1.5px solid ${live ? "rgba(248,113,113,0.6)" : cat.color}`,
+            backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)",
             display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.4)",
           }}>
-            {CAT_ICONS[cat.slug](live ? "#fca5a5" : cat.color)}
+            {CAT_ICONS[cat.slug](live ? "#fff" : cat.color, 13)}
           </div>
         )}
       </div>
 
-      {/* Info */}
-      <div style={{ padding: "14px 16px 18px" }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: "#6b9fd4", marginBottom: 5 }}>
-          {formatEventDate(ev)}
-        </div>
+      {/* Descripción + metadatos */}
+      <div style={{ flex: 1, minWidth: 0 }}>
         <h3 style={{
-          fontSize: 16, fontWeight: 700, color: "#e8eaf0",
-          margin: "0 0 6px", lineHeight: 1.3,
+          fontSize: 15.5, fontWeight: 700, color: "#e8eaf0",
+          margin: "0 0 7px", lineHeight: 1.3,
           display: "-webkit-box", WebkitLineClamp: 2,
           WebkitBoxOrient: "vertical", overflow: "hidden",
         }}>
           {ev.title}
         </h3>
-        {ev.city && (
-          <div style={{ fontSize: 12, color: "#8fa3b1", marginBottom: 10 }}>
-            📍 {ev.city}
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+          {ev.city && (
+            <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+              <GlassIcon><PinIcon /></GlassIcon>
+              <span style={{ fontSize: 12.5, color: "rgba(232,234,240,0.5)" }}>{ev.city}</span>
+            </div>
+          )}
+          <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+            {ev.hostAvatar ? (
+              <img src={ev.hostAvatar} alt="" style={{ width: 20, height: 20, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+            ) : (
+              <span style={{ width: 20, height: 20, borderRadius: "50%", flexShrink: 0, background: "rgba(107,159,212,0.25)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9.5, fontWeight: 700, color: "#c8dff0" }}>
+                {(ev.hostName || "?").slice(0, 1).toUpperCase()}
+              </span>
+            )}
+            <span style={{ fontSize: 12.5, color: "rgba(232,234,240,0.5)" }}>
+              {ev.hostName ? `Por ${ev.hostName}` : "Organizador"}
+            </span>
           </div>
-        )}
-        <span style={{
-          display: "inline-block",
-          background: ev.isPaid ? "rgba(251,191,36,0.12)" : "rgba(34,197,94,0.12)",
-          color: ev.isPaid ? "#fbbf24" : "#22c55e",
-          borderRadius: 6, padding: "4px 10px",
-          fontSize: 12, fontWeight: 700,
-        }}>
-          {price}
-        </span>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, color: "rgba(232,234,240,0.5)" }}>
+            <span>{formatEventDate(ev)}</span>
+            {live && (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 4, color: "#fca5a5", fontWeight: 700 }}>
+                <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#ef4444", display: "inline-block" }} />
+                EN VIVO
+              </span>
+            )}
+          </div>
+        </div>
       </div>
+
+      {/* Precio */}
+      <span style={{
+        flexShrink: 0,
+        display: "inline-block",
+        background: ev.isPaid ? "rgba(251,191,36,0.12)" : "rgba(34,197,94,0.12)",
+        color: ev.isPaid ? "#fbbf24" : "#22c55e",
+        borderRadius: 8, padding: "5px 10px",
+        fontSize: 11.5, fontWeight: 700, whiteSpace: "nowrap",
+      }}>
+        {price}
+      </span>
     </a>
   );
 }
@@ -241,7 +279,7 @@ export default function DiscoverPage({ embedded = false }) {
           position: "sticky", top: 0, zIndex: 20,
           background: "rgba(18,20,34,0.82)", backdropFilter: "blur(16px)",
         }}>
-          <a href="/app" style={{
+          <a href="/app" className="ef-hover-fill" style={{
             justifySelf: "start",
             display: "inline-flex", alignItems: "center", gap: 5, textDecoration: "none",
             background: "rgba(107,159,212,0.25)", color: "#e8eaf0",
@@ -250,11 +288,11 @@ export default function DiscoverPage({ embedded = false }) {
           }}>
             ← Inicio
           </a>
-          <a href="/" style={{ justifySelf: "center", display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
+          <a href="/" className="ef-hover-fill" style={{ justifySelf: "center", display: "flex", alignItems: "center", gap: 8, textDecoration: "none", padding: "6px 12px", borderRadius: 12 }}>
             <span style={{ color: "#22c55e", fontSize: 18 }}>●</span>
             <span style={{ fontWeight: 800, fontSize: 16, color: "#e8eaf0" }}>EventForm</span>
           </a>
-          <a href="/app" style={{
+          <a href="/app" className="ef-hover-fill" style={{
             justifySelf: "end",
             background: "rgba(107,159,212,0.25)", color: "#e8eaf0",
             border: "1px solid rgba(107,159,212,0.4)",
@@ -333,6 +371,7 @@ export default function DiscoverPage({ embedded = false }) {
               {activeCategory && (
                 <button
                   type="button"
+                  className="ef-hover-fill"
                   onClick={() => { setActiveCategory(null); fetchEvents(search, null); }}
                   style={{ background: "transparent", color: "#6b9fd4", border: "1px solid #6b9fd4", borderRadius: 20, padding: "5px 12px", fontSize: 12, cursor: "pointer", fontWeight: 600 }}
                 >
@@ -352,6 +391,7 @@ export default function DiscoverPage({ embedded = false }) {
               <div style={{ fontSize: 40, marginBottom: 14 }}>⚠️</div>
               <p style={{ color: "#8fa3b1", fontSize: 15, marginBottom: 16 }}>{error}</p>
               <button
+                className="ef-hover-fill"
                 onClick={() => fetchEvents(search, activeCategory)}
                 style={{ background: "rgba(107,159,212,0.22)", color: "#e8eaf0", border: "1px solid rgba(107,159,212,0.4)", borderRadius: 10, padding: "11px 22px", cursor: "pointer", fontWeight: 700, fontSize: 14 }}
               >
@@ -366,6 +406,7 @@ export default function DiscoverPage({ embedded = false }) {
               </p>
               {(search || activeCategory) && (
                 <button
+                  className="ef-hover-fill"
                   onClick={() => { setSearch(""); setActiveCategory(null); fetchEvents("", null); }}
                   style={{ background: "transparent", color: "#6b9fd4", border: "1px solid #6b9fd4", borderRadius: 10, padding: "10px 20px", cursor: "pointer", fontWeight: 600, fontSize: 14 }}
                 >
@@ -374,11 +415,7 @@ export default function DiscoverPage({ embedded = false }) {
               )}
             </div>
           ) : (
-            <div style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-              gap: 20,
-            }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {events.map(ev => <EventCard key={ev.id} ev={ev} />)}
             </div>
           )}

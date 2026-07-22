@@ -217,8 +217,12 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
 
   const eventsRef = useRef(events);
   const evIdRef = useRef(evId);
+  const viewRef = useRef(view);
+  const draftRef = useRef(draft);
   eventsRef.current = events;
   evIdRef.current = evId;
+  viewRef.current = view;
+  draftRef.current = draft;
 
   useEffect(() => {
     const styleSheet = document.createElement("style");
@@ -263,6 +267,37 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
     });
   };
 
+  // ── Historial del navegador: cada cambio de `view` es un "paso" navegable.
+  // Así, el botón atrás del navegador (o el gesto/botón atrás en móvil) regresa
+  // al paso anterior dentro de la app en vez de salir de /app o no hacer nada.
+  const pushHistory = (v, id = null) => {
+    try {
+      const cur = window.history.state;
+      if (cur && cur.efView === v && (cur.efEvId ?? null) === (id ?? null)) return;
+      window.history.pushState({ efView: v, efEvId: id ?? null }, "");
+    } catch { /* noop (SSR / navegador sin history API) */ }
+  };
+
+  const applyHistoryState = (state) => {
+    if (viewRef.current === "builder" && draftRef.current) saveDraftToEvents(draftRef.current);
+    setView(state?.efView || "inicio");
+    setEvId(state?.efEvId ?? null);
+    setEditFid(null);
+    setVResult(null);
+    setVCode("");
+    setForm({});
+    setErrors({});
+  };
+
+  useEffect(() => {
+    // Deja sembrada la entrada inicial para que el primer "atrás" tenga a dónde ir.
+    try { window.history.replaceState({ efView: viewRef.current, efEvId: evIdRef.current ?? null }, ""); } catch { /* noop */ }
+    const onPopState = (e) => applyHistoryState(e.state);
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const go = (v, id = null) => {
     if (view === "builder" && draft) saveDraftToEvents(draft);
     setView(v);
@@ -272,6 +307,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
     setVCode("");
     setForm({});
     setErrors({});
+    pushHistory(v, id);
   };
 
   const openValidate = (id = null) => {
@@ -279,6 +315,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
     setView("validate");
     setVResult(null);
     setVCode("");
+    pushHistory("validate", id);
     // Trae las inscripciones más recientes para que el escáner las encuentre.
     refreshEvents();
   };
@@ -353,6 +390,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
     setEvId(null);
     setCreateReturn(view === "create_wizard" || view === "builder" ? "inicio" : view);
     setView("create_wizard");
+    pushHistory("create_wizard", null);
   };
 
   const editEvent = (event) => {
@@ -361,6 +399,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
     if (event.isDraft) localStorage.removeItem("ef_builder_draft");
     setCreateReturn(view === "create_wizard" || view === "builder" ? "mis_eventos" : view);
     setView("create_wizard"); // passes through CreateEventForm for consistent UX
+    pushHistory("create_wizard", event.id);
   };
 
   const generatePreliminaryForm = (finalDraft) => {
@@ -368,6 +407,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
     if (finalDraft.fields?.length > 0) {
       setDraft(finalDraft);
       setView("builder");
+      pushHistory("builder", evId);
       return;
     }
     // New event: generate base registration fields
@@ -377,6 +417,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
     ];
     setDraft({ ...finalDraft, fields: baseFields });
     setView("builder");
+    pushHistory("builder", evId);
   };
 
   const addField = (type) => {
@@ -416,6 +457,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
       localStorage.removeItem("ef_builder_draft");
       setEvents((p) => p.map((e) => e.id === saved.id ? { ...saved, isDraft: false } : e));
       setView("mis_eventos");
+      pushHistory("mis_eventos", saved.id);
       setShareEv(saved);
     } catch (e) {
       alert(e.message || "Error al publicar");
@@ -457,6 +499,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
     );
     setRegId(r.id);
     setView("confirm");
+    pushHistory("confirm", evId);
   };
 
   const applyCheckInResult = (result) => {
@@ -568,11 +611,20 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
     ? user.name.split(" ").slice(0, 2).map(w => w[0]).join("").toUpperCase()
     : "?";
 
-  // Items de la barra inferior tipo liquid glass.
+  // Items de la barra inferior tipo liquid glass (móvil).
   const BOTTOM_NAV = [
     { key: "mis_eventos", label: "Mis eventos", icon: <IconCalendar /> },
     { key: "mis_tickets", label: "Tickets",     icon: <IconTicket /> },
     { key: "discover",    label: "Descubrir",   icon: <IconCompass /> },
+  ];
+
+  // Navegación principal del encabezado (escritorio) — inspirada en Luma.
+  const HEADER_NAV = [
+    { key: "inicio",      label: "Inicio" },
+    { key: "mis_eventos", label: "Mis eventos" },
+    { key: "mis_tickets", label: "Tickets" },
+    { key: "discover",    label: "Descubrir" },
+    { key: "stats",       label: "Dashboard" },
   ];
 
   const searchResults = searchQuery.trim()
@@ -593,38 +645,74 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
         textAlign: "left",
       }}
     >
-      {/* ── NAVEGACIÓN COMPACTA ── */}
-      <nav style={{ background: "rgba(18,20,34,0.82)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderBottom: "1px solid rgba(255,255,255,0.08)", padding: "0 20px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10, boxShadow: "0 1px 8px rgba(0,0,0,0.4)" }}>
-        {/* Profile circle → Mi cuenta */}
-        <button
-          type="button"
-          onClick={() => {
-            if (view === "mi_cuenta") { go(accountReturn || "inicio"); }
-            else { setAccountReturn(view); go("mi_cuenta"); }
-          }}
-          style={{
-            width: 42, height: 42, borderRadius: "50%",
-            boxSizing: "border-box",
-            backgroundColor: "#0d3b66",
-            backgroundImage: avatarUrl ? `url("${avatarUrl}")` : "linear-gradient(135deg, #0d3b66, #1a5f8a)",
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            backgroundRepeat: "no-repeat",
-            border: "2px solid rgba(107,159,212,0.35)",
-            cursor: "pointer", overflow: "hidden",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 15, fontWeight: 800, color: "#fff",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
-            flexShrink: 0,
-            padding: 0,
-          }}
-          title="Mi cuenta"
-        >
-          {!avatarUrl && initials}
-        </button>
-        <button type="button" onClick={() => go("inicio")} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontWeight: 800, fontSize: 17, color: "#e8eaf0" }}>
-          <span style={{ color: VERDE_CORPORATIVO, fontSize: 20 }}>●</span> EventForm
-        </button>
+      {/* ── ENCABEZADO ── avatar+logo (izq) · navegación centrada (escritorio) · Nuevo evento (der) */}
+      <nav style={{ background: "rgba(18,20,34,0.82)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderBottom: "1px solid rgba(255,255,255,0.08)", padding: "0 20px", height: 60, display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 12, position: "sticky", top: 0, zIndex: 10, boxShadow: "0 1px 8px rgba(0,0,0,0.4)" }}>
+        {/* Izquierda: avatar (Mi cuenta) + logo */}
+        <div style={{ justifySelf: "start", display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+          <button
+            type="button"
+            className="ef-hover-fill"
+            onClick={() => {
+              if (view === "mi_cuenta") { go(accountReturn || "inicio"); }
+              else { setAccountReturn(view); go("mi_cuenta"); }
+            }}
+            style={{
+              width: 42, height: 42, borderRadius: "50%",
+              boxSizing: "border-box",
+              backgroundColor: "#0d3b66",
+              backgroundImage: avatarUrl ? `url("${avatarUrl}")` : "linear-gradient(135deg, #0d3b66, #1a5f8a)",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
+              border: "2px solid rgba(107,159,212,0.35)",
+              cursor: "pointer", overflow: "hidden",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 15, fontWeight: 800, color: "#fff",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+              flexShrink: 0,
+              padding: 0,
+            }}
+            title="Mi cuenta"
+          >
+            {!avatarUrl && initials}
+          </button>
+          <button type="button" className="ef-hover-fill" onClick={() => go("inicio")} style={{ background: "none", border: "none", borderRadius: 10, padding: "6px 10px", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontWeight: 800, fontSize: 17, color: "#e8eaf0", whiteSpace: "nowrap" }}>
+            <span style={{ color: VERDE_CORPORATIVO, fontSize: 20 }}>●</span>
+            EventForm
+          </button>
+        </div>
+
+        {/* Centro: navegación principal (solo escritorio — en móvil la cubre la barra inferior + acciones por página) */}
+        <div className="ef-header-nav" style={{ alignItems: "center", gap: 2 }}>
+          {HEADER_NAV.map((item) => {
+            const active = view === item.key;
+            return (
+              <button
+                key={item.key}
+                type="button"
+                className="ef-hover-fill"
+                onClick={() => go(item.key)}
+                style={{
+                  background: active ? "rgba(107,159,212,0.18)" : "transparent",
+                  border: active ? "1px solid rgba(107,159,212,0.35)" : "1px solid transparent",
+                  borderRadius: 10, padding: "8px 14px", whiteSpace: "nowrap",
+                  fontSize: 13.5, fontWeight: active ? 700 : 600,
+                  color: active ? "#c8dff0" : "rgba(232,234,240,0.65)",
+                  cursor: "pointer",
+                }}
+              >
+                {item.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Derecha: Nuevo evento (solo escritorio; en móvil vive en la fila de acciones de cada página) */}
+        <div className="ef-header-nav" style={{ justifySelf: "end" }}>
+          <button type="button" className="ef-hover-fill" onClick={startNew} style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "rgba(107,159,212,0.18)", border: "1px solid rgba(107,159,212,0.35)", borderRadius: 10, padding: "9px 16px", color: "#c8dff0", fontWeight: 700, fontSize: 13.5, cursor: "pointer", whiteSpace: "nowrap" }}>
+            <IconPlus size={15} /> Nuevo evento
+          </button>
+        </div>
       </nav>
 
       {shareEv && (
@@ -739,7 +827,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
             {BOTTOM_NAV.map(({ key, label, icon, to }) => {
               const active = view === key;
               return (
-                <button key={key} type="button" onClick={() => go(key)}
+                <button key={key} type="button" className="ef-hover-fill" onClick={() => go(key)}
                   style={{
                     flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3,
                     background: active ? "rgba(107,159,212,0.22)" : "transparent",
@@ -754,7 +842,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
             })}
             {/* Separador + buscar */}
             <div style={{ width: 1, background: "rgba(255,255,255,0.12)", margin: "8px 2px" }} />
-            <button type="button" onClick={() => { setSearchOpen(true); setSearchQuery(""); }} title="Buscar eventos"
+            <button type="button" className="ef-hover-fill" onClick={() => { setSearchOpen(true); setSearchQuery(""); }} title="Buscar eventos"
               style={{
                 flex: "0 0 auto", width: 54, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3,
                 background: "transparent", border: "1px solid transparent", borderRadius: 16, padding: "9px 4px", cursor: "pointer",
@@ -776,14 +864,14 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
               <span style={{ display: "flex", color: "#6b9fd4" }}><IconSearch /></span>
               <input autoFocus type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Buscar mis eventos…"
                 style={{ flex: 1, background: "none", border: "none", outline: "none", color: "#e8eaf0", fontSize: 16, fontFamily: "inherit" }} />
-              <button type="button" onClick={() => setSearchOpen(false)} style={{ background: "none", border: "none", color: "#8fa3b1", cursor: "pointer", fontSize: 20, lineHeight: 1, padding: 4 }}>×</button>
+              <button type="button" className="ef-hover-fill" onClick={() => setSearchOpen(false)} style={{ background: "none", border: "none", borderRadius: "50%", color: "#8fa3b1", cursor: "pointer", fontSize: 20, lineHeight: 1, padding: 4 }}>×</button>
             </div>
             <div style={{ overflowY: "auto", padding: 8 }}>
               {searchResults.length === 0 ? (
                 <p style={{ textAlign: "center", color: "rgba(232,234,240,0.5)", fontSize: 14, padding: "28px 12px" }}>Sin resultados.</p>
               ) : (
                 searchResults.map((e) => (
-                  <button key={e.id} type="button"
+                  <button key={e.id} type="button" className="ef-hover-fill"
                     onClick={() => { setSearchOpen(false); if (e.isDraft) editEvent(e); else go("crm", e.id); }}
                     style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 12, padding: "11px 12px", borderRadius: 12, background: "transparent", border: "none", cursor: "pointer", color: "#e8eaf0" }}>
                     <span style={{ width: 38, height: 38, borderRadius: 9, flexShrink: 0, overflow: "hidden", background: "rgba(107,159,212,0.18)", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -1677,8 +1765,8 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
         </div>
       </div>
 
-      {/* ── Publicar (deslizable) ── */}
-      <div style={{ marginTop: 24 }}>
+      {/* ── Publicar (deslizable, tamaño móvil incluso en escritorio) ── */}
+      <div style={{ marginTop: 24, maxWidth: 360, marginLeft: "auto", marginRight: "auto" }}>
         <SlideToCancel
           onComplete={onPublish}
           label="Publicar"
