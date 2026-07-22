@@ -64,12 +64,11 @@ export default function MisEventosView({ events, onNew, onOpen, onEdit, onValida
                 display: "inline-flex", alignItems: "center", gap: 7,
                 padding: "8px 16px", borderRadius: 999, cursor: "pointer",
                 fontSize: 13, fontWeight: active ? 700 : 600,
-                background: active ? "rgba(107,159,212,0.2)" : "rgba(255,255,255,0.06)",
-                border: `1px solid ${active ? "rgba(107,159,212,0.45)" : "rgba(255,255,255,0.12)"}`,
-                color: active ? "#c8dff0" : "rgba(232,234,240,0.65)",
+                background: "transparent", border: "none",
+                color: active ? "#ffffff" : "rgba(255,255,255,0.6)",
               }}>
               {f.label}
-              <span style={{ fontSize: 12, fontWeight: 700, color: active ? "rgba(200,223,240,0.7)" : "rgba(232,234,240,0.4)" }}>{f.count}</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: active ? "rgba(255,255,255,0.65)" : "rgba(255,255,255,0.38)" }}>{f.count}</span>
             </button>
           );
         })}

@@ -2,7 +2,6 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { uploadImage } from "../lib/upload.js";
 
 // ── Tokens ──────────────────────────────────────────────────────────────────
-const BG     = "radial-gradient(115% 85% at 85% -10%, rgba(36,116,76,0.75), transparent 62%), radial-gradient(120% 90% at -10% 110%, rgba(24,92,58,0.65), transparent 60%), linear-gradient(170deg, #1d2340 0%, #131628 100%)";
 const CARD   = "rgba(255,255,255,0.08)";
 const BORDER = "1px solid rgba(255,255,255,0.11)";
 const RADIUS = 20;
@@ -349,7 +348,9 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
     <>
       <style>{`
         .ce-wheel::-webkit-scrollbar { display: none; }
-        .ce-bg { background: ${BG}; min-height: 100dvh; }
+        /* Sin fondo propio: hereda el degradado global de la página (antes pintaba
+           su propio degradado sobre la columna y se veía como un recuadro). */
+        .ce-bg { min-height: 100dvh; }
         .ce-scroll { max-width: 540px; margin: 0 auto; padding: 0 16px 100px; }
         .ce-header-inner { max-width: 540px; margin: 0 auto; }
         @media (min-width: 768px) { .ce-scroll { padding-bottom: 60px; } }
@@ -360,7 +361,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
           {/* ── Volver (acción translúcida) — regresa a la pantalla anterior ── */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginTop: 16 }}>
             <button type="button" className="ef-hover-fill" onClick={onCancel}
-              style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "9px 16px", background: "rgba(107,159,212,0.16)", border: "1px solid rgba(107,159,212,0.32)", borderRadius: 999, color: "#c8dff0", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+              style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "9px 16px", background: "transparent", border: "none", borderRadius: 999, color: "#ffffff", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
               <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
               Volver
             </button>
