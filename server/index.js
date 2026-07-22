@@ -715,7 +715,14 @@ app.get("/api/public/events", requireDb, async (req, res) => {
     ];
     const args = [today, today, today];
 
-    if (category) { conditions.push("category = ?"); args.push(category); }
+    if (category) {
+      // Los eventos sin categoría cuentan como "otro" por defecto.
+      if (category === "otro") {
+        conditions.push("(category = 'otro' OR category IS NULL OR category = '')");
+      } else {
+        conditions.push("category = ?"); args.push(category);
+      }
+    }
     if (city) { conditions.push("json_extract(payload, '$.city') = ?"); args.push(city); }
     if (q) {
       conditions.push("(json_extract(payload, '$.title') LIKE ? OR json_extract(payload, '$.city') LIKE ?)");
@@ -756,13 +763,14 @@ app.get("/api/public/events", requireDb, async (req, res) => {
 app.get("/api/public/categories", requireDb, async (req, res) => {
   try {
     const today = new Date().toISOString().split("T")[0];
+    // Los eventos sin categoría (NULL o '') se agrupan en "otro" por defecto.
     const { rows } = await db.execute({
-      sql: `SELECT category, COUNT(*) as count FROM events
-            WHERE visibility = 'public' AND category IS NOT NULL AND category != ''
+      sql: `SELECT COALESCE(NULLIF(category, ''), 'otro') as category, COUNT(*) as count FROM events
+            WHERE visibility = 'public'
             AND (json_extract(payload, '$.endDate') >= ?
               OR (json_extract(payload, '$.endDate') IS NULL AND json_extract(payload, '$.startDate') >= ?)
               OR (json_extract(payload, '$.endDate') = '' AND json_extract(payload, '$.startDate') >= ?))
-            GROUP BY category ORDER BY count DESC`,
+            GROUP BY COALESCE(NULLIF(category, ''), 'otro') ORDER BY count DESC`,
       args: [today, today, today],
     });
     res.set("Cache-Control", "public, s-maxage=120, stale-while-revalidate=300");

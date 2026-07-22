@@ -85,7 +85,9 @@ const ClockIcon = () => (
 // todo en tono atenuado salvo el nombre. A la derecha: precio y placa de fecha.
 function EventCard({ ev }) {
   const live  = isLive(ev);
-  const cat   = DISCOVER_CATEGORIES.find(c => c.slug === ev.category);
+  // Los eventos sin categoría definida se muestran como "Otro" por defecto.
+  const cat   = DISCOVER_CATEGORIES.find(c => c.slug === ev.category)
+    || DISCOVER_CATEGORIES.find(c => c.slug === "otro");
   const price = ev.isPaid
     ? (ev.price ? `COP ${Number(ev.price).toLocaleString("es-CO")}` : "De pago")
     : "Gratis";
@@ -180,14 +182,15 @@ function EventCard({ ev }) {
         </div>
       </div>
 
-      {/* Derecha: precio arriba, placa de calendario (día/mes) debajo */}
+      {/* Derecha: precio arriba, placa de calendario (día/mes) debajo — mismo ancho */}
       <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
         <span style={{
+          width: 44, boxSizing: "border-box", textAlign: "center",
           display: "inline-block",
           background: ev.isPaid ? "rgba(251,191,36,0.12)" : "rgba(34,197,94,0.12)",
           color: ev.isPaid ? "#fbbf24" : "#22c55e",
-          borderRadius: 8, padding: "5px 10px",
-          fontSize: 11.5, fontWeight: 700, whiteSpace: "nowrap",
+          borderRadius: 8, padding: "5px 4px",
+          fontSize: 11, fontWeight: 700, lineHeight: 1.25,
         }}>
           {price}
         </span>
@@ -417,8 +420,8 @@ export default function DiscoverPage({ embedded = false }) {
           </div>
 
           {loading ? (
-            <div style={{ textAlign: "center", padding: "60px 0", color: "#555f6b" }}>
-              <div style={{ fontSize: 36, marginBottom: 14, animation: "spin 1.5s linear infinite", display: "inline-block" }}>✦</div>
+            <div style={{ textAlign: "center", padding: "60px 0", color: "#8fa3b1" }}>
+              <div style={{ fontSize: 44, lineHeight: 1, marginBottom: 14, color: "#22c55e", animation: "ef-logo-pulse 1.3s ease-in-out infinite", display: "inline-block" }}>●</div>
               <p style={{ fontSize: 15, margin: 0 }}>Cargando eventos…</p>
             </div>
           ) : error ? (
@@ -459,6 +462,10 @@ export default function DiscoverPage({ embedded = false }) {
 
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes ef-logo-pulse {
+          0%, 100% { transform: scale(0.6); opacity: 0.3; }
+          50%      { transform: scale(1.15); opacity: 0.75; }
+        }
         @media (max-width: 480px) { .hide-mobile { display: none !important; } }
       `}</style>
     </div>
