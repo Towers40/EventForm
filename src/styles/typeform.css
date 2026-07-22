@@ -525,17 +525,63 @@ body::after {
 .ef-topbar > * { min-width: 0; }
 .ef-logo-text { overflow: hidden; }
 
-@media (min-width: 860px) {
-  /* Escritorio: rejilla de tres columnas para dejar la navegación centrada. */
+/* Escritorio: rejilla de tres columnas para dejar la navegación centrada. El
+   corte es 940px y no 860px porque centrar exige que cada columna lateral quepa
+   el bloque más ancho (avatar+logo, 188px); con la navegación central de 456px
+   hacen falta ~896px, y por debajo el logo se montaba sobre "Inicio". */
+@media (min-width: 940px) {
   .ef-topbar { display: grid; grid-template-columns: 1fr auto 1fr; }
   .ef-header-nav { display: flex; }
   .ef-mobile-actions { display: none; }
 }
 
-/* Pantallas estrechas: encoge márgenes y logo para que la fila no se desborde. */
-@media (max-width: 400px) {
+/* Móvil: encoge márgenes y logo para que la fila no se desborde. El umbral es
+   el mismo que el de abajo a propósito: si se separan, justo por encima del
+   corte reaparecen de golpe el padding y el logo grandes, y eso pesa más que
+   los píxeles de ancho que se ganan. */
+@media (max-width: 480px) {
   .ef-topbar { padding: 0 10px !important; gap: 6px !important; }
   .ef-logo-text { font-size: 15px !important; padding: 6px 4px !important; }
+}
+
+/* ─── Píldoras del encabezado en móvil (estilo iOS) ───────────────────────────
+   En reposo cada acción es un círculo con su icono; la que corresponde a la
+   sección abierta se despliega en píldora mostrando su nombre. La etiqueta se
+   anima con max-width (no con width: auto, que no es animable) y el texto queda
+   recortado por overflow mientras está cerrada, así que no ocupa sitio ni la
+   lee un lector de pantalla como si fuera visible. */
+.ef-pill {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: 36px; padding: 0 8px; flex-shrink: 0;
+  border: none; border-radius: 999px; cursor: pointer; overflow: hidden;
+  background: rgba(255,255,255,0.08); color: rgba(232,234,240,0.78);
+  transition: background 0.25s ease, color 0.25s ease, padding 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.ef-pill:hover { background: rgba(255,255,255,0.14); }
+.ef-pill-icon { display: inline-flex; flex-shrink: 0; }
+.ef-pill-label {
+  max-width: 0; opacity: 0; margin-left: 0;
+  overflow: hidden; white-space: nowrap;
+  font-size: 13.5px; font-weight: 700; letter-spacing: -0.01em;
+  transition: max-width 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.18s ease, margin-left 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+/* Abierta: verde de acción con texto oscuro (blanco sobre este verde no llega
+   al contraste mínimo de WCAG AA). */
+.ef-pill-on { background: #34c759; color: #07260f; padding: 0 14px; }
+.ef-pill-on:hover { background: #45d16a; }
+.ef-pill-on .ef-pill-label { max-width: 160px; opacity: 1; margin-left: 7px; }
+
+/* Con una píldora abierta el encabezado necesita sitio. Hasta 400px el logo se
+   reduce al punto verde y recupera el texto al cerrarse (con "Dashboard"
+   abierto, la fila completa no cabe ni en un iPhone de 375px); de 401px en
+   adelante caben logo y píldora a la vez. */
+@media (max-width: 480px) {
+  .ef-topbar-open .ef-logo-word { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ef-pill, .ef-pill-label { transition: none; }
 }
 
 @media (max-width: 760px) {

@@ -49,14 +49,24 @@ import {
 
 const uid = () => Math.random().toString(36).slice(2, 10).toUpperCase();
 
-// Botón de acción solo-icono del encabezado en móvil (Inicio · Dashboard · +).
-const mobileIconBtn = (active) => ({
-  display: "inline-flex", alignItems: "center", justifyContent: "center",
-  width: 36, height: 36, flexShrink: 0, padding: 0, borderRadius: 10, cursor: "pointer",
-  background: active ? "rgba(107,159,212,0.18)" : "transparent",
-  border: `1px solid ${active ? "rgba(107,159,212,0.35)" : "transparent"}`,
-  color: active ? "#c8dff0" : "rgba(232,234,240,0.7)",
-});
+// Píldora del encabezado en móvil (estilo iOS): círculo con el icono que se
+// despliega mostrando su nombre cuando su sección está activa. Como `view` es
+// un único valor, abrir una retrae automáticamente las demás.
+function HeaderPill({ icon, label, short, active, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={label}
+      aria-label={label}
+      aria-current={active ? "page" : undefined}
+      className={`ef-pill${active ? " ef-pill-on" : ""}`}
+    >
+      <span className="ef-pill-icon">{icon}</span>
+      <span className="ef-pill-label">{short || label}</span>
+    </button>
+  );
+}
 
 // ─── ICONOS SVG (heredan color con currentColor) ──────────────────────────────
 const svgBase = (s = 18) => ({ width: s, height: s, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round" });
@@ -655,7 +665,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
       }}
     >
       {/* ── ENCABEZADO ── avatar+logo (izq) · navegación centrada (escritorio) · Nuevo evento (der) */}
-      <nav className="ef-topbar" style={{ background: "rgba(18,20,34,0.82)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderBottom: "1px solid rgba(255,255,255,0.08)", padding: "0 20px", height: 60, alignItems: "center", gap: 12, position: "sticky", top: 0, zIndex: 10, boxShadow: "0 1px 8px rgba(0,0,0,0.4)" }}>
+      <nav className={`ef-topbar${["inicio", "stats", "create_wizard", "builder"].includes(view) ? " ef-topbar-open" : ""}`} style={{ background: "rgba(18,20,34,0.82)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderBottom: "1px solid rgba(255,255,255,0.08)", padding: "0 20px", height: 60, alignItems: "center", gap: 12, position: "sticky", top: 0, zIndex: 10, boxShadow: "0 1px 8px rgba(0,0,0,0.4)" }}>
         {/* Izquierda: avatar (Mi cuenta) + logo */}
         <div style={{ justifySelf: "start", display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
           <button
@@ -687,7 +697,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
           </button>
           <button type="button" className="ef-hover-fill ef-logo-text" onClick={() => go("inicio")} style={{ background: "none", border: "none", borderRadius: 10, padding: "6px 10px", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontWeight: 800, fontSize: 17, color: "#e8eaf0", whiteSpace: "nowrap" }}>
             <span style={{ color: VERDE_CORPORATIVO, fontSize: 20 }}>●</span>
-            EventForm
+            <span className="ef-logo-word">EventForm</span>
           </button>
         </div>
 
@@ -719,16 +729,10 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
         {/* Derecha: acciones. En escritorio, "Nuevo evento" con texto; en móvil,
             solo iconos (casa · dashboard · +) para que todo quepa en el encabezado. */}
         <div style={{ justifySelf: "end", display: "flex", alignItems: "center", gap: 4, minWidth: 0 }}>
-          <div className="ef-mobile-actions" style={{ alignItems: "center", gap: 2 }}>
-            <button type="button" className="ef-hover-fill" onClick={() => go("inicio")} title="Inicio" aria-label="Inicio" style={mobileIconBtn(view === "inicio")}>
-              <IconHome size={19} />
-            </button>
-            <button type="button" className="ef-hover-fill" onClick={() => go("stats")} title="Dashboard" aria-label="Dashboard" style={mobileIconBtn(view === "stats")}>
-              <IconChart size={19} />
-            </button>
-            <button type="button" className="ef-hover-fill" onClick={startNew} title="Nuevo evento" aria-label="Nuevo evento" style={{ ...mobileIconBtn(false), background: "rgba(107,159,212,0.18)", border: "1px solid rgba(107,159,212,0.35)", color: "#c8dff0" }}>
-              <IconPlus size={19} />
-            </button>
+          <div className="ef-mobile-actions" style={{ alignItems: "center", gap: 5 }}>
+            <HeaderPill icon={<IconHome size={19} />} label="Inicio" active={view === "inicio"} onClick={() => go("inicio")} />
+            <HeaderPill icon={<IconChart size={19} />} label="Dashboard" active={view === "stats"} onClick={() => go("stats")} />
+            <HeaderPill icon={<IconPlus size={19} />} label="Nuevo evento" short="Nuevo" active={view === "create_wizard" || view === "builder"} onClick={startNew} />
           </div>
           <div className="ef-header-nav">
             <button type="button" className="ef-hover-fill" onClick={startNew} style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "rgba(107,159,212,0.18)", border: "1px solid rgba(107,159,212,0.35)", borderRadius: 10, padding: "9px 16px", color: "#c8dff0", fontWeight: 700, fontSize: 13.5, cursor: "pointer", whiteSpace: "nowrap" }}>
