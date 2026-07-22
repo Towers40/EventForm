@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import TypeformRegister from "../components/TypeformRegister.jsx";
 import ConfirmTicket from "../components/ConfirmTicket.jsx";
+import { useAuth } from "../context/AuthContext.jsx";
 import { api, apiEnabled } from "../lib/api.js";
 import { loadEvents } from "../lib/storage.js";
 import { isSoldOut } from "../lib/capacity.js";
@@ -85,6 +86,7 @@ function Avatar({ name, size = 24 }) {
 // ── Main component ────────────────────────────────────────────────────────────
 export default function PublicEventPage() {
   const { slug }                   = useParams();
+  const { token }                  = useAuth();
   const [event, setEvent]          = useState(null);
   const [reg, setReg]              = useState(null);
   const [phase, setPhase]          = useState("event");
@@ -106,16 +108,27 @@ export default function PublicEventPage() {
         // Si ya hay una entrada guardada, la recordamos pero NO saltamos al QR:
         // el enlace siempre abre la página del evento (con la info editada) y
         // se ofrece un botón para ver la entrada.
+        // 1) Entrada guardada en ESTE dispositivo.
         const saved = localStorage.getItem(`ef_ticket_${slug}`);
         if (saved) {
           try {
             const parsed = JSON.parse(saved);
-            if (!parsed.cancelled) setReg(parsed);
+            if (!parsed.cancelled) { setReg(parsed); return; }
           } catch {}
+        }
+        // 2) Entrada vinculada a la cuenta (cruce por email en el servidor).
+        //    Sin esto, "Ver mi entrada" solo aparecía en el dispositivo donde se
+        //    hizo la inscripción; en el móvil, con la misma cuenta, no salía.
+        if (apiEnabled && token) {
+          try {
+            const { tickets } = await api.myTickets(token);
+            const mine = (tickets || []).find(t => t.event?.slug === slug);
+            if (mine) setReg({ id: mine.id, used: Boolean(mine.used) });
+          } catch { /* sin conexión o sesión expirada: se ofrece registrarse */ }
         }
       } catch { setErr("Evento no encontrado o no disponible"); }
     })();
-  }, [slug]);
+  }, [slug, token]);
 
   const handleSubmit = async (payload) => {
     if (apiEnabled) {

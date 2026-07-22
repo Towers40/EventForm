@@ -26,7 +26,7 @@ function qrFor(id) {
   return `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(id)}&bgcolor=ffffff&color=000000&margin=12&qzone=2`;
 }
 
-export default function MisTicketsView({ onHome }) {
+export default function MisTicketsView() {
   const { token } = useAuth();
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -117,15 +117,7 @@ export default function MisTicketsView({ onHome }) {
 
   return (
     <div style={{ maxWidth: 760, margin: "0 auto" }}>
-      {onHome && (
-        <div className="ef-page-actions" style={{ marginBottom: 16 }}>
-          <button type="button" className="ef-hover-fill" onClick={onHome} style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(107,159,212,0.25)", borderRadius: 10, color: "#c8dff0", cursor: "pointer", fontSize: 13, fontWeight: 700, padding: "8px 14px" }}>
-            <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M3 9.5 12 3l9 6.5" /><path d="M5 10v10h14V10" /><path d="M9 20v-6h6v6" /></svg>
-            Inicio
-          </button>
-        </div>
-      )}
-
+      {/* Inicio ya vive en el encabezado (icono de casa en móvil, texto en escritorio). */}
       <h1 style={{ fontSize: 24, fontWeight: 700, margin: "0 0 20px", color: "#e8eaf0" }}>Mis tickets</h1>
 
       {/* Resumen */}

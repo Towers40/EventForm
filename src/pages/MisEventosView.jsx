@@ -10,60 +10,40 @@ function statusOf(ev) {
   return d < new Date() ? "pasado" : "activo";
 }
 
-export default function MisEventosView({ events, onNew, onOpen, onEdit, onValidate, onDelete, onShare, onToggleSoldOut, onHome, onDashboard }) {
+export default function MisEventosView({ events, onNew, onOpen, onEdit, onValidate, onDelete, onShare, onToggleSoldOut }) {
   const [tab, setTab] = useState("todos");
 
+  // Los borradores ya no tienen pestaña propia: aparecen dentro de "Todos" con
+  // su tarjeta de borrador, para que un evento a medio crear no quede oculto.
   const borradores = events.filter(e => e.isDraft);
   const proximos   = events.filter(e => statusOf(e) === "activo" && !e.isDraft);
   const pasados    = events.filter(e => statusOf(e) === "pasado" && !e.isDraft);
-  const todos      = [...proximos, ...pasados];
+  const todos      = [...borradores, ...proximos, ...pasados];
 
-  const lista = tab === "todos" ? todos
-    : tab === "proximos" ? proximos
+  const lista = tab === "proximos" ? proximos
     : tab === "pasados"  ? pasados
-    : borradores;
+    : todos;
 
   const FILTERS = [
-    { key: "todos",      label: "Todos",      count: todos.length },
-    { key: "proximos",   label: "Próximos",   count: proximos.length },
-    { key: "pasados",    label: "Pasados",    count: pasados.length },
-    { key: "borradores", label: "Borradores", count: borradores.length },
+    { key: "todos",    label: "Todos",    count: todos.length },
+    { key: "proximos", label: "Próximos", count: proximos.length },
+    { key: "pasados",  label: "Pasados",  count: pasados.length },
   ];
-  const pillStyle = { display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(107,159,212,0.25)", borderRadius: 10, color: "#c8dff0", cursor: "pointer", fontSize: 13, fontWeight: 700, padding: "8px 14px" };
 
   return (
     <div style={{ maxWidth: 760, margin: "0 auto" }}>
-      {/* Acciones: Inicio · Dashboard · Nuevo evento — solo móvil (en escritorio viven en el encabezado) */}
-      <div className="ef-page-actions" style={{ justifyContent: "space-between", alignItems: "center", marginBottom: 18, gap: 10, flexWrap: "wrap" }}>
-        {onHome ? (
-          <button type="button" className="ef-hover-fill" onClick={onHome} style={pillStyle}>
-            <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M3 9.5 12 3l9 6.5" /><path d="M5 10v10h14V10" /><path d="M9 20v-6h6v6" /></svg>
-            Inicio
-          </button>
-        ) : <span />}
-        {onDashboard && (
-          <button type="button" className="ef-hover-fill" onClick={onDashboard} style={pillStyle}>
-            <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></svg>
-            Dashboard
-          </button>
-        )}
-        <button type="button" className="ef-hover-fill" onClick={onNew} style={{ ...pillStyle, background: "rgba(107,159,212,0.16)", border: "1px solid rgba(107,159,212,0.32)" }}>
-          <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
-          Nuevo evento
-        </button>
-      </div>
       <h1 style={{ fontSize: 24, fontWeight: 700, margin: "0 0 18px", color: "#e8eaf0", textAlign: "center" }}>Mis eventos</h1>
 
-      {/* Filtros en botones horizontales, centrados */}
-      <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: 8, marginBottom: 24 }}>
+      {/* Filtros centrados, siempre en una sola línea (móvil y escritorio) */}
+      <div style={{ display: "flex", justifyContent: "center", flexWrap: "nowrap", gap: 4, marginBottom: 24 }}>
         {FILTERS.map(f => {
           const active = tab === f.key;
           return (
             <button key={f.key} type="button" className="ef-hover-fill" onClick={() => setTab(f.key)}
               style={{
-                display: "inline-flex", alignItems: "center", gap: 7,
-                padding: "8px 16px", borderRadius: 999, cursor: "pointer",
-                fontSize: 13, fontWeight: active ? 700 : 600,
+                display: "inline-flex", alignItems: "center", gap: 6,
+                padding: "8px 14px", borderRadius: 999, cursor: "pointer",
+                fontSize: 13, fontWeight: active ? 700 : 600, whiteSpace: "nowrap",
                 background: "transparent", border: "none",
                 color: active ? "#ffffff" : "rgba(255,255,255,0.6)",
               }}>
@@ -77,12 +57,11 @@ export default function MisEventosView({ events, onNew, onOpen, onEdit, onValida
       {lista.length === 0 ? (
         <div className="panel-card" style={{ padding: "48px 24px", textAlign: "center" }}>
           <p style={{ color: "#8fa3b1", fontSize: 15, margin: 0 }}>
-            {tab === "todos"      ? "No tienes eventos publicados."
-              : tab === "proximos"  ? "No tienes eventos próximos."
-              : tab === "pasados"   ? "No tienes eventos pasados."
-              : "No hay borradores guardados."}
+            {tab === "proximos" ? "No tienes eventos próximos."
+              : tab === "pasados" ? "No tienes eventos pasados."
+              : "No tienes eventos publicados."}
           </p>
-          {(tab === "todos" || tab === "proximos") && (
+          {tab !== "pasados" && (
             <button type="button" className="soft-btn soft-btn-primary" onClick={onNew} style={{ marginTop: 20 }}>
               Crear mi primer evento
             </button>
