@@ -1,11 +1,19 @@
 import { isNative, PUBLIC_WEB_URL } from "./platform.js";
 
-// VITE_API_URL = URL del backend externo (Vercel/local).
-// - Web: si está vacío, las llamadas van a /api/* en el mismo dominio (Vercel).
-// - Nativo (Capacitor): no existe "mismo dominio", así que se usa la URL
-//   absoluta de producción (PUBLIC_WEB_URL) cuando no hay VITE_API_URL.
-const ENV_API = import.meta.env.VITE_API_URL || "";
-const API = ENV_API || (isNative ? PUBLIC_WEB_URL : "");
+// En WEB el frontend y el API viven SIEMPRE en el mismo dominio: en Vercel es
+// la función serverless (/api/*) del propio dominio, y en desarrollo el proxy
+// de Vite enruta /api → localhost:3001. Por eso en web usamos rutas relativas
+// y NO una URL absoluta.
+//
+// Fijar VITE_API_URL a una URL absoluta rompía los dominios de preview de
+// Vercel (event-form-git-main-…, event-form-<hash>-…): el login se volvía
+// cross-origin hacia otro dominio y, con la barra final, el preflight de CORS
+// recibía un redirect (no permitido) → "Failed to fetch" → no se podía entrar.
+//
+// La URL absoluta solo aplica a la app NATIVA (Capacitor), donde no existe
+// "mismo dominio". Se normaliza la barra final para evitar rutas con "//api".
+const ENV_API = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
+const API = isNative ? (ENV_API || PUBLIC_WEB_URL).replace(/\/+$/, "") : "";
 
 function headers(token) {
   const h = { "Content-Type": "application/json" };
