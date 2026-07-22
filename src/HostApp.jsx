@@ -728,8 +728,8 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
 
         {/* Derecha: acciones. En escritorio, "Nuevo evento" con texto; en móvil,
             solo iconos (casa · dashboard · +) para que todo quepa en el encabezado. */}
-        <div style={{ justifySelf: "end", display: "flex", alignItems: "center", gap: 4, minWidth: 0 }}>
-          <div className="ef-mobile-actions" style={{ alignItems: "center", gap: 5 }}>
+        <div className="ef-topbar-right" style={{ justifySelf: "end", display: "flex", alignItems: "center", gap: 4, minWidth: 0 }}>
+          <div className="ef-mobile-actions" style={{ alignItems: "center" }}>
             <HeaderPill icon={<IconHome size={19} />} label="Inicio" active={view === "inicio"} onClick={() => go("inicio")} />
             <HeaderPill icon={<IconChart size={19} />} label="Dashboard" active={view === "stats"} onClick={() => go("stats")} />
             <HeaderPill icon={<IconPlus size={19} />} label="Nuevo evento" short="Nuevo" active={view === "create_wizard" || view === "builder"} onClick={startNew} />
@@ -839,10 +839,10 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
       {/* ── BARRA INFERIOR LIQUID GLASS ── */}
       {view !== "create_wizard" && (
         <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 60, display: "flex", justifyContent: "center", padding: "0 12px 14px", pointerEvents: "none" }}>
-          <div style={{
+          <div className="ef-dock" style={{
             pointerEvents: "auto",
             display: "flex", alignItems: "stretch", gap: 4,
-            width: "100%", maxWidth: 440,
+            width: "100%",
             background: "rgba(28,32,54,0.55)",
             backdropFilter: "blur(22px) saturate(160%)", WebkitBackdropFilter: "blur(22px) saturate(160%)",
             border: "1px solid rgba(255,255,255,0.14)",
@@ -861,20 +861,20 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
                     color: active ? "#c8dff0" : "rgba(232,234,240,0.6)",
                   }}>
                   <span style={{ display: "flex" }}>{icon}</span>
-                  <span style={{ fontSize: 10.5, fontWeight: active ? 700 : 600, letterSpacing: "0.01em" }}>{label}</span>
+                  <span className="ef-dock-label" style={{ fontSize: 10.5, fontWeight: active ? 700 : 600, letterSpacing: "0.01em" }}>{label}</span>
                 </button>
               );
             })}
             {/* Separador + buscar */}
             <div style={{ width: 1, background: "rgba(255,255,255,0.12)", margin: "8px 2px" }} />
-            <button type="button" className="ef-hover-fill" onClick={() => { setSearchOpen(true); setSearchQuery(""); }} title="Buscar eventos"
+            <button type="button" className="ef-hover-fill ef-dock-search" onClick={() => { setSearchOpen(true); setSearchQuery(""); }} title="Buscar eventos"
               style={{
-                flex: "0 0 auto", width: 54, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3,
+                flex: "0 0 auto", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3,
                 background: "transparent", border: "1px solid transparent", borderRadius: 16, padding: "9px 4px", cursor: "pointer",
                 color: "rgba(232,234,240,0.6)",
               }}>
               <span style={{ display: "flex" }}><IconSearch /></span>
-              <span style={{ fontSize: 10.5, fontWeight: 600 }}>Buscar</span>
+              <span className="ef-dock-label" style={{ fontSize: 10.5, fontWeight: 600 }}>Buscar</span>
             </button>
           </div>
         </div>
