@@ -89,45 +89,51 @@ export default function PublicEventPage() {
   const { token }                  = useAuth();
   const [event, setEvent]          = useState(null);
   const [reg, setReg]              = useState(null);
+  // Mientras vale true no se sabe aún si el usuario tiene entrada, así que la
+  // tarjeta de registro muestra "Comprobando…" en vez de "Registrarse" (evita
+  // el parpadeo en móvil, donde la entrada se resuelve por API, no localStorage).
+  const [regLoading, setRegLoading] = useState(true);
   const [phase, setPhase]          = useState("event");
   const [err, setErr]              = useState("");
   const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
-    (async () => {
-      try {
-        let ev;
-        if (apiEnabled) {
-          const { event: fetched } = await api.publicEvent(slug);
-          ev = fetched;
-        } else {
-          ev = loadEvents().find(e => e.slug === slug);
-          if (!ev) { setErr("Evento no encontrado"); return; }
-        }
-        setEvent(ev);
-        // Si ya hay una entrada guardada, la recordamos pero NO saltamos al QR:
-        // el enlace siempre abre la página del evento (con la info editada) y
-        // se ofrece un botón para ver la entrada.
-        // 1) Entrada guardada en ESTE dispositivo.
-        const saved = localStorage.getItem(`ef_ticket_${slug}`);
-        if (saved) {
-          try {
-            const parsed = JSON.parse(saved);
-            if (!parsed.cancelled) { setReg(parsed); return; }
-          } catch {}
-        }
-        // 2) Entrada vinculada a la cuenta (cruce por email en el servidor).
-        //    Sin esto, "Ver mi entrada" solo aparecía en el dispositivo donde se
-        //    hizo la inscripción; en el móvil, con la misma cuenta, no salía.
-        if (apiEnabled && token) {
-          try {
-            const { tickets } = await api.myTickets(token);
-            const mine = (tickets || []).find(t => t.event?.slug === slug);
-            if (mine) setReg({ id: mine.id, used: Boolean(mine.used) });
-          } catch { /* sin conexión o sesión expirada: se ofrece registrarse */ }
-        }
-      } catch { setErr("Evento no encontrado o no disponible"); }
-    })();
+    let cancelled = false;
+    setRegLoading(true);
+
+    // 1) Entrada guardada en ESTE dispositivo (instantáneo).
+    let localReg = null;
+    try {
+      const saved = localStorage.getItem(`ef_ticket_${slug}`);
+      if (saved) { const p = JSON.parse(saved); if (!p.cancelled) localReg = p; }
+    } catch { /* ignora JSON inválido */ }
+    if (localReg) setReg(localReg);
+
+    // 2) Evento y entrada de la cuenta se piden EN PARALELO, para que el estado
+    //    de inscripción esté listo cuando la página se pinta (no después).
+    const eventP = apiEnabled
+      ? api.publicEvent(slug).then(r => r.event)
+      : Promise.resolve(loadEvents().find(e => e.slug === slug));
+    const ticketsP = (!localReg && apiEnabled && token)
+      ? api.myTickets(token).then(r => r.tickets).catch(() => null)
+      : Promise.resolve(null);
+
+    eventP.then(ev => {
+      if (cancelled) return;
+      if (!ev) { setErr("Evento no encontrado"); return; }
+      setEvent(ev);
+    }).catch(() => { if (!cancelled) setErr("Evento no encontrado o no disponible"); });
+
+    ticketsP.then(tickets => {
+      if (cancelled) return;
+      if (!localReg && tickets) {
+        const mine = tickets.find(t => t.event?.slug === slug);
+        if (mine) setReg({ id: mine.id, used: Boolean(mine.used) });
+      }
+      setRegLoading(false);
+    });
+
+    return () => { cancelled = true; };
   }, [slug, token]);
 
   const handleSubmit = async (payload) => {
@@ -271,6 +277,12 @@ export default function PublicEventPage() {
                   Ver mi entrada (QR)
                 </button>
               </>
+            ) : regLoading ? (
+              // Aún no se sabe si tiene entrada: placeholder neutro (mismo tamaño
+              // que los botones) para no mostrar "Registrarse" por error.
+              <div style={{ width: "100%", padding: "16px", background: "rgba(255,255,255,0.05)", borderRadius: 14, textAlign: "center", color: SUB, fontWeight: 700, fontSize: 15, boxSizing: "border-box" }}>
+                Comprobando tu inscripción…
+              </div>
             ) : soldOut ? (
               <>
                 <p style={{ margin: "0 0 16px", fontSize: 14, color: SUB, lineHeight: 1.5 }}>Las entradas para este evento se agotaron.</p>
