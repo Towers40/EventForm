@@ -106,7 +106,7 @@ function EventCard({ ev }) {
       {/* Miniatura (la categoría ahora va junto al nombre, no en la imagen) */}
       <div style={{ flexShrink: 0, width: 76, height: 76, borderRadius: 14, overflow: "hidden", background: "#111" }}>
         {ev.headerImage ? (
-          <img src={ev.headerImage} alt={ev.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <img src={ev.headerImage} alt={ev.title} loading="lazy" decoding="async" width={76} height={76} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         ) : (
           <div style={{
             width: "100%", height: "100%",
@@ -170,7 +170,7 @@ function EventCard({ ev }) {
         {/* 4) Promotor (con su foto/avatar) */}
         <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
           {ev.hostAvatar ? (
-            <img src={ev.hostAvatar} alt="" style={{ width: 20, height: 20, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+            <img src={ev.hostAvatar} alt="" loading="lazy" decoding="async" width={20} height={20} style={{ width: 20, height: 20, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
           ) : (
             <span style={{ width: 20, height: 20, borderRadius: "50%", flexShrink: 0, background: "rgba(107,159,212,0.25)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9.5, fontWeight: 700, color: "#c8dff0" }}>
               {(ev.hostName || "?").slice(0, 1).toUpperCase()}
@@ -243,28 +243,38 @@ function CategoryPill({ cat, count, active, onClick }) {
   );
 }
 
+const PAGE_SIZE = 24; // por request; se cargan más con el botón "Cargar más"
+
 export default function DiscoverPage({ embedded = false }) {
   const [events,         setEvents]         = useState([]);
-  const [loading,        setLoading]        = useState(true);
+  const [loading,        setLoading]        = useState(true);  // primera página
+  const [loadingMore,    setLoadingMore]    = useState(false); // páginas siguientes
+  const [total,          setTotal]          = useState(0);
+  const [page,           setPage]           = useState(1);
   const [error,          setError]          = useState(null);
   const [search,         setSearch]         = useState("");
   const [activeCategory, setActiveCategory] = useState(null);
   const [categoryCounts, setCategoryCounts] = useState({});
   const searchTimer = useRef(null);
 
-  async function fetchEvents(q, category) {
-    setLoading(true);
+  // Una sola función para primera página (append=false, reemplaza) y siguientes
+  // (append=true, agrega). Así el listado escala a cientos de eventos sin traer
+  // todo de golpe: cada request pide solo PAGE_SIZE.
+  async function fetchEvents(q, category, pageToLoad = 1, append = false) {
+    if (append) setLoadingMore(true); else setLoading(true);
     setError(null);
     try {
-      const params = {};
+      const params = { page: pageToLoad, limit: PAGE_SIZE };
       if (q)        params.q        = q;
       if (category) params.category = category;
-      const { events: evs } = await api.discoverEvents(params);
-      setEvents(evs || []);
+      const { events: evs, total: tot } = await api.discoverEvents(params);
+      setTotal(Number(tot || 0));
+      setPage(pageToLoad);
+      setEvents(prev => append ? [...prev, ...(evs || [])] : (evs || []));
     } catch (e) {
-      setError(e.message || "No se pudo cargar los eventos.");
+      if (!append) setError(e.message || "No se pudo cargar los eventos.");
     } finally {
-      setLoading(false);
+      if (append) setLoadingMore(false); else setLoading(false);
     }
   }
 
@@ -278,21 +288,23 @@ export default function DiscoverPage({ embedded = false }) {
   }
 
   useEffect(() => {
-    fetchEvents("", null);
+    fetchEvents("", null, 1);
     fetchCategories();
   }, []);
 
   function handleSearch(val) {
     setSearch(val);
     clearTimeout(searchTimer.current);
-    searchTimer.current = setTimeout(() => fetchEvents(val, activeCategory), 350);
+    searchTimer.current = setTimeout(() => fetchEvents(val, activeCategory, 1), 350);
   }
 
   function handleCategory(slug) {
     const next = activeCategory === slug ? null : slug;
     setActiveCategory(next);
-    fetchEvents(search, next);
+    fetchEvents(search, next, 1);
   }
+
+  const hasMore = events.length < total;
 
   const activeCat = DISCOVER_CATEGORIES.find(c => c.slug === activeCategory);
 
@@ -401,16 +413,16 @@ export default function DiscoverPage({ embedded = false }) {
               ) : "Próximos eventos"}
             </h2>
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              {!loading && events.length > 0 && (
+              {!loading && total > 0 && (
                 <span style={{ fontSize: 13, color: "#555f6b" }}>
-                  {events.length} resultado{events.length !== 1 ? "s" : ""}
+                  {total} resultado{total !== 1 ? "s" : ""}
                 </span>
               )}
               {activeCategory && (
                 <button
                   type="button"
                   className="ef-hover-fill"
-                  onClick={() => { setActiveCategory(null); fetchEvents(search, null); }}
+                  onClick={() => { setActiveCategory(null); fetchEvents(search, null, 1); }}
                   style={{ background: "transparent", color: "#6b9fd4", border: "1px solid #6b9fd4", borderRadius: 20, padding: "5px 12px", fontSize: 12, cursor: "pointer", fontWeight: 600 }}
                 >
                   × Quitar filtro
@@ -445,7 +457,7 @@ export default function DiscoverPage({ embedded = false }) {
               {(search || activeCategory) && (
                 <button
                   className="ef-hover-fill"
-                  onClick={() => { setSearch(""); setActiveCategory(null); fetchEvents("", null); }}
+                  onClick={() => { setSearch(""); setActiveCategory(null); fetchEvents("", null, 1); }}
                   style={{ background: "transparent", color: "#6b9fd4", border: "1px solid #6b9fd4", borderRadius: 10, padding: "10px 20px", cursor: "pointer", fontWeight: 600, fontSize: 14 }}
                 >
                   Ver todos los eventos
@@ -453,9 +465,29 @@ export default function DiscoverPage({ embedded = false }) {
               )}
             </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {events.map(ev => <EventCard key={ev.id} ev={ev} />)}
-            </div>
+            <>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {events.map(ev => <EventCard key={ev.id} ev={ev} />)}
+              </div>
+              {hasMore && (
+                <div style={{ textAlign: "center", marginTop: 24 }}>
+                  <button
+                    type="button"
+                    className="ef-hover-fill"
+                    disabled={loadingMore}
+                    onClick={() => fetchEvents(search, activeCategory, page + 1, true)}
+                    style={{
+                      background: "rgba(107,159,212,0.18)", color: "#c8dff0",
+                      border: "1px solid rgba(107,159,212,0.35)", borderRadius: 12,
+                      padding: "12px 28px", cursor: loadingMore ? "default" : "pointer",
+                      fontWeight: 700, fontSize: 14, opacity: loadingMore ? 0.6 : 1,
+                    }}
+                  >
+                    {loadingMore ? "Cargando…" : `Cargar más (${total - events.length})`}
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </section>
       </div>

@@ -74,22 +74,35 @@ export async function initDb() {
     },
     { sql: `CREATE INDEX IF NOT EXISTS idx_events_host ON events(host_id)` },
     { sql: `CREATE INDEX IF NOT EXISTS idx_events_slug ON events(slug)` },
+    // El listado público filtra siempre por visibility; este índice lo poda.
+    { sql: `CREATE INDEX IF NOT EXISTS idx_events_visibility ON events(visibility)` },
     { sql: `CREATE INDEX IF NOT EXISTS idx_reg_event ON registrations(event_id)` },
   ], "deferred");
 
-  // Migrations — ALTER TABLE fails silently if column already exists
+  // Migraciones. Turso es una base remota (HTTP): cada `db.execute` es un viaje
+  // de red, y en el arranque en frío de la función serverless esos viajes se
+  // suman al tiempo de la primera respuesta. Por eso se leen las columnas
+  // existentes de una vez (una consulta por tabla) y solo se añaden las que
+  // falten, en vez de lanzar siete ALTER a ciegas confiando en que fallen.
   const migrations = [
-    "ALTER TABLE events ADD COLUMN visibility TEXT NOT NULL DEFAULT 'public'",
-    "ALTER TABLE events ADD COLUMN category TEXT",
-    "ALTER TABLE events ADD COLUMN is_paid INTEGER NOT NULL DEFAULT 0",
-    "ALTER TABLE events ADD COLUMN price REAL",
-    "ALTER TABLE registrations ADD COLUMN cancelled INTEGER NOT NULL DEFAULT 0",
-    "ALTER TABLE users ADD COLUMN avatar TEXT",
-    "ALTER TABLE registrations ADD COLUMN email TEXT",
+    ["events",        "visibility", "TEXT NOT NULL DEFAULT 'public'"],
+    ["events",        "category",   "TEXT"],
+    ["events",        "is_paid",    "INTEGER NOT NULL DEFAULT 0"],
+    ["events",        "price",      "REAL"],
+    ["registrations", "cancelled",  "INTEGER NOT NULL DEFAULT 0"],
+    ["users",         "avatar",     "TEXT"],
+    ["registrations", "email",      "TEXT"],
   ];
-  for (const sql of migrations) {
+  const tablas = [...new Set(migrations.map(m => m[0]))];
+  const columnas = {};
+  await Promise.all(tablas.map(async t => {
+    const { rows } = await db.execute({ sql: `PRAGMA table_info(${t})`, args: [] });
+    columnas[t] = new Set(rows.map(r => r.name));
+  }));
+  for (const [tabla, col, def] of migrations) {
+    if (columnas[tabla].has(col)) continue;
     try {
-      await db.execute({ sql, args: [] });
+      await db.execute({ sql: `ALTER TABLE ${tabla} ADD COLUMN ${col} ${def}`, args: [] });
     } catch (e) {
       const m = e.message?.toLowerCase() || "";
       if (!m.includes("duplicate column") && !m.includes("already has")) throw e;

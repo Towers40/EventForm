@@ -734,9 +734,23 @@ app.get("/api/public/events", requireDb, async (req, res) => {
     const { rows: countRows } = await db.execute({ sql: `SELECT COUNT(*) as total FROM events ${where}`, args });
     const total = Number(countRows[0]?.total || 0);
 
+    // Proyección esbelta: solo los campos que pinta la tarjeta del listado, en
+    // vez de `events.*` (que arrastra el `payload` entero con decenas de campos
+    // sin usar). El avatar del organizador se devuelve SOLO si es una URL: los
+    // avatares en base64 pesan ~50 KB y, multiplicados por evento, hacían la
+    // respuesta de varios MB; con base64 la tarjeta cae a la inicial. Se elimina
+    // también la subconsulta de conteo de inscritos (el listado no la muestra).
     const { rows } = await db.execute({
-      sql: `SELECT events.*, u.name as host_name, u.avatar as host_avatar,
-                   (SELECT COUNT(*) FROM registrations r WHERE r.event_id = events.id AND r.cancelled = 0) as reg_count
+      sql: `SELECT events.id, events.slug, events.category, events.is_paid, events.price,
+                   json_extract(payload, '$.title')       AS title,
+                   json_extract(payload, '$.city')        AS city,
+                   json_extract(payload, '$.startDate')   AS start_date,
+                   json_extract(payload, '$.startTime')   AS start_time,
+                   json_extract(payload, '$.endDate')     AS end_date,
+                   json_extract(payload, '$.endTime')     AS end_time,
+                   json_extract(payload, '$.headerImage') AS header_image,
+                   u.name AS host_name,
+                   CASE WHEN u.avatar LIKE 'http%' THEN u.avatar END AS host_avatar
             FROM events
             LEFT JOIN users u ON u.id = events.host_id
             ${where}
@@ -745,15 +759,22 @@ app.get("/api/public/events", requireDb, async (req, res) => {
       args: [...args, Number(limit), offset],
     });
 
-    const events = rows.map(r => {
-      const ev = parseEvent(r);
-      ev.regCount = Number(r.reg_count || 0);
-      ev.hostName = r.host_name || "";
-      ev.hostAvatar = r.host_avatar || null;
-      ev.registrations = undefined;
-      ev.fields = undefined;
-      return ev;
-    });
+    const events = rows.map(r => ({
+      id: r.id,
+      slug: r.slug,
+      title: r.title || "Evento",
+      city: r.city || "",
+      startDate: r.start_date || "",
+      startTime: r.start_time || "",
+      endDate: r.end_date || "",
+      endTime: r.end_time || "",
+      headerImage: r.header_image || "",
+      category: r.category || null,
+      isPaid: Boolean(r.is_paid),
+      price: r.price != null ? Number(r.price) : null,
+      hostName: r.host_name || "",
+      hostAvatar: r.host_avatar || null,
+    }));
 
     res.set("Cache-Control", "public, s-maxage=60, stale-while-revalidate=120");
     res.json({ events, total, page: Number(page), limit: Number(limit) });
