@@ -4,6 +4,7 @@ import cors from "cors";
 import { customAlphabet } from "nanoid";
 import { db, dbReady, initDb, parseEvent, slugify } from "./db.js";
 import { uploadToCloudinary, isDataUrl } from "./cloudinary.js";
+import { migrateBase64Avatars } from "./avatarMigration.js";
 
 // Middleware: rechaza rutas de DB si no está configurada
 function requireDb(req, res, next) {
@@ -706,6 +707,18 @@ app.get("/api/admin/overview", requireDb, authMiddleware, requireRole("super_adm
       latestUsers: latestUsers.map(u => ({ id: u.id, email: u.email, name: u.name, role: u.role, createdAt: u.created_at })),
       latestEvents: latestEvents.map(e => ({ id: e.id, slug: e.slug, hostId: e.host_id, createdAt: e.created_at })),
     });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Migra los avatares antiguos en base64 a URLs de Cloudinary. Se ejecuta en el
+// servidor (que ya tiene las credenciales), así el admin no necesita terminal.
+app.post("/api/admin/migrate-avatars", requireDb, authMiddleware, requireRole("super_admin"), async (req, res) => {
+  try {
+    const result = await migrateBase64Avatars({ apply: true });
+    if (result.error === "cloudinary_no_config") {
+      return res.status(400).json({ error: "Cloudinary no está configurado en el servidor (CLOUDINARY_CLOUD_NAME / CLOUDINARY_UPLOAD_PRESET)." });
+    }
+    res.json(result);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

@@ -80,6 +80,7 @@ export const api = {
   cancelRegistration: (ticketId) =>
     request(`/api/public/registrations/${ticketId}/cancel`, { method: "PATCH" }),
   adminOverview: (token) => request("/api/admin/overview", {}, token),
+  migrateAvatars: (token) => request("/api/admin/migrate-avatars", { method: "POST" }, token),
   discoverEvents: (params = {}) => {
     const qs = new URLSearchParams(params).toString();
     return request(`/api/public/events${qs ? `?${qs}` : ""}`);

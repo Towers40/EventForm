@@ -108,6 +108,26 @@ export default function MiCuentaView() {
     }
   };
 
+  // Migración de avatares antiguos (base64 → Cloudinary). Solo super admin.
+  const isSuperAdmin = user?.role === "super_admin";
+  const [migrateBusy, setMigrateBusy] = useState(false);
+  const [migrateMsg, setMigrateMsg] = useState({ text: "", ok: false });
+  const handleMigrateAvatars = async () => {
+    setMigrateBusy(true);
+    setMigrateMsg({ text: "", ok: false });
+    try {
+      const r = await api.migrateAvatars(token);
+      const txt = r.scanned === 0
+        ? "No quedan avatares en base64. Todo migrado. ✔"
+        : `Migrados ${r.migrated} de ${r.scanned}${r.failed ? ` (${r.failed} fallidos)` : ""}.`;
+      setMigrateMsg({ text: txt, ok: !r.failed });
+    } catch (ex) {
+      setMigrateMsg({ text: ex?.message || "No se pudo migrar.", ok: false });
+    } finally {
+      setMigrateBusy(false);
+    }
+  };
+
   return (
     <div style={{ maxWidth: 560, margin: "0 auto" }}>
       <h1 style={{ fontSize: 24, fontWeight: 700, color: "#e8eaf0", marginBottom: 28 }}>Mi cuenta</h1>
@@ -215,6 +235,28 @@ export default function MiCuentaView() {
           </div>
         </form>
       </div>
+
+      {/* Administrador — migración de avatares (solo super admin) */}
+      {isSuperAdmin && (
+        <div className="panel-card" style={{ marginBottom: 20 }}>
+          <div className="panel-card-header">
+            <h2 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "#e8eaf0" }}>Administrador</h2>
+          </div>
+          <div style={{ padding: 20 }}>
+            <p style={{ margin: "0 0 14px", fontSize: 13, color: "#8fa3b1", lineHeight: 1.5 }}>
+              Sube a Cloudinary los avatares antiguos que están guardados en base64
+              y los reemplaza por su URL. Es seguro repetirlo: solo toca los que aún
+              estén en base64.
+            </p>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <button type="button" className="soft-btn soft-btn-primary ef-hover-fill" style={{ fontSize: 13 }} disabled={migrateBusy} onClick={handleMigrateAvatars}>
+                {migrateBusy ? "Migrando…" : "Migrar avatares"}
+              </button>
+              {migrateMsg.text && <span style={{ fontSize: 13, color: migrateMsg.ok ? "#16a34a" : "#e53e3e", fontWeight: 700 }}>{migrateMsg.text}</span>}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Cerrar sesión */}
       <div className="panel-card" style={{ padding: 20, display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
