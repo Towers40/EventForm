@@ -517,19 +517,10 @@ body::after {
    cubre la barra inferior. Ya no hay filas de acciones dentro de cada página. */
 .ef-header-nav { display: none; }
 
-/* Móvil: las píldoras ocupan el hueco que queda a la derecha del logo. En
-   reposo el bloque se limita a su ancho natural y queda centrado en ese hueco;
-   al abrir una, el tope sube al 100% y `space-between` las reparte a lo ancho
-   del encabezado. Se anima `max-width` porque `justify-content` y `gap: auto`
-   no son animables. */
-.ef-topbar-right { flex: 1; }
-.ef-mobile-actions {
-  display: flex; flex: 1;
-  justify-content: space-between;
-  margin: 0 auto; max-width: 125px;
-  transition: max-width 0.34s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.ef-topbar-open .ef-mobile-actions { max-width: 100%; }
+/* Móvil: las píldoras van juntas en el extremo derecho, junto al avatar. Cada
+   una se despliega en su sitio al activarse; el grupo no se centra ni se reparte
+   por el encabezado. */
+.ef-mobile-actions { display: flex; }
 
 /* Móvil: fila simple con los extremos separados. Con `grid: 1fr auto 1fr` las
    dos columnas laterales valían la mitad cada una y el bloque avatar+logo, más
@@ -614,7 +605,7 @@ body::after {
 [data-scroll-dir="down"] .ef-dock-search { width: 44px; }
 
 @media (prefers-reduced-motion: reduce) {
-  .ef-pill, .ef-pill-label, .ef-mobile-actions,
+  .ef-pill, .ef-pill-label,
   .ef-dock, .ef-dock-label, .ef-dock-search { transition: none; }
 }
 

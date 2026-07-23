@@ -728,8 +728,8 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
 
         {/* Derecha: acciones. En escritorio, "Nuevo evento" con texto; en móvil,
             solo iconos (casa · dashboard · +) para que todo quepa en el encabezado. */}
-        <div className="ef-topbar-right" style={{ justifySelf: "end", display: "flex", alignItems: "center", gap: 4, minWidth: 0 }}>
-          <div className="ef-mobile-actions" style={{ alignItems: "center" }}>
+        <div style={{ justifySelf: "end", display: "flex", alignItems: "center", gap: 4, minWidth: 0 }}>
+          <div className="ef-mobile-actions" style={{ alignItems: "center", gap: 5 }}>
             <HeaderPill icon={<IconHome size={19} />} label="Inicio" active={view === "inicio"} onClick={() => go("inicio")} />
             <HeaderPill icon={<IconChart size={19} />} label="Dashboard" active={view === "stats"} onClick={() => go("stats")} />
             <HeaderPill icon={<IconPlus size={19} />} label="Nuevo evento" short="Nuevo" active={view === "create_wizard" || view === "builder"} onClick={startNew} />
