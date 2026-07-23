@@ -86,9 +86,24 @@ async function uniqueSlug(title, excludeId = null) {
   }
 }
 
+// El "dueño" es la cuenta cuyo correo coincide con SUPER_ADMIN_EMAIL. Se calcula
+// en cada petición desde la variable de entorno, sin promover roles en la base
+// (más fiable en Vercel, que puede congelar la función antes de terminar la
+// inicialización). Da acceso a las acciones de administrador.
+function isOwnerEmail(email) {
+  const owner = process.env.SUPER_ADMIN_EMAIL;
+  return Boolean(owner && email && String(email).toLowerCase() === owner.trim().toLowerCase());
+}
+
+// Permite super_admin (por rol en la base) o el dueño (por email en el env).
+function requireOwner(req, res, next) {
+  if (req.user?.role === "super_admin" || isOwnerEmail(req.user?.email)) return next();
+  return res.status(403).json({ error: "Solo el administrador puede hacer esto." });
+}
+
 function rowToUser(row) {
   if (!row) return null;
-  return { id: row.id, email: row.email, name: row.name, role: row.role, avatar: row.avatar || null, createdAt: row.created_at };
+  return { id: row.id, email: row.email, name: row.name, role: row.role, avatar: row.avatar || null, createdAt: row.created_at, isOwner: isOwnerEmail(row.email) };
 }
 
 async function getRegsForEvent(eventId) {
@@ -712,7 +727,7 @@ app.get("/api/admin/overview", requireDb, authMiddleware, requireRole("super_adm
 
 // Migra los avatares antiguos en base64 a URLs de Cloudinary. Se ejecuta en el
 // servidor (que ya tiene las credenciales), así el admin no necesita terminal.
-app.post("/api/admin/migrate-avatars", requireDb, authMiddleware, requireRole("super_admin"), async (req, res) => {
+app.post("/api/admin/migrate-avatars", requireDb, authMiddleware, requireOwner, async (req, res) => {
   try {
     const result = await migrateBase64Avatars({ apply: true });
     if (result.error === "cloudinary_no_config") {

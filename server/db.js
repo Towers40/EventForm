@@ -113,20 +113,6 @@ export async function initDb() {
   try {
     await db.execute({ sql: "CREATE INDEX IF NOT EXISTS idx_reg_email ON registrations(email)", args: [] });
   } catch { /* noop */ }
-
-  // Bootstrap del dueño: si SUPER_ADMIN_EMAIL está definido, esa cuenta (ya
-  // existente) se promueve a super_admin. Así el dueño entra con su PROPIA
-  // cuenta sin depender de la cuenta admin sembrada. Solo promueve, nunca
-  // degrada, y es idempotente (tras promover, no afecta filas).
-  const ownerEmail = process.env.SUPER_ADMIN_EMAIL;
-  if (ownerEmail) {
-    try {
-      await db.execute({
-        sql: "UPDATE users SET role = 'super_admin' WHERE lower(email) = lower(?) AND role != 'super_admin'",
-        args: [ownerEmail.trim()],
-      });
-    } catch (e) { console.error("Bootstrap super_admin falló:", e.message); }
-  }
 }
 
 export function parseEvent(row) {

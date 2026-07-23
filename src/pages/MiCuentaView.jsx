@@ -108,8 +108,10 @@ export default function MiCuentaView() {
     }
   };
 
-  // Migración de avatares antiguos (base64 → Cloudinary). Solo super admin.
-  const isSuperAdmin = user?.role === "super_admin";
+  // Migración de avatares antiguos (base64 → Cloudinary). Visible para el admin:
+  // super_admin (por rol) o el dueño (email = SUPER_ADMIN_EMAIL, flag isOwner
+  // que devuelve el servidor en /api/auth/me).
+  const isSuperAdmin = user?.role === "super_admin" || user?.isOwner;
   const [migrateBusy, setMigrateBusy] = useState(false);
   const [migrateMsg, setMigrateMsg] = useState({ text: "", ok: false });
   const handleMigrateAvatars = async () => {
