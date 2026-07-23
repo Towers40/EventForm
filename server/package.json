@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "node --watch index.js",
     "start": "node index.js",
-    "seed": "node seed.js"
+    "seed": "node seed.js",
+    "migrate:avatars": "node migrate-avatars.js"
   },
   "dependencies": {
     "@libsql/client": "^0.17.3",

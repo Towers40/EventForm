@@ -3,6 +3,7 @@ import express from "express";
 import cors from "cors";
 import { customAlphabet } from "nanoid";
 import { db, dbReady, initDb, parseEvent, slugify } from "./db.js";
+import { uploadToCloudinary, isDataUrl } from "./cloudinary.js";
 
 // Middleware: rechaza rutas de DB si no está configurada
 function requireDb(req, res, next) {
@@ -332,7 +333,15 @@ app.patch("/api/auth/me", requireDb, authMiddleware, async (req, res) => {
     if (name?.trim()) await db.execute({ sql: "UPDATE users SET name = ? WHERE id = ?", args: [name.trim(), req.user.sub] });
     // Foto de perfil: cadena = guardar, null/"" = eliminar
     if (Object.prototype.hasOwnProperty.call(body, "avatar")) {
-      const avatar = body.avatar ? String(body.avatar) : null;
+      let avatar = body.avatar ? String(body.avatar) : null;
+      // Si llega en base64, se sube a Cloudinary y se guarda la URL — así ningún
+      // avatar nuevo entra como base64 (que pesa ~50 KB y ralentiza los listados).
+      // Si Cloudinary no está configurado o falla, se conserva el base64 (sin
+      // regresión respecto al comportamiento anterior).
+      if (isDataUrl(avatar)) {
+        const url = await uploadToCloudinary(avatar, { folder: "eventform/avatars" });
+        if (url) avatar = url;
+      }
       await db.execute({ sql: "UPDATE users SET avatar = ? WHERE id = ?", args: [avatar, req.user.sub] });
     }
     const { rows } = await db.execute({ sql: "SELECT * FROM users WHERE id = ?", args: [req.user.sub] });
