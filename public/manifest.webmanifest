@@ -1,6 +1,6 @@
 {
-  "name": "EventForm",
-  "short_name": "EventForm",
+  "name": "TapIn",
+  "short_name": "TapIn",
   "description": "Crea eventos, gestiona inscritos y haz check-in con QR.",
   "lang": "es-CO",
   "start_url": "/app",

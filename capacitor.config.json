@@ -1,6 +1,6 @@
 {
-  "appId": "co.eventform.app",
-  "appName": "EventForm",
+  "appId": "co.tapin.app",
+  "appName": "TapIn",
   "webDir": "dist",
   "server": {
     "androidScheme": "https",

@@ -5,7 +5,7 @@ import { hashPassword } from "./auth.js";
 
 const email = process.env.SUPER_ADMIN_EMAIL || "admin@eventform.co";
 const password = process.env.SUPER_ADMIN_PASSWORD || "AdminEventForm2026!";
-const name = process.env.SUPER_ADMIN_NAME || "Dueño EventForm";
+const name = process.env.SUPER_ADMIN_NAME || "Dueño TapIn";
 
 const existing = db.prepare("SELECT id FROM users WHERE email = ?").get(email);
 if (existing) {

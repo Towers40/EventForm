@@ -1,4 +1,8 @@
-# 🚀 EventForm — Manual de Contexto y Desarrollo
+# 🚀 TapIn — Manual de Contexto y Desarrollo
+
+> La app se llama **TapIn** (antes "EventForm"). El repo de GitHub sigue siendo
+> `Towers40/EventForm` y el dominio de producción `event-form-navy.vercel.app`;
+> no se renombraron para no romper CI/CD ni enlaces.
 
 Instrucciones de arquitectura, stack y estilo para el asistente de IA. 
 
@@ -26,6 +30,7 @@ Instrucciones de arquitectura, stack y estilo para el asistente de IA.
   + `backdrop-filter: blur`, `border-radius` 16–24, TEXT `#e8eaf0`, ACCENT `#6b9fd4`.
   Acción/confirmar verde `#34c759`/`#5ee07f`; denegado rojo `rgba(220,38,38,*)`.
   (Ya NO se usa la línea neo-brutalista; `theme.js` con `NEGRO_PURO` es legacy.)
+  
 * **Tokens en `src/lib/ds.jsx` (objeto `DS`)** + estilos **inline en JSX** (patrón
   dominante). CSS global solo en `src/styles/typeform.css` y `mobile.css`
   (clases `.tf-*`, `.panel-card`, `.soft-btn`). Sin Tailwind/Sass.

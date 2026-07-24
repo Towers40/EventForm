@@ -31,7 +31,7 @@ export default function DashboardView({ events }) {
   return (
     <div style={{ maxWidth: 760, margin: "0 auto" }}>
       <h1 style={{ fontSize: 24, fontWeight: 700, color: "#e8eaf0", marginBottom: 8 }}>Dashboard</h1>
-      <p style={{ fontSize: 14, color: "#8fa3b1", marginBottom: 28 }}>Visión global de tu actividad en EventForm</p>
+      <p style={{ fontSize: 14, color: "#8fa3b1", marginBottom: 28 }}>Visión global de tu actividad en TapIn</p>
 
       {/* Stats principales */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px,1fr))", gap: 12, marginBottom: 28 }}>

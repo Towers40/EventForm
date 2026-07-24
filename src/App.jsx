@@ -358,7 +358,7 @@ export default function App() {
             color: NEGRO_PURO,
           }}
         >
-          <span style={{ color: VERDE_CORPORATIVO, fontSize: 24 }}>●</span> EventForm
+          <span style={{ color: VERDE_CORPORATIVO, fontSize: 24 }}>●</span> TapIn
         </button>
         <div className="app-nav-actions" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button type="button" onClick={() => go("dashboard")} style={navBtn(view === "dashboard")}>
@@ -515,7 +515,7 @@ export default function App() {
             marginTop: 64,
           }}
         >
-          EventForm © 2026 — Datos guardados en este dispositivo (listo para conectar
+          TapIn © 2026 — Datos guardados en este dispositivo (listo para conectar
           backend)
         </footer>
       )}

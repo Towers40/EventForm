@@ -846,7 +846,7 @@ if (dbReady) {
   initDb()
     .then(() => {
       if (!process.env.VERCEL) {
-        app.listen(PORT, () => console.log(`EventForm API http://localhost:${PORT}`));
+        app.listen(PORT, () => console.log(`TapIn API http://localhost:${PORT}`));
       }
     })
     .catch((e) => {
@@ -854,7 +854,7 @@ if (dbReady) {
       if (!process.env.VERCEL) process.exit(1);
     });
 } else if (!process.env.VERCEL) {
-  app.listen(PORT, () => console.log(`EventForm API http://localhost:${PORT}`));
+  app.listen(PORT, () => console.log(`TapIn API http://localhost:${PORT}`));
 }
 
 export default app;

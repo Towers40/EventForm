@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { api, apiEnabled } from "../lib/api.js";
+import { BRAND_NAME, TapInMark } from "../lib/brand.jsx";
 import "../styles/typeform.css";
 
 const DAYS_ES   = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
@@ -37,8 +38,8 @@ export default function TicketPage() {
     <div className="tf-screen" style={{ display: "block", overflowY: "auto", minHeight: "100dvh" }}>
       <div style={{ maxWidth: 460, margin: "0 auto", padding: "32px 16px 60px" }}>
         <div style={{ textAlign: "center", marginBottom: 22 }}>
-          <span style={{ color: "#4ade80", fontSize: 20 }}>●</span>
-          <span style={{ color: "#e8eaf0", fontWeight: 800, fontSize: 17, marginLeft: 8 }}>EventForm</span>
+          <TapInMark size={20} color="#4ade80" />
+          <span style={{ color: "#e8eaf0", fontWeight: 800, fontSize: 17, marginLeft: 8 }}>{BRAND_NAME}</span>
         </div>
 
         {ev && (

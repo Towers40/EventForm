@@ -5,6 +5,7 @@ import { COLOMBIA_CITIES } from "../lib/colombia.js";
 import { EVENT_TYPE_OTHER, EVENT_TYPE_PRESETS } from "../lib/colombia.js";
 import { searchPlacesInColombia } from "../lib/geocoding.js";
 import { VERDE_CORPORATIVO } from "../lib/theme.js";
+import { TapInMark } from "../lib/brand.jsx";
 import { api } from "../lib/api.js";
 import DateTimePicker from "./DateTimePicker.jsx";
 import CreateEventForm from "./CreateEventForm.jsx";
@@ -525,8 +526,8 @@ export default function OnboardingFlow({ onDraftReady }) {
         {phase === 0 && (
           <div style={{ textAlign: "center" }}>
             <div style={{ marginBottom: 36 }}>
-              <span style={{ color: VERDE_CORPORATIVO, fontSize: 48, display: "block", lineHeight: 1, marginBottom: 10 }}>●</span>
-              <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: "0.15em", color: "#8fa3b1" }}>EVENTFORM COLOMBIA</span>
+              <span style={{ display: "block", lineHeight: 1, marginBottom: 10 }}><TapInMark size={48} color={VERDE_CORPORATIVO} /></span>
+              <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: "0.15em", color: "#8fa3b1" }}>TAPIN COLOMBIA</span>
             </div>
             <h1 className="tf-question" style={{ fontSize: "clamp(28px, 6vw, 42px)", fontWeight: 300, lineHeight: 1.25, marginBottom: 20 }}>
               Empecemos a crear<br />

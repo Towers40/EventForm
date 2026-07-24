@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { isNative } from "./platform.js";
 
 // Escucha enlaces entrantes en la app nativa (Capacitor) y navega dentro de la
-// SPA. Ej: abrir https://eventform.app/e/mi-evento desde fuera abre la app en
+// SPA. Ej: abrir https://tapin.app/e/mi-evento desde fuera abre la app en
 // esa ruta. En web no hace nada (los enlaces los maneja el navegador).
 export function useDeepLinks() {
   const navigate = useNavigate();

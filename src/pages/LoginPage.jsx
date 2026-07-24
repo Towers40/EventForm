@@ -95,7 +95,7 @@ export default function LoginPage() {
               ← Inicio
             </button>
             <h1 className="tf-question">Inicia sesión</h1>
-            <p className="tf-hint">Accede a tu cuenta de EventForm.</p>
+            <p className="tf-hint">Accede a tu cuenta de TapIn.</p>
             <form onSubmit={handleLogin} style={{ marginTop: 24 }}>
               <input
                 className="tf-input-line"

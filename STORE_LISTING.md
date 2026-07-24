@@ -1,13 +1,13 @@
-# Ficha de tienda — EventForm
+# Ficha de tienda — TapIn
 
 Textos listos para copiar a App Store Connect y Google Play Console.
 Ajusta lo que necesites antes de enviar.
 
 ## Identidad
 
-- **Nombre de la app:** EventForm
+- **Nombre de la app:** TapIn
 - **Subtítulo (App Store, máx. 30):** Eventos y entradas con QR
-- **Bundle / Package:** `co.eventform.app`
+- **Bundle / Package:** `co.tapin.app`
 - **Categoría principal:** Eventos (alt.: Estilo de vida / Negocios)
 - **Idioma principal:** Español (Colombia)
 - **Clasificación de edad:** 4+ / Todos (sin contenido sensible)
@@ -18,7 +18,7 @@ Ajusta lo que necesites antes de enviar.
 
 ## Descripción larga
 
-> **EventForm** es la forma más simple de crear eventos, recibir inscripciones y
+> **TapIn** es la forma más simple de crear eventos, recibir inscripciones y
 > controlar el acceso el día del evento.
 >
 > **Para organizadores**

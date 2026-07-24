@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { api } from "../lib/api.js";
+import { BRAND_NAME, CONTACT_EMAIL, TapInMark } from "../lib/brand.jsx";
 import { DISCOVER_CATEGORIES } from "../lib/categories.js";
 import { CAT_ICONS } from "../lib/categoryIcons.jsx";
 
@@ -332,8 +333,8 @@ export default function DiscoverPage({ embedded = false }) {
             ← Inicio
           </a>
           <a href="/" className="ef-hover-fill" style={{ justifySelf: "center", display: "flex", alignItems: "center", gap: 8, textDecoration: "none", padding: "6px 12px", borderRadius: 12 }}>
-            <span style={{ color: "#22c55e", fontSize: 18 }}>●</span>
-            <span style={{ fontWeight: 800, fontSize: 16, color: "#e8eaf0" }}>EventForm</span>
+            <TapInMark size={20} color="#22c55e" />
+            <span style={{ fontWeight: 800, fontSize: 16, color: "#e8eaf0" }}>{BRAND_NAME}</span>
           </a>
           <a href="/app" className="ef-hover-fill" style={{
             justifySelf: "end",
@@ -433,7 +434,7 @@ export default function DiscoverPage({ embedded = false }) {
 
           {loading ? (
             <div style={{ textAlign: "center", padding: "60px 0", color: "#8fa3b1" }}>
-              <div style={{ fontSize: 44, lineHeight: 1, marginBottom: 14, color: "#22c55e", animation: "ef-logo-pulse 1.3s ease-in-out infinite", display: "inline-block" }}>●</div>
+              <div style={{ lineHeight: 1, marginBottom: 14, animation: "ef-logo-pulse 1.3s ease-in-out infinite", display: "inline-block" }}><TapInMark size={44} color="#22c55e" /></div>
               <p style={{ fontSize: 15, margin: 0 }}>Cargando eventos…</p>
             </div>
           ) : error ? (
@@ -489,6 +490,31 @@ export default function DiscoverPage({ embedded = false }) {
               )}
             </>
           )}
+        </section>
+
+        {/* ── Comunícate con nosotros ── */}
+        <section style={{ marginTop: 72, paddingTop: 40, borderTop: "1px solid rgba(255,255,255,0.08)", textAlign: "center" }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+            <TapInMark size={22} color="#22c55e" />
+            <span style={{ fontWeight: 800, fontSize: 17, color: "#e8eaf0" }}>{BRAND_NAME}</span>
+          </div>
+          <h3 style={{ fontSize: 18, fontWeight: 800, color: "#e8eaf0", margin: "0 0 8px" }}>Comunícate con nosotros</h3>
+          <p style={{ fontSize: 14, color: "#8fa3b1", margin: "0 0 16px", lineHeight: 1.5 }}>
+            ¿Dudas, sugerencias o soporte? Escríbenos y te respondemos.
+          </p>
+          <a
+            href={`mailto:${CONTACT_EMAIL}`}
+            className="ef-hover-fill"
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 8, textDecoration: "none",
+              background: "rgba(34,197,94,0.12)", color: "#5ee07f",
+              border: "1px solid rgba(34,197,94,0.35)", borderRadius: 12,
+              padding: "11px 20px", fontSize: 14, fontWeight: 700,
+            }}
+          >
+            <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" /></svg>
+            {CONTACT_EMAIL}
+          </a>
         </section>
       </div>
 

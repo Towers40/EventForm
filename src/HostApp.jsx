@@ -11,6 +11,7 @@ import ShareEventModal from "./components/ShareEventModal.jsx";
 import ConfirmTicket from "./components/ConfirmTicket.jsx";
 import DateTimePicker from "./components/DateTimePicker.jsx";
 import CreateEventForm from "./components/CreateEventForm.jsx";
+import { BRAND_NAME, TapInMark } from "./lib/brand.jsx";
 import InicioView from "./pages/InicioView.jsx";
 import MisEventosView from "./pages/MisEventosView.jsx";
 import MisTicketsView from "./pages/MisTicketsView.jsx";
@@ -696,8 +697,8 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
             {!avatarUrl && initials}
           </button>
           <button type="button" className="ef-hover-fill ef-logo-text" onClick={() => go("inicio")} style={{ background: "none", border: "none", borderRadius: 10, padding: "6px 10px", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontWeight: 800, fontSize: 17, color: "#e8eaf0", whiteSpace: "nowrap" }}>
-            <span style={{ color: VERDE_CORPORATIVO, fontSize: 20 }}>●</span>
-            <span className="ef-logo-word">EventForm</span>
+            <TapInMark size={22} color={VERDE_CORPORATIVO} />
+            <span className="ef-logo-word">{BRAND_NAME}</span>
           </button>
         </div>
 
@@ -832,7 +833,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
 
       {view !== "create_wizard" && (
         <footer style={{ background: "transparent", borderTop: "1px solid rgba(255,255,255,0.07)", padding: 20, textAlign: "center", fontSize: 12, color: "rgba(232,234,240,0.3)", marginTop: 48, paddingBottom: 110 }}>
-          EventForm Colombia © 2026
+          {BRAND_NAME} Colombia © 2026
         </footer>
       )}
 
@@ -999,15 +1000,8 @@ function Dashboard({ events, onNew, onOpen, onRegister, onValidate, onAdmin }) {
             border: `2px solid ${NEGRO_PURO}`,
           }}
         >
-          <span
-            style={{
-              fontSize: 40,
-              color: VERDE_CORPORATIVO,
-              display: "block",
-              marginBottom: 20,
-            }}
-          >
-            ●
+          <span style={{ display: "block", marginBottom: 20 }}>
+            <TapInMark size={40} color={VERDE_CORPORATIVO} />
           </span>
           <h2
             style={{

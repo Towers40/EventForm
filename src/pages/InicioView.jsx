@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import "../styles/typeform.css";
 import { VERDE_CORPORATIVO } from "../lib/theme.js";
+import { BRAND_NAME, TapInMark } from "../lib/brand.jsx";
 
 const STEPS = [
   { n: "1", title: "Crea tu evento", desc: "Responde 4 preguntas rápidas: nombre, tipo, aforo y lugar. En menos de 3 minutos." },
@@ -18,9 +19,9 @@ export default function InicioView({ events, onNew, onGoTo }) {
 
       {/* Hero */}
       <div style={{ textAlign: "center", padding: "48px 24px 40px" }}>
-        <span style={{ color: VERDE_CORPORATIVO, fontSize: 40, display: "block", marginBottom: 12 }}>●</span>
+        <span style={{ display: "block", marginBottom: 12 }}><TapInMark size={44} color={VERDE_CORPORATIVO} /></span>
         <h1 className="tf-question" style={{ fontSize: "clamp(26px,5vw,38px)", fontWeight: 300, margin: "0 0 16px" }}>
-          Bienvenido a <strong style={{ fontWeight: 700 }}>EventForm</strong>
+          Bienvenido a <strong style={{ fontWeight: 700 }}>{BRAND_NAME}</strong>
         </h1>
         <p className="tf-hint" style={{ maxWidth: 400, margin: "0 auto 32px" }}>
           Gestiona inscripciones, controla el acceso con QR y analiza tus eventos — todo desde un solo lugar.

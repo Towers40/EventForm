@@ -1,4 +1,4 @@
-# EventForm Colombia
+# TapIn Colombia
 
 MVP de gestión de eventos: formularios tipo Typeform, check-in QR, CRM de inscritos y panel super administrador.
 

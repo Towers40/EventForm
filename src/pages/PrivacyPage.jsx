@@ -9,7 +9,7 @@ export default function PrivacyPage() {
 
       <h2>1. Responsable</h2>
       <p>
-        EventForm Colombia («nosotros», «la plataforma») es responsable del tratamiento de los datos
+        TapIn Colombia («nosotros», «la plataforma») es responsable del tratamiento de los datos
         personales recogidos a través de los formularios de inscripción a eventos publicados por
         anfitriones registrados.
       </p>
@@ -44,7 +44,7 @@ export default function PrivacyPage() {
       <p>
         Puedes solicitar acceso, actualización, rectificación o supresión de tus datos escribiendo al
         correo de contacto del anfitrión del evento o a{" "}
-        <a href="mailto:privacidad@eventform.co">privacidad@eventform.co</a>.
+        <a href="mailto:tapinwalletcol@gmail.com">tapinwalletcol@gmail.com</a>.
       </p>
 
       <h2>6. Conservación y seguridad</h2>

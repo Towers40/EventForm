@@ -27,8 +27,8 @@ const transporter = smtpConfigured
 // Remitente. Con Resend debe ser un dominio verificado (RESEND_FROM).
 // Con SMTP (Gmail), el correo autenticado para que SPF/DKIM validen.
 const FROM = RESEND_API_KEY
-  ? (RESEND_FROM || EMAIL_FROM || "EventForm <onboarding@resend.dev>")
-  : `EventForm <${SMTP_USER}>`;
+  ? (RESEND_FROM || EMAIL_FROM || "TapIn <onboarding@resend.dev>")
+  : `TapIn <${SMTP_USER}>`;
 const REPLY_TO = EMAIL_FROM || SMTP_USER || undefined;
 
 // Envío unificado: usa Resend (HTTP API) si hay API key; si no, SMTP.
@@ -63,7 +63,7 @@ function emailLayout(content) {
   <div style="max-width:480px;margin:40px auto;background:#fff;border-radius:16px;overflow:hidden;border:1px solid #e2e8f0">
     <div style="background:#0d3b66;padding:28px 40px;text-align:center">
       <span style="color:#4ade80;font-size:24px">●</span>
-      <span style="color:#fff;font-size:18px;font-weight:800;margin-left:8px">EventForm</span>
+      <span style="color:#fff;font-size:18px;font-weight:800;margin-left:8px">TapIn</span>
     </div>
     <div style="padding:40px">${content}</div>
   </div></body></html>`;
@@ -74,12 +74,12 @@ export async function sendVerificationCode(email, name, code) {
   const firstName = (name || "anfitrión").split(" ")[0];
   await deliver({
     to: email,
-    subject: "Tu código de verificación — EventForm",
-    text: `Hola ${firstName},\n\nTu código de verificación de EventForm es: ${code}\nVálido por 15 minutos.\n\nSi no creaste esta cuenta, ignora este mensaje.`,
+    subject: "Tu código de verificación — TapIn",
+    text: `Hola ${firstName},\n\nTu código de verificación de TapIn es: ${code}\nVálido por 15 minutos.\n\nSi no creaste esta cuenta, ignora este mensaje.`,
     html: emailLayout(`
       <h2 style="color:#0d1b2a;font-size:20px;font-weight:700;margin:0 0 12px">Hola ${firstName} 👋</h2>
       <p style="color:#4a5568;font-size:15px;line-height:1.6;margin:0 0 28px">
-        Ingresa este código para confirmar tu cuenta en <strong>EventForm Colombia</strong>:
+        Ingresa este código para confirmar tu cuenta en <strong>TapIn Colombia</strong>:
       </p>
       <div style="text-align:center;margin:32px 0">
         <div style="display:inline-block;background:#f0f6fc;border:2px solid #0d3b66;border-radius:12px;padding:20px 40px">
@@ -116,7 +116,7 @@ export async function sendRegistrationConfirmation(email, name, ticketId, event)
 
   await deliver({
     to: email,
-    subject: `Tu entrada para ${event.title} — EventForm`,
+    subject: `Tu entrada para ${event.title} — TapIn`,
     attachments,
     text: `¡Hola ${firstName}, tu lugar está confirmado!\n\nEvento: ${event.title}\nFecha: ${dateStr}\nLugar: ${loc}\n\nID de tu entrada: ${ticketId}\nPresenta el código QR de este correo en la entrada. Solo permite un ingreso.`,
     html: emailLayout(`
@@ -144,8 +144,8 @@ export async function sendPasswordResetCode(email, name, code) {
   const firstName = (name || "usuario").split(" ")[0];
   await deliver({
     to: email,
-    subject: "Código para restablecer tu contraseña — EventForm",
-    text: `Hola ${firstName},\n\nUsa este código para restablecer tu contraseña de EventForm: ${code}\nVálido por 15 minutos.\n\nSi no solicitaste esto, ignora este mensaje.`,
+    subject: "Código para restablecer tu contraseña — TapIn",
+    text: `Hola ${firstName},\n\nUsa este código para restablecer tu contraseña de TapIn: ${code}\nVálido por 15 minutos.\n\nSi no solicitaste esto, ignora este mensaje.`,
     html: emailLayout(`
       <h2 style="color:#0d1b2a;font-size:20px;font-weight:700;margin:0 0 12px">Hola ${firstName}</h2>
       <p style="color:#4a5568;font-size:15px;line-height:1.6;margin:0 0 28px">
