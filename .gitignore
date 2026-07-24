@@ -26,3 +26,7 @@ dist-ssr
 
 # Local DB
 data/
+
+# Nunca versionar archivos de entorno con secretos (mantener solo *.env.example)
+**/.env
+server/.env
