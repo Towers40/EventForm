@@ -27,25 +27,55 @@ function fmtTime(t) {
   return `${h12}:${String(mi).padStart(2, "0")} ${suffix}`;
 }
 
-function DirectionButtons({ lat, lng }) {
+// Un solo botón "Ir aquí" que despliega el menú de apps de navegación
+// (Waze · Google Maps · Apple Maps) para que el usuario elija.
+function DirectionsMenu({ lat, lng }) {
+  const [open, setOpen] = useState(false);
   const ll = `${lat},${lng}`;
-  const links = [
-    { label: "Google Maps", href: `https://maps.google.com/?daddr=${ll}` },
-    { label: "Apple Maps",  href: `https://maps.apple.com/?daddr=${ll}` },
-    { label: "Waze",        href: `https://waze.com/ul?ll=${ll}&navigate=yes` },
+  const apps = [
+    { label: "Waze",        href: `https://waze.com/ul?ll=${ll}&navigate=yes`, color: "#33ccff" },
+    { label: "Google Maps", href: `https://maps.google.com/?daddr=${ll}`,      color: "#34a853" },
+    { label: "Apple Maps",  href: `https://maps.apple.com/?daddr=${ll}`,       color: "#7d8590" },
   ];
   return (
-    <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
-      {links.map(l => (
-        <a key={l.label} href={l.href} target="_blank" rel="noopener noreferrer" style={{
-          display: "inline-flex", alignItems: "center", gap: 5,
-          padding: "7px 14px", borderRadius: 20,
-          background: "rgba(107,159,212,0.12)", border: "1px solid rgba(107,159,212,0.28)",
-          fontSize: 12, fontWeight: 600, color: "#6b9fd4", textDecoration: "none", whiteSpace: "nowrap",
+    <div style={{ position: "relative", marginTop: 14 }}>
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width: "100%", boxSizing: "border-box",
+          display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+          padding: "14px 18px", borderRadius: 14, cursor: "pointer",
+          background: "rgba(107,159,212,0.2)", color: "#e8eaf0",
+          border: "1px solid rgba(107,159,212,0.4)", fontWeight: 800, fontSize: 15,
+        }}
+      >
+        <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        Ir aquí
+        <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ transform: open ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      {open && (
+        <div style={{
+          marginTop: 8, borderRadius: 14, overflow: "hidden",
+          background: "rgba(20,24,40,0.96)", border: "1px solid rgba(255,255,255,0.14)",
+          boxShadow: "0 8px 28px rgba(0,0,0,0.5)",
         }}>
-          {l.label} ↗
-        </a>
-      ))}
+          {apps.map((a, i) => (
+            <a key={a.label} href={a.href} target="_blank" rel="noopener noreferrer"
+              onClick={() => setOpen(false)}
+              style={{
+                display: "flex", alignItems: "center", gap: 12,
+                padding: "14px 18px", textDecoration: "none", color: "#e8eaf0",
+                fontSize: 15, fontWeight: 600,
+                borderTop: i ? "1px solid rgba(255,255,255,0.08)" : "none",
+              }}>
+              <span style={{ width: 10, height: 10, borderRadius: "50%", background: a.color, flexShrink: 0 }} />
+              {a.label}
+              <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="rgba(232,234,240,0.5)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: "auto" }}><path d="M7 17 17 7M7 7h10v10"/></svg>
+            </a>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -68,8 +98,14 @@ function DateChip({ dateStr }) {
   );
 }
 
-// ── Avatar circle ─────────────────────────────────────────────────────────────
-function Avatar({ name, size = 24 }) {
+// ── Avatar circle (foto del organizador si tiene; si no, iniciales) ───────────
+function Avatar({ name, src, size = 24 }) {
+  if (src) {
+    return (
+      <img src={src} alt={name || ""} width={size} height={size} loading="lazy" decoding="async"
+        style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", flexShrink: 0, border: "1.5px solid rgba(107,159,212,0.5)" }} />
+    );
+  }
   const initials = (name || "?").split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
   return (
     <div style={{
@@ -163,8 +199,6 @@ export default function PublicEventPage() {
   const BG   = "transparent"; // fondo global en body (typeform.css)
   const TEXT = "#e8eaf0";
   const SUB  = "rgba(232,234,240,0.5)";
-  const CARD = "rgba(255,255,255,0.06)";
-  const BORDER = "1px solid rgba(255,255,255,0.1)";
 
   if (err) return (
     <div style={{ minHeight: "100dvh", background: BG, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -230,17 +264,17 @@ export default function PublicEventPage() {
             {event.title}
           </h1>
 
-          {/* Hosted by */}
+          {/* Organizado por — con el avatar (foto) del organizador */}
           {event.hostName && (
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 24 }}>
-              <Avatar name={event.hostName} size={26} />
+              <Avatar name={event.hostName} src={event.hostAvatar} size={26} />
               <span style={{ fontSize: 14, color: SUB }}>Organizado por <strong style={{ color: TEXT, fontWeight: 600 }}>{event.hostName}</strong></span>
             </div>
           )}
 
           {/* Date row */}
           {startP && dateDesc && (
-            <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 14 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 24 }}>
               <DateChip dateStr={event.startDate} />
               <div>
                 <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: TEXT }}>{dateDesc.dateStr}</p>
@@ -252,49 +286,24 @@ export default function PublicEventPage() {
             </div>
           )}
 
-          {/* Location row */}
-          {locName && (
-            <div style={{ display: "flex", alignItems: "flex-start", gap: 14, marginBottom: 28 }}>
-              <div style={{ width: 52, height: 52, borderRadius: 12, flexShrink: 0, background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#6b9fd4" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ margin: 0, fontSize: 15, fontWeight: 600, color: TEXT }}>{locName}</p>
-                {event.city && event.address && event.city !== locName && (
-                  <p style={{ margin: "2px 0 0", fontSize: 13, color: SUB }}>{event.city}</p>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Registration card */}
-          <div style={{ background: CARD, border: BORDER, borderRadius: 20, padding: "20px", marginBottom: 28 }}>
-            <p style={{ margin: "0 0 8px", fontSize: 13, fontWeight: 600, color: SUB, textTransform: "uppercase", letterSpacing: "0.08em" }}>Registro</p>
+          {/* Registro — solo la barra de acción (sin texto ni recuadro) */}
+          <div style={{ marginBottom: 28 }}>
             {reg ? (
-              <>
-                <p style={{ margin: "0 0 16px", fontSize: 14, color: SUB, lineHeight: 1.5 }}>Ya tienes una entrada para este evento.</p>
-                <button onClick={() => setPhase("ticket")} style={{ width: "100%", padding: "16px", background: "rgba(107,159,212,0.25)", color: "#e8eaf0", borderRadius: 14, fontWeight: 800, fontSize: 16, border: "1px solid rgba(107,159,212,0.4)", cursor: "pointer", letterSpacing: "0.01em" }}>
-                  Ver mi entrada (QR)
-                </button>
-              </>
+              <button onClick={() => setPhase("ticket")} style={{ width: "100%", padding: "16px", background: "rgba(107,159,212,0.25)", color: "#e8eaf0", borderRadius: 14, fontWeight: 800, fontSize: 16, border: "1px solid rgba(107,159,212,0.4)", cursor: "pointer", letterSpacing: "0.01em" }}>
+                Ver mi entrada (QR)
+              </button>
             ) : regLoading ? (
               // Aún no se sabe si tiene entrada: placeholder neutro (mismo tamaño
-              // que los botones) para no mostrar "Registrarse" por error.
+              // que el botón) para no mostrar "Registrarse" por error.
               <div style={{ width: "100%", padding: "16px", background: "rgba(255,255,255,0.05)", borderRadius: 14, textAlign: "center", color: SUB, fontWeight: 700, fontSize: 15, boxSizing: "border-box" }}>
                 Comprobando tu inscripción…
               </div>
             ) : soldOut ? (
-              <>
-                <p style={{ margin: "0 0 16px", fontSize: 14, color: SUB, lineHeight: 1.5 }}>Las entradas para este evento se agotaron.</p>
-                <div style={{ padding: "15px", background: "rgba(255,255,255,0.05)", borderRadius: 14, textAlign: "center", color: SUB, fontWeight: 700, fontSize: 15 }}>Entradas agotadas</div>
-              </>
+              <div style={{ padding: "16px", background: "rgba(255,255,255,0.05)", borderRadius: 14, textAlign: "center", color: SUB, fontWeight: 700, fontSize: 15 }}>Entradas agotadas</div>
             ) : (
-              <>
-                <p style={{ margin: "0 0 16px", fontSize: 14, color: SUB, lineHeight: 1.5 }}>¡Bienvenido! Para participar en este evento, regístrate a continuación.</p>
-                <button onClick={() => setPhase("register")} style={{ width: "100%", padding: "16px", background: "#fff", color: "#0d1520", borderRadius: 14, fontWeight: 800, fontSize: 16, border: "none", cursor: "pointer", letterSpacing: "0.01em" }}>
-                  Registrarse
-                </button>
-              </>
+              <button onClick={() => setPhase("register")} style={{ width: "100%", padding: "16px", background: "#fff", color: "#0d1520", borderRadius: 14, fontWeight: 800, fontSize: 16, border: "none", cursor: "pointer", letterSpacing: "0.01em" }}>
+                Registrarse
+              </button>
             )}
           </div>
 
@@ -308,30 +317,29 @@ export default function PublicEventPage() {
             </div>
           )}
 
-          {/* Location section */}
+          {/* Ubicación — el nombre y un solo botón "Ir aquí" con menú de GPS */}
           {locName && (
             <div style={{ marginBottom: 28, borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 24 }}>
               <p style={{ margin: "0 0 10px", fontSize: 13, fontWeight: 600, color: SUB, textTransform: "uppercase", letterSpacing: "0.08em" }}>Ubicación</p>
               <p style={{ margin: 0, fontSize: 17, fontWeight: 700, color: TEXT }}>{locName}</p>
               {event.locationInstructions && <p style={{ margin: "6px 0 0", fontSize: 13, color: SUB, lineHeight: 1.5 }}>{event.locationInstructions}</p>}
-              {hasCoords && <DirectionButtons lat={event.lat} lng={event.lng} />}
+              {hasCoords && <DirectionsMenu lat={event.lat} lng={event.lng} />}
             </div>
           )}
 
-          {/* Hosted by section */}
-          {event.hostName && (
+          {/* Contacta al organizador (sin la ficha "Organizado por") */}
+          {event.hostEmail && (
             <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 24, marginBottom: 24 }}>
-              <p style={{ margin: "0 0 14px", fontSize: 13, fontWeight: 600, color: SUB, textTransform: "uppercase", letterSpacing: "0.08em" }}>Organizado por</p>
-              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-                <Avatar name={event.hostName} size={44} />
-                <span style={{ fontSize: 17, fontWeight: 700, color: TEXT }}>{event.hostName}</span>
-              </div>
-              {event.hostEmail && (
-                <a href={`mailto:${event.hostEmail}?subject=${encodeURIComponent("Consulta: " + event.title)}`}
-                  style={{ display: "block", fontSize: 14, color: "#6b9fd4", textDecoration: "none", marginBottom: 10 }}>
-                  Contactar al organizador
-                </a>
-              )}
+              <a href={`mailto:${event.hostEmail}?subject=${encodeURIComponent("Consulta: " + event.title)}`}
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 9,
+                  fontSize: 15, fontWeight: 700, color: "#6b9fd4", textDecoration: "none",
+                  background: "rgba(107,159,212,0.12)", border: "1px solid rgba(107,159,212,0.28)",
+                  borderRadius: 12, padding: "11px 18px",
+                }}>
+                <svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+                Contacta al organizador
+              </a>
             </div>
           )}
 

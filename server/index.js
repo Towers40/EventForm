@@ -423,9 +423,12 @@ app.get("/api/public/events/:slug", requireDb, async (req, res) => {
     ev.registrationCount = Number(cnt[0]?.c || 0);
     ev.registrations = undefined;
     ev.publicUrl = `${APP_URL}/e/${ev.slug}`;
-    const { rows: hostRows } = await db.execute({ sql: "SELECT name, email FROM users WHERE id = ?", args: [ev.hostId] });
+    const { rows: hostRows } = await db.execute({ sql: "SELECT name, email, avatar FROM users WHERE id = ?", args: [ev.hostId] });
     ev.hostName = hostRows[0]?.name || "";
     ev.hostEmail = hostRows[0]?.email || "";
+    // Solo se expone el avatar si es una URL (los base64 no viajan; ver Descubrir).
+    const hostAv = hostRows[0]?.avatar;
+    ev.hostAvatar = hostAv && String(hostAv).startsWith("http") ? hostAv : null;
     res.set("Cache-Control", "public, s-maxage=20, stale-while-revalidate=40");
     res.json({ event: ev });
   } catch (e) { res.status(500).json({ error: e.message }); }
