@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useLayoutEffect, useCallback, useRef } from "react";
 import FieldInput, { FieldError } from "./components/FieldInput.jsx";
 import QrScanner from "./components/QrScanner.jsx";
 import EventHeader from "./components/EventHeader.jsx";
@@ -1455,17 +1455,34 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
   // el mismo orden viejo y el segundo desharía el movimiento del primero (el
   // campo se quedaba a mitad de camino y no llegaba al final de la lista).
   const orderRef = useRef(null);
+  // Posición de cada tarjeta ANTES del último reordenado, para animar el
+  // desplazamiento (técnica FLIP): sin esto las tarjetas saltan de golpe a su
+  // sitio en vez de apartarse para dejar pasar a la que se arrastra.
+  const prevTops = useRef(new Map());
+  const pointerY = useRef(0);
+
+  const snapshotTops = () => {
+    const tops = new Map();
+    for (const [id, el] of itemRefs.current) tops.set(id, el.getBoundingClientRect().top);
+    prevTops.current = tops;
+  };
 
   const startDrag = (e, fid) => {
     e.preventDefault();
     e.stopPropagation();
     orderRef.current = draft.fields;
+    pointerY.current = e.clientY;
     setDragId(fid);
   };
 
   const moveDrag = (e) => {
     if (!dragId) return;
     const y = e.clientY;
+    pointerY.current = y;
+    // La tarjeta agarrada sigue al dedo/ratón dentro de su hueco. Se toca el
+    // estilo directamente (no por estado) para que vaya a la tasa del puntero
+    // y no a la de los repintados de React.
+    followPointer();
 
     // Con muchos campos el destino queda fuera de pantalla: se desplaza sola
     // al acercarse a los bordes.
@@ -1490,6 +1507,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
     }
     if (to === from) return;
 
+    snapshotTops(); // "First" del FLIP: dónde estaba cada tarjeta antes de mover
     const next = [...fields];
     const [moved] = next.splice(from, 1);
     next.splice(to, 0, moved);
@@ -1497,7 +1515,59 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
     setDraft((p) => ({ ...p, fields: next }));
   };
 
-  const endDrag = () => { orderRef.current = null; setDragId(null); };
+  // Coloca la tarjeta agarrada bajo el puntero, respecto al hueco que ocupa.
+  const followPointer = () => {
+    const el = dragId && itemRefs.current.get(dragId);
+    if (!el) return;
+    const prev = el.style.transform;
+    el.style.transform = "";           // mide el hueco real, sin el desfase actual
+    const r = el.getBoundingClientRect();
+    const dy = pointerY.current - (r.top + r.height / 2);
+    if (Math.abs(dy) < 0.5 && !prev) return;
+    el.style.transform = `translateY(${dy}px)`;
+  };
+
+  const endDrag = () => {
+    const el = dragId && itemRefs.current.get(dragId);
+    if (el) {
+      // Al soltar, la tarjeta vuelve a su hueco con la misma animación que
+      // usan las demás, en vez de aparecer de golpe en su sitio.
+      el.style.transition = "transform 0.18s ease-out";
+      el.style.transform = "";
+      setTimeout(() => { if (el) el.style.transition = ""; }, 200);
+    }
+    orderRef.current = null;
+    prevTops.current = new Map();
+    setDragId(null);
+  };
+
+  // "Last / Invert / Play" del FLIP: tras repintar con el orden nuevo, cada
+  // tarjeta se coloca de vuelta en su posición anterior sin transición y se
+  // suelta en el mismo fotograma, de modo que se ve deslizarse hasta su sitio.
+  useLayoutEffect(() => {
+    if (!prevTops.current.size) return;
+    const tops = prevTops.current;
+    prevTops.current = new Map();
+    for (const [id, el] of itemRefs.current) {
+      if (id === dragId) continue; // la agarrada la lleva followPointer
+      const before = tops.get(id);
+      if (before == null) continue;
+      const delta = before - el.getBoundingClientRect().top;
+      if (!delta) continue;
+      el.style.transition = "none";
+      el.style.transform = `translateY(${delta}px)`;
+    }
+    requestAnimationFrame(() => {
+      for (const [id, el] of itemRefs.current) {
+        if (id === dragId) continue;
+        if (!el.style.transform) continue;
+        el.style.transition = "transform 0.18s cubic-bezier(0.2,0,0,1)";
+        el.style.transform = "";
+      }
+    });
+    followPointer(); // el hueco de la agarrada cambió: recolocarla bajo el puntero
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft.fields]);
 
   // Los listeners del arrastre viven en `window`, no en el asa. Con
   // setPointerCapture sobre el asa el arrastre se quedaba a medias: al
@@ -1656,12 +1726,12 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
             className="panel-card"
             style={{
               overflow: "hidden", position: "relative",
-              // La tarjeta arrastrada se levanta; las demás ceden el sitio solas
-              // porque la lista ya está reordenada en el estado.
+              // OJO: `transition` y `transform` los gobierna el FLIP de forma
+              // imperativa (ver useLayoutEffect). No ponerlos aquí: React los
+              // sobrescribiría en cada repintado y cortaría la animación.
               ...(dragId === f.id
-                ? { outline: "2px solid rgba(107,159,212,0.55)", boxShadow: "0 12px 32px rgba(0,0,0,0.45)", zIndex: 2 }
+                ? { outline: "2px solid rgba(107,159,212,0.55)", boxShadow: "0 14px 34px rgba(0,0,0,0.5)", zIndex: 3, position: "relative" }
                 : null),
-              transition: dragId ? "none" : "outline 0.1s",
             }}
           >
             {/* × en esquina superior derecha */}

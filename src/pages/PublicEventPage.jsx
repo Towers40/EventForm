@@ -125,6 +125,9 @@ export default function PublicEventPage() {
   const { token }                  = useAuth();
   const [event, setEvent]          = useState(null);
   const [reg, setReg]              = useState(null);
+  // Todas las entradas de esta persona para el evento (los eventos que
+  // permiten más de una por persona generan un QR por cada una).
+  const [regs, setRegs]            = useState(null);
   // Mientras vale true no se sabe aún si el usuario tiene entrada, así que la
   // tarjeta de registro muestra "Comprobando…" en vez de "Registrarse" (evita
   // el parpadeo en móvil, donde la entrada se resuelve por API, no localStorage).
@@ -143,7 +146,7 @@ export default function PublicEventPage() {
       const saved = localStorage.getItem(`ef_ticket_${slug}`);
       if (saved) { const p = JSON.parse(saved); if (!p.cancelled) localReg = p; }
     } catch { /* ignora JSON inválido */ }
-    if (localReg) setReg(localReg);
+    if (localReg) { setReg(localReg); setRegs(localReg._all?.length ? localReg._all : null); }
 
     // 2) Evento y entrada de la cuenta se piden EN PARALELO, para que el estado
     //    de inscripción esté listo cuando la página se pinta (no después).
@@ -163,8 +166,12 @@ export default function PublicEventPage() {
     ticketsP.then(tickets => {
       if (cancelled) return;
       if (!localReg && tickets) {
-        const mine = tickets.find(t => t.event?.slug === slug);
-        if (mine) setReg({ id: mine.id, used: Boolean(mine.used) });
+        const mias = tickets.filter(t => t.event?.slug === slug);
+        if (mias.length) {
+          const norm = mias.map(t => ({ id: t.id, used: Boolean(t.used), approved: t.approved !== false }));
+          setReg(norm[0]);
+          setRegs(norm.length > 1 ? norm : null);
+        }
       }
       setRegLoading(false);
     });
@@ -181,17 +188,27 @@ export default function PublicEventPage() {
 
   const handleSubmit = async (payload) => {
     if (apiEnabled) {
-      let registration;
+      let registration, registrations;
       try {
-        ({ registration } = await api.publicRegister(slug, payload, token));
+        ({ registration, registrations } = await api.publicRegister(slug, payload, token));
       } catch (e) {
         // La sesión caducó entre abrir el formulario y enviarlo.
         if (e?.status === 401 || e?.data?.error === "account_required") { goToLogin(); return; }
+        if (e?.data?.error === "limit_per_user") {
+          const tope = e.data.maxPerUser;
+          const ya = e.data.already;
+          throw new Error(ya
+            ? `Ya tienes ${ya} entrada${ya === 1 ? "" : "s"} de este evento y el límite es ${tope} por persona.`
+            : `Este evento permite un máximo de ${tope} entradas por persona.`);
+        }
         throw e;
       }
       const snap = event ? { title: event.title, slug, startDate: event.startDate, date: event.date, headerImage: event.headerImage, city: event.city, location: event.location } : null;
-      localStorage.setItem(`ef_ticket_${slug}`, JSON.stringify({ ...registration, _event: snap }));
-      setReg(registration); setPhase("ticket"); return;
+      // En el dispositivo se guarda la primera; el resto viaja en `_all` para
+      // poder pintarlas todas sin volver a pedirlas.
+      const all = registrations?.length ? registrations : [registration];
+      localStorage.setItem(`ef_ticket_${slug}`, JSON.stringify({ ...registration, _event: snap, _all: all }));
+      setReg(registration); setRegs(all); setPhase("ticket"); return;
     }
     const ev   = loadEvents().find(e => e.slug === slug);
     const ticket = { id: "TICKET-" + Math.random().toString(36).slice(2, 10).toUpperCase(), eventId: ev.id, data: payload.form, ts: Date.now(), used: false };
@@ -231,7 +248,7 @@ export default function PublicEventPage() {
   );
 
   if (phase === "ticket") return (
-    <ConfirmTicket ev={event} reg={reg} standalone onCancel={handleCancel} cancelling={cancelling}
+    <ConfirmTicket ev={event} reg={reg} regs={regs} standalone onCancel={handleCancel} cancelling={cancelling}
       onBack={() => { if (window.history.length > 1) window.history.back(); else window.location.href = "/app"; }} />
   );
 

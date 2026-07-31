@@ -149,8 +149,11 @@ export default function TypeformRegister({ event, onSubmit, onBack }) {
   const [form, setForm] = useState({});
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [quantity, setQuantity] = useState(1);
 
   const soldOut = isSoldOut(event);
+  // Tope de entradas por persona que fijó el anfitrión (1 si no lo configuró).
+  const maxPerUser = Math.max(1, Math.min(Number(event.maxPerUser) || 1, 20));
 
   const setField = (fid, value) => {
     setForm((p) => ({ ...p, [fid]: value }));
@@ -170,6 +173,7 @@ export default function TypeformRegister({ event, onSubmit, onBack }) {
     try {
       await onSubmit({
         form,
+        quantity,
         consentPrivacy: Boolean(form[CONSENT_PRIVACY_ID]),
         consentMarketing: Boolean(form[CONSENT_MARKETING_ID]),
       });
@@ -218,6 +222,33 @@ export default function TypeformRegister({ event, onSubmit, onBack }) {
         </div>
 
         <form onSubmit={handleSubmit} noValidate>
+          {/* Cuántas entradas — solo si el anfitrión permite más de una */}
+          {maxPerUser > 1 && (
+            <div style={{ marginBottom: 24, padding: "16px 18px", background: "rgba(107,159,212,0.08)", border: "1px solid rgba(107,159,212,0.22)", borderRadius: 14 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#e8eaf0" }}>¿Cuántas entradas?</div>
+                  <div style={{ fontSize: 12, color: "#8fa3b1", marginTop: 2 }}>Hasta {maxPerUser} por persona · un QR por entrada</div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <button type="button" aria-label="Una entrada menos"
+                    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                    disabled={quantity <= 1}
+                    style={{ width: 34, height: 34, borderRadius: 10, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)", color: quantity <= 1 ? "rgba(255,255,255,0.25)" : "#e8eaf0", fontSize: 19, fontWeight: 700, cursor: quantity <= 1 ? "default" : "pointer", lineHeight: 1 }}>
+                    −
+                  </button>
+                  <span aria-live="polite" style={{ minWidth: 28, textAlign: "center", fontSize: 18, fontWeight: 800, color: "#6b9fd4" }}>{quantity}</span>
+                  <button type="button" aria-label="Una entrada más"
+                    onClick={() => setQuantity((q) => Math.min(maxPerUser, q + 1))}
+                    disabled={quantity >= maxPerUser}
+                    style={{ width: 34, height: 34, borderRadius: 10, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)", color: quantity >= maxPerUser ? "rgba(255,255,255,0.25)" : "#e8eaf0", fontSize: 19, fontWeight: 700, cursor: quantity >= maxPerUser ? "default" : "pointer", lineHeight: 1 }}>
+                    +
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Fields */}
           {(event.fields || []).map((field) => (
             <div key={field.id} style={{ marginBottom: 24 }}>

@@ -6,10 +6,13 @@ import PendingQr, { PendingNotice } from "./PendingQr.jsx";
 import { publicBaseUrl } from "../lib/platform.js";
 import "../styles/typeform.css";
 
-export default function ConfirmTicket({ ev, reg, onDone, standalone, onCancel, cancelling, onBack }) {
+export default function ConfirmTicket({ ev, reg, regs, onDone, standalone, onCancel, cancelling, onBack }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   // `approved` solo llega en false cuando el evento requiere aprobación.
   const approved = reg?.approved !== false;
+  // Eventos que permiten varias entradas por persona: un QR por entrada.
+  const tickets = regs?.length ? regs : (reg ? [reg] : []);
+  const varias = tickets.length > 1;
 
   const inner = (
     <div style={{ maxWidth: 520, margin: "0 auto", padding: "24px 16px 80px" }}>
@@ -36,56 +39,70 @@ export default function ConfirmTicket({ ev, reg, onDone, standalone, onCancel, c
       {/* Ticket header */}
       <div style={{ textAlign: "center", marginBottom: 24 }}>
         <div style={{ fontSize: 11, fontWeight: 800, color: approved ? "#4ade80" : "#fbbf24", letterSpacing: 2, marginBottom: 6 }}>
-          {approved ? "✓ INSCRIPCIÓN CONFIRMADA" : "⏳ SUJETO A APROBACIÓN"}
+          {approved
+            ? (varias ? `✓ ${tickets.length} ENTRADAS CONFIRMADAS` : "✓ INSCRIPCIÓN CONFIRMADA")
+            : "⏳ SUJETO A APROBACIÓN"}
         </div>
         <h2 style={{ fontSize: 22, fontWeight: 800, color: "#e8eaf0", margin: 0 }}>{ev.title}</h2>
+        {varias && (
+          <p style={{ fontSize: 13, color: "#8fa3b1", margin: "8px 0 0", lineHeight: 1.5 }}>
+            Cada acompañante entra con su propio código. Cada QR permite un solo ingreso.
+          </p>
+        )}
       </div>
 
-      {/* QR card */}
-      <div style={{
-        background: "#1a1c1e",
-        border: "1px solid rgba(255,255,255,0.1)",
-        borderRadius: 20, padding: "28px 20px",
-        textAlign: "center",
-        marginBottom: 24,
-        boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
-      }}>
-        <PendingQr id={reg.id} size={200} approved={approved} />
-        <p style={{
-          fontFamily: "monospace", fontWeight: 700, marginTop: 16,
-          fontSize: 13, color: "#6b9fd4", letterSpacing: 1,
+      {/* Una tarjeta de QR por entrada */}
+      {tickets.map((t, i) => (
+        <div key={t.id} style={{
+          background: "#1a1c1e",
+          border: "1px solid rgba(255,255,255,0.1)",
+          borderRadius: 20, padding: "28px 20px",
+          textAlign: "center",
+          marginBottom: i === tickets.length - 1 ? 24 : 12,
+          boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
         }}>
-          {reg.id}
-        </p>
-        {approved ? (
-          <p style={{ fontSize: 12, color: "#8fa3b1", margin: "8px 0 0", lineHeight: 1.5 }}>
-            Presenta este QR en la entrada.<br />Solo permite un ingreso.
+          {varias && (
+            <div style={{ fontSize: 11, fontWeight: 800, color: "#6b9fd4", letterSpacing: 1.5, marginBottom: 14, textTransform: "uppercase" }}>
+              Entrada {i + 1} de {tickets.length}
+            </div>
+          )}
+          <PendingQr id={t.id} size={200} approved={t.approved !== false} />
+          <p style={{
+            fontFamily: "monospace", fontWeight: 700, marginTop: 16,
+            fontSize: 13, color: "#6b9fd4", letterSpacing: 1,
+          }}>
+            {t.id}
           </p>
-        ) : (
-          <PendingNotice />
-        )}
-        {approved && typeof navigator !== "undefined" && typeof navigator.share === "function" && (
-          <button
-            type="button"
-            onClick={() => navigator.share({
-              title: `Mi entrada: ${ev.title}`,
-              text: `Mi entrada (QR) para ${ev.title} — ID: ${reg.id}`,
-              url: `${publicBaseUrl()}/t/${reg.id}`,
-            }).catch(() => {})}
-            style={{
-              marginTop: 16, width: "100%",
-              padding: "13px",
-              background: "rgba(107,159,212,0.08)",
-              color: "#6b9fd4", borderRadius: 12,
-              border: "1px solid rgba(107,159,212,0.25)",
-              fontWeight: 700, fontSize: 14, cursor: "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-            }}
-          >
-            ↗ Compartir ticket
-          </button>
-        )}
-      </div>
+          {t.approved !== false ? (
+            <p style={{ fontSize: 12, color: "#8fa3b1", margin: "8px 0 0", lineHeight: 1.5 }}>
+              Presenta este QR en la entrada.<br />Solo permite un ingreso.
+            </p>
+          ) : (
+            <PendingNotice />
+          )}
+          {t.approved !== false && typeof navigator !== "undefined" && typeof navigator.share === "function" && (
+            <button
+              type="button"
+              onClick={() => navigator.share({
+                title: `Mi entrada: ${ev.title}`,
+                text: `Mi entrada (QR) para ${ev.title} — ID: ${t.id}`,
+                url: `${publicBaseUrl()}/t/${t.id}`,
+              }).catch(() => {})}
+              style={{
+                marginTop: 16, width: "100%",
+                padding: "13px",
+                background: "rgba(107,159,212,0.08)",
+                color: "#6b9fd4", borderRadius: 12,
+                border: "1px solid rgba(107,159,212,0.25)",
+                fontWeight: 700, fontSize: 14, cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+              }}
+            >
+              ↗ {varias ? `Compartir entrada ${i + 1}` : "Compartir ticket"}
+            </button>
+          )}
+        </div>
+      ))}
 
       {/* Map */}
       {ev.lat != null && ev.lng != null && (

@@ -520,8 +520,18 @@ app.post("/api/public/events/:slug/register", requireDb, optionalAuth, async (re
     }
 
     const max = capacityMaxOf(ev);
-    const ticketId = "TICKET-" + uid();
     const now = Date.now();
+
+    // Entradas por persona. El anfitrión fija el tope (`maxPerUser`, 1 por
+    // defecto) y el asistente pide cuántas quiere dentro de ese tope.
+    const maxPerUser = Math.max(1, Math.min(Number(ev.maxPerUser) || 1, 20));
+    const wanted = Math.floor(Number(req.body?.quantity) || 1);
+    if (!Number.isFinite(wanted) || wanted < 1) {
+      return res.status(400).json({ error: "Cantidad de entradas inválida." });
+    }
+    if (wanted > maxPerUser) {
+      return res.status(403).json({ error: "limit_per_user", maxPerUser });
+    }
 
     // Email del asistente (campo tipo email o primer valor con forma de correo)
     let recipientEmail = null, recipientName = null;
@@ -543,8 +553,17 @@ app.post("/api/public/events/:slug/register", requireDb, optionalAuth, async (re
 
     const approved = needsApproval ? 0 : 1;
     const insertSql = `INSERT INTO registrations (id, event_id, ticket_id, payload, used, checked_in_at, consent_privacy, consent_marketing, created_at, email, approved) VALUES (?, ?, ?, ?, 0, NULL, ?, ?, ?, ?, ?)`;
-    const insertArgs = ["R" + uid(), ev.id, ticketId, JSON.stringify(form), consentPrivacy ? 1 : 0, consentMarketing ? 1 : 0, now, emailNorm, approved];
+    // Una fila (y un QR) por entrada pedida.
+    const ticketIds = Array.from({ length: wanted }, () => "TICKET-" + uid());
+    const ticketId = ticketIds[0];
+    const inserts = ticketIds.map((tid) => ({
+      sql: insertSql,
+      args: ["R" + uid(), ev.id, tid, JSON.stringify(form), consentPrivacy ? 1 : 0, consentMarketing ? 1 : 0, now, emailNorm, approved],
+    }));
     const countSql = "SELECT COUNT(*) AS c FROM registrations WHERE event_id = ? AND cancelled = 0";
+    // Tope por persona: se cuenta por el correo con el que quedan atadas las
+    // entradas, que es el mismo cruce que usa "Mis tickets".
+    const mineSql = "SELECT COUNT(*) AS c FROM registrations WHERE event_id = ? AND cancelled = 0 AND lower(email) = ?";
 
     // Chequeo de cupo + inserción ATÓMICOS (evita sobreventa en simultáneo).
     let useFallback = false;
@@ -557,9 +576,19 @@ app.post("/api/public/events/:slug/register", requireDb, optionalAuth, async (re
       try {
         if (max != null) {
           const { rows: cntRows } = await tx.execute({ sql: countSql, args: [ev.id] });
-          if (Number(cntRows[0]?.c || 0) >= max) { await tx.rollback(); return res.status(403).json({ error: "sold_out" }); }
+          // Se comprueba el lote entero: pedir 3 con 2 cupos libres no puede
+          // dejar la mitad dentro.
+          if (Number(cntRows[0]?.c || 0) + wanted > max) { await tx.rollback(); return res.status(403).json({ error: "sold_out" }); }
         }
-        await tx.execute({ sql: insertSql, args: insertArgs });
+        if (emailNorm && maxPerUser > 1) {
+          const { rows: mineRows } = await tx.execute({ sql: mineSql, args: [ev.id, emailNorm] });
+          const mine = Number(mineRows[0]?.c || 0);
+          if (mine + wanted > maxPerUser) {
+            await tx.rollback();
+            return res.status(403).json({ error: "limit_per_user", maxPerUser, already: mine });
+          }
+        }
+        for (const ins of inserts) await tx.execute(ins);
         await tx.commit();
       } catch (txErr) {
         try { await tx.rollback(); } catch { /* noop */ }
@@ -572,9 +601,14 @@ app.post("/api/public/events/:slug/register", requireDb, optionalAuth, async (re
     if (useFallback) {
       if (max != null) {
         const { rows: cntRows } = await db.execute({ sql: countSql, args: [ev.id] });
-        if (Number(cntRows[0]?.c || 0) >= max) return res.status(403).json({ error: "sold_out" });
+        if (Number(cntRows[0]?.c || 0) + wanted > max) return res.status(403).json({ error: "sold_out" });
       }
-      await db.execute({ sql: insertSql, args: insertArgs });
+      if (emailNorm && maxPerUser > 1) {
+        const { rows: mineRows } = await db.execute({ sql: mineSql, args: [ev.id, emailNorm] });
+        const mine = Number(mineRows[0]?.c || 0);
+        if (mine + wanted > maxPerUser) return res.status(403).json({ error: "limit_per_user", maxPerUser, already: mine });
+      }
+      for (const ins of inserts) await db.execute(ins);
     }
 
     // Correo de confirmación. AWAIT antes de responder: en Vercel serverless la
@@ -582,14 +616,19 @@ app.post("/api/public/events/:slug/register", requireDb, optionalAuth, async (re
     if (emailEnabled && recipientEmail) {
       try {
         // Pendiente de aprobación → aviso sin QR; el correo con la entrada sale
-        // al aprobar. Si no requiere aprobación, va la entrada de una vez.
+        // al aprobar. Si no requiere aprobación, va una entrada por cada QR.
         if (needsApproval) await sendApprovalPending(recipientEmail, recipientName, ev);
-        else await sendRegistrationConfirmation(recipientEmail, recipientName, ticketId, ev);
+        else for (const tid of ticketIds) await sendRegistrationConfirmation(recipientEmail, recipientName, tid, ev);
       }
       catch (mailErr) { console.error("Error enviando correo de inscripción:", mailErr?.message); }
     }
+    const registrations = ticketIds.map((tid) => ({
+      id: tid, eventId: ev.id, data: form, ts: now, used: false, approved: !needsApproval,
+    }));
     res.status(201).json({
-      registration: { id: ticketId, eventId: ev.id, data: form, ts: now, used: false, approved: !needsApproval },
+      // `registration` (singular) se mantiene por compatibilidad: es la primera.
+      registration: registrations[0],
+      registrations,
       event: { id: ev.id, title: ev.title, slug: ev.slug },
     });
   } catch (e) { res.status(500).json({ error: e.message }); }

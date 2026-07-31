@@ -559,6 +559,36 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
               <Toggle value={Boolean(draft.requireApproval)} onChange={v => up("requireApproval", v)} />
             </div>
 
+            {/* Entradas por persona */}
+            <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "15px 18px", ...rowDivider }}>
+              <span style={{ color: SUB, display: "flex" }}>
+                <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 11h-6"/></svg>
+              </span>
+              <span style={{ flex: 1, fontSize: 15, color: TEXT }}>Entradas por persona</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <button type="button" className="ef-hover-fill" aria-label="Menos entradas"
+                  onClick={() => up("maxPerUser", Math.max(1, (Number(draft.maxPerUser) || 1) - 1))}
+                  disabled={(Number(draft.maxPerUser) || 1) <= 1}
+                  style={{ width: 30, height: 30, borderRadius: 9, background: "rgba(255,255,255,0.06)", border: BORDER, color: (Number(draft.maxPerUser) || 1) <= 1 ? "rgba(255,255,255,0.2)" : TEXT, fontSize: 17, fontWeight: 700, cursor: (Number(draft.maxPerUser) || 1) <= 1 ? "default" : "pointer", lineHeight: 1 }}>
+                  −
+                </button>
+                <span style={{ minWidth: 26, textAlign: "center", fontSize: 15, fontWeight: 700, color: (Number(draft.maxPerUser) || 1) > 1 ? ACCENT : TEXT }}>
+                  {Number(draft.maxPerUser) || 1}
+                </span>
+                <button type="button" className="ef-hover-fill" aria-label="Más entradas"
+                  onClick={() => up("maxPerUser", Math.min(20, (Number(draft.maxPerUser) || 1) + 1))}
+                  disabled={(Number(draft.maxPerUser) || 1) >= 20}
+                  style={{ width: 30, height: 30, borderRadius: 9, background: "rgba(255,255,255,0.06)", border: BORDER, color: (Number(draft.maxPerUser) || 1) >= 20 ? "rgba(255,255,255,0.2)" : TEXT, fontSize: 17, fontWeight: 700, cursor: (Number(draft.maxPerUser) || 1) >= 20 ? "default" : "pointer", lineHeight: 1 }}>
+                  +
+                </button>
+              </div>
+            </div>
+            {(Number(draft.maxPerUser) || 1) > 1 && (
+              <p style={{ fontSize: 12.5, color: SUB, margin: 0, padding: "0 18px 14px", lineHeight: 1.45, ...rowDivider }}>
+                Cada persona podrá reservar hasta {draft.maxPerUser} entradas y recibirá un código QR por cada una.
+              </p>
+            )}
+
             {/* Sold out — solo al editar */}
             {isEditing && (
               <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "15px 18px", ...rowDivider }}>
