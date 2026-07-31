@@ -197,6 +197,8 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
   const _hasDraft = Boolean(_realInitial || _realPending);
   const [view, setView] = useState(_hasDraft ? "builder" : "inicio");
   const [events, setEvents] = useState(() => (apiOn ? [] : loadEvents()));
+  const [eventsLoading, setEventsLoading] = useState(apiOn);
+  const [eventsError, setEventsError] = useState(null);
   const [shareEv, setShareEv] = useState(null);
   const [evId, setEvId] = useState(null);
   const [regId, setRegId] = useState(null);
@@ -256,18 +258,45 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
   }, [events, apiOn]);
 
   const refreshEvents = useCallback(async () => {
-    if (!apiOn || !token) return;
+    if (!apiOn || !token) { setEventsLoading(false); return; }
+    setEventsLoading(true);
+    setEventsError(null);
     try {
       const { events: list } = await api.events(token);
-      setEvents(list.map((e) => ({ ...e, _persisted: true })));
+      // Los borradores locales (aún sin publicar) no existen en el servidor, así
+      // que se conservan: antes cada refresco los borraba de la lista.
+      setEvents((prev) => {
+        const drafts = prev.filter((e) => e.isDraft && !list.some((s) => s.id === e.id));
+        return [...list.map((e) => ({ ...e, _persisted: true })), ...drafts];
+      });
     } catch (e) {
+      // Sin esto un fallo del API dejaba "Mis eventos" vacío y en silencio,
+      // indistinguible de "no tienes eventos".
       console.error(e);
+      setEventsError(e?.message || "No se pudieron cargar tus eventos.");
+    } finally {
+      setEventsLoading(false);
     }
   }, [apiOn, token]);
 
   useEffect(() => {
     refreshEvents();
   }, [refreshEvents, isSuperAdmin]);
+
+  const setRegistrationApproval = async (eventId, ticketId, approved) => {
+    if (!apiOn || !token) return;
+    // Optimista: el anfitrión ve el cambio al instante y el servidor confirma.
+    setEvents((p) => p.map((e) => e.id !== eventId ? e : {
+      ...e,
+      registrations: (e.registrations || []).map((r) => r.id === ticketId ? { ...r, approved } : r),
+    }));
+    try {
+      await api.setRegistrationApproval(token, eventId, ticketId, approved);
+    } catch (err) {
+      alert("No se pudo actualizar la aprobación: " + (err?.message || "error"));
+      refreshEvents();
+    }
+  };
 
   const ev = events.find((e) => e.id === evId);
 
@@ -432,7 +461,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
     }
     // New event: generate base registration fields
     const baseFields = [
-      { id: "F" + uid(), type: "text", label: "Nombre completo del asistente", description: "Escribe tus nombres tal como aparecen en tu documento", placeholder: "", required: true, options: [] },
+      { id: "F" + uid(), type: "text", label: "Nombre completo del asistente", description: "", placeholder: "", required: true, options: [] },
       { id: "F" + uid(), type: "email", label: "Correo electrónico", description: "Usa un correo al que tengas acceso; lo verás en tu boleto", placeholder: "", required: true, options: [] }
     ];
     setDraft({ ...finalDraft, fields: baseFields });
@@ -535,9 +564,9 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
       });
       return;
     }
-    if (result.status === "used") {
+    if (result.status === "used" || result.status === "pending") {
       setVResult({
-        s: "used",
+        s: result.status,
         ticketId: result.ticketId,
         event: result.event,
         reg: result.reg,
@@ -588,6 +617,9 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
         setVResult({ s: "ok", ticketId, event: ev, reg, participant, checkedInAt: res.reg?.checkedInAt });
       } else if (res.status === "used") {
         setVResult({ s: "used", ticketId, event: ev, reg, participant });
+      } else if (res.status === "pending") {
+        // Entrada real pero sin aprobar: no da acceso todavía.
+        setVResult({ s: "pending", ticketId, event: ev, reg, participant });
       } else {
         // nf / cancelled
         setVResult({ s: "nf", ticketId });
@@ -754,6 +786,9 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
         {view === "mis_eventos" && (
           <MisEventosView
             events={events}
+            loading={eventsLoading}
+            error={eventsError}
+            onRetry={refreshEvents}
             onNew={startNew}
             onOpen={(id) => go("crm", id)}
             onEdit={editEvent}
@@ -797,6 +832,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
             onBack={() => go("mis_eventos")}
             onToggleSoldOut={(v) => toggleSoldOut(ev.id, v)}
             onShare={() => setShareEv(ev)}
+            onSetApproval={(ticketId, approved) => setRegistrationApproval(ev.id, ticketId, approved)}
           />
         )}
         {view === "detail" && ev && (
@@ -2030,9 +2066,12 @@ function Validate({ event, scopeLabel, code, setCode, result, onCheck, onScan, o
 
       {result && (() => {
         const ok = result.s === "ok";
-        const accent = ok ? "#4ade80" : "#f87171";
-        const cardBg = ok ? "rgba(52,199,89,0.15)" : "rgba(220,38,38,0.15)";
-        const cardBorder = ok ? "rgba(52,199,89,0.5)" : "rgba(220,38,38,0.5)";
+        // Pendiente de aprobación no es un error del asistente: se pinta ámbar,
+        // no rojo, para que el portero entienda que falta aprobarlo.
+        const pending = result.s === "pending";
+        const accent = ok ? "#4ade80" : pending ? "#fbbf24" : "#f87171";
+        const cardBg = ok ? "rgba(52,199,89,0.15)" : pending ? "rgba(251,191,36,0.15)" : "rgba(220,38,38,0.15)";
+        const cardBorder = ok ? "rgba(52,199,89,0.5)" : pending ? "rgba(251,191,36,0.5)" : "rgba(220,38,38,0.5)";
         return (
         <div style={{ textAlign: "center" }}>
           <div
@@ -2049,8 +2088,15 @@ function Validate({ event, scopeLabel, code, setCode, result, onCheck, onScan, o
           >
             {ok && "✓ CHECK-IN EXITOSO — ACCESO CONCEDIDO"}
             {result.s === "used" && "⚠️ BOLETO YA UTILIZADO — ACCESO DENEGADO"}
+            {pending && "⏳ SUJETO A APROBACIÓN — ACCESO DENEGADO"}
             {result.s === "nf" && "✕ BOLETO NO ENCONTRADO"}
           </div>
+          {pending && (
+            <p style={{ fontSize: 13, color: "rgba(232,234,240,0.7)", margin: "-6px 0 16px", lineHeight: 1.5 }}>
+              Esta inscripción está pendiente de aprobación. Apruébala en
+              <strong style={{ color: "#fbbf24" }}> Inscritos</strong> y el QR queda activo al instante.
+            </p>
+          )}
 
           {result.participant && result.s !== "nf" && (
             <div style={{ textAlign: "left", border: `1.5px solid ${cardBorder}`, borderRadius: 12, padding: 16, marginBottom: 16, background: cardBg, color: "#e8eaf0" }}>

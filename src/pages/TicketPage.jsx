@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { api, apiEnabled } from "../lib/api.js";
+import PendingQr, { PendingNotice } from "../components/PendingQr.jsx";
 import { BRAND_NAME, TapInMark } from "../lib/brand.jsx";
 import "../styles/typeform.css";
 
@@ -19,20 +20,28 @@ function fmt(dateStr, timeStr) {
 export default function TicketPage() {
   const { ticketId } = useParams();
   const id = String(ticketId || "").toUpperCase();
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(id)}&bgcolor=ffffff&color=000000&margin=12&qzone=2`;
   const [ticket, setTicket] = useState(null);
 
   useEffect(() => {
     if (!apiEnabled) return;
-    (async () => {
+    let stop = false;
+    const load = async () => {
       try {
         const { ticket: t } = await api.publicTicket(id);
-        setTicket(t);
-      } catch { /* sin datos: igual mostramos el QR */ }
-    })();
+        if (!stop) setTicket(t);
+        return t;
+      } catch { return null; /* sin datos: igual mostramos el QR */ }
+    };
+    load();
+    // Si está pendiente, se vuelve a consultar al volver a la pestaña para que
+    // el QR se destape en cuanto el organizador apruebe.
+    const onFocus = () => load();
+    window.addEventListener("focus", onFocus);
+    return () => { stop = true; window.removeEventListener("focus", onFocus); };
   }, [id]);
 
   const ev = ticket?.event;
+  const approved = ticket?.approved !== false;
 
   return (
     <div className="tf-screen" style={{ display: "block", overflowY: "auto", minHeight: "100dvh" }}>
@@ -58,10 +67,12 @@ export default function TicketPage() {
             <p style={{ color: "#fca5a5", fontWeight: 800, fontSize: 15, margin: "20px 0" }}>Esta entrada fue cancelada.</p>
           ) : (
             <>
-              <img src={qrUrl} alt="QR de acceso" style={{ width: 220, height: 220, borderRadius: 12, display: "block", margin: "0 auto", background: "#fff", padding: 10 }} />
+              <PendingQr id={id} size={220} approved={approved} />
               <p style={{ fontFamily: "monospace", fontWeight: 800, fontSize: 13, color: "#6b9fd4", margin: "14px 0 4px", letterSpacing: 1 }}>{id}</p>
-              <p style={{ fontSize: 12, color: "#8fa3b1", margin: 0 }}>Presenta este QR en la entrada. Solo permite un ingreso.</p>
-              {ticket?.used && (
+              {approved
+                ? <p style={{ fontSize: 12, color: "#8fa3b1", margin: 0 }}>Presenta este QR en la entrada. Solo permite un ingreso.</p>
+                : <PendingNotice style={{ margin: "10px 0 0" }} />}
+              {approved && ticket?.used && (
                 <p style={{ marginTop: 14, fontSize: 12.5, fontWeight: 700, color: "#fca5a5", background: "rgba(220,38,38,0.15)", border: "1px solid rgba(220,38,38,0.35)", borderRadius: 10, padding: "8px 12px" }}>
                   Esta entrada ya fue utilizada para ingresar.
                 </p>

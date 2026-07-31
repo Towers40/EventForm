@@ -172,9 +172,23 @@ export default function PublicEventPage() {
     return () => { cancelled = true; };
   }, [slug, token]);
 
+  // Los eventos con aprobación exigen cuenta: es en "Mis tickets" donde la
+  // persona ve si su QR sigue pendiente o ya se activó.
+  const goToLogin = () => {
+    try { sessionStorage.setItem("ef_return_to", `/e/${slug}`); } catch { /* noop */ }
+    window.location.href = "/login";
+  };
+
   const handleSubmit = async (payload) => {
     if (apiEnabled) {
-      const { registration } = await api.publicRegister(slug, payload);
+      let registration;
+      try {
+        ({ registration } = await api.publicRegister(slug, payload, token));
+      } catch (e) {
+        // La sesión caducó entre abrir el formulario y enviarlo.
+        if (e?.status === 401 || e?.data?.error === "account_required") { goToLogin(); return; }
+        throw e;
+      }
       const snap = event ? { title: event.title, slug, startDate: event.startDate, date: event.date, headerImage: event.headerImage, city: event.city, location: event.location } : null;
       localStorage.setItem(`ef_ticket_${slug}`, JSON.stringify({ ...registration, _event: snap }));
       setReg(registration); setPhase("ticket"); return;
@@ -221,7 +235,8 @@ export default function PublicEventPage() {
       onBack={() => { if (window.history.length > 1) window.history.back(); else window.location.href = "/app"; }} />
   );
 
-  const soldOut   = isSoldOut(event);
+  const soldOut     = isSoldOut(event);
+  const needsAccount = Boolean(event.requireApproval) && !token;
   const startP    = parseDateParts(event.startDate);
   const endP      = parseDateParts(event.endDate);
   const locName   = event.address || event.location || event.city || null;
@@ -300,10 +315,27 @@ export default function PublicEventPage() {
               </div>
             ) : soldOut ? (
               <div style={{ padding: "16px", background: "rgba(255,255,255,0.05)", borderRadius: 14, textAlign: "center", color: SUB, fontWeight: 700, fontSize: 15 }}>Entradas agotadas</div>
+            ) : needsAccount ? (
+              <>
+                <button onClick={goToLogin} style={{ width: "100%", padding: "16px", background: "#fff", color: "#0d1520", borderRadius: 14, fontWeight: 800, fontSize: 16, border: "none", cursor: "pointer", letterSpacing: "0.01em" }}>
+                  Inicia sesión para solicitar tu lugar
+                </button>
+                <p style={{ margin: "10px 0 0", fontSize: 12.5, color: SUB, textAlign: "center", lineHeight: 1.5 }}>
+                  Este evento requiere aprobación del organizador. Necesitas una cuenta
+                  para seguir el estado de tu entrada.
+                </p>
+              </>
             ) : (
-              <button onClick={() => setPhase("register")} style={{ width: "100%", padding: "16px", background: "#fff", color: "#0d1520", borderRadius: 14, fontWeight: 800, fontSize: 16, border: "none", cursor: "pointer", letterSpacing: "0.01em" }}>
-                Registrarse
-              </button>
+              <>
+                <button onClick={() => setPhase("register")} style={{ width: "100%", padding: "16px", background: "#fff", color: "#0d1520", borderRadius: 14, fontWeight: 800, fontSize: 16, border: "none", cursor: "pointer", letterSpacing: "0.01em" }}>
+                  {event.requireApproval ? "Solicitar mi lugar" : "Registrarse"}
+                </button>
+                {event.requireApproval && (
+                  <p style={{ margin: "10px 0 0", fontSize: 12.5, color: SUB, textAlign: "center", lineHeight: 1.5 }}>
+                    El organizador debe aprobar tu solicitud. Tu QR se activará cuando lo haga.
+                  </p>
+                )}
+              </>
             )}
           </div>
 
@@ -329,7 +361,7 @@ export default function PublicEventPage() {
 
           {/* Contacta al organizador (sin la ficha "Organizado por") */}
           {event.hostEmail && (
-            <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 24, marginBottom: 24 }}>
+            <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 24, marginBottom: 24, textAlign: "center" }}>
               <a href={`mailto:${event.hostEmail}?subject=${encodeURIComponent("Consulta: " + event.title)}`}
                 style={{
                   display: "inline-flex", alignItems: "center", gap: 9,

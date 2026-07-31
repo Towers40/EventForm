@@ -6,6 +6,13 @@ import "../styles/typeform.css";
 const CONSENT_PRIVACY_ID = "__consent_privacy__";
 const CONSENT_MARKETING_ID = "__consent_marketing__";
 
+// Descripciones que la app añadía por defecto y que ya no se muestran. Los
+// eventos creados antes las llevan guardadas en su payload, así que se filtran
+// al pintar en vez de migrar la base de datos.
+const LEGACY_HINTS = new Set([
+  "Escribe tus nombres tal como aparecen en tu documento",
+]);
+
 const inputBase = {
   width: "100%",
   padding: "12px 14px",
@@ -226,7 +233,7 @@ export default function TypeformRegister({ event, onSubmit, onBack }) {
                   {field.label}{field.required && <span style={{ color: "#f87171" }}> *</span>}
                 </label>
               )}
-              {field.description && field.type !== "checkbox" && (
+              {field.description && field.type !== "checkbox" && !LEGACY_HINTS.has(field.description.trim()) && (
                 <p style={{ fontSize: 12, color: "#6b7a8d", margin: "0 0 8px" }}>{field.description}</p>
               )}
               <FieldWidget field={field} value={form[field.id]} onChange={setField} />

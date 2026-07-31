@@ -41,9 +41,11 @@ function exportCsv(event, registrations) {
   a.click();
 }
 
-export default function EventCrm({ event, onBack, onToggleSoldOut, onShare }) {
+export default function EventCrm({ event, onBack, onToggleSoldOut, onShare, onSetApproval }) {
   const regs = event.registrations || [];
   const checked = regs.filter((r) => r.used).length;
+  const needsApproval = Boolean(event.requireApproval);
+  const pending = regs.filter((r) => r.approved === false).length;
 
   return (
     <div>
@@ -63,6 +65,13 @@ export default function EventCrm({ event, onBack, onToggleSoldOut, onShare }) {
             {capacityLabel(event)} · {checked} ingresaron ·{" "}
             {isSoldOut(event) ? "🔴 Venta cerrada" : "🟢 Venta abierta"}
           </p>
+          {needsApproval && (
+            <p style={{ margin: "8px 0 0", fontSize: 13.5, fontWeight: 700, color: pending ? "#fbbf24" : "#86efac" }}>
+              {pending
+                ? `⏳ ${pending} solicitud${pending === 1 ? "" : "es"} por aprobar — su QR no funciona hasta que la apruebes`
+                : "✓ Sin solicitudes pendientes"}
+            </p>
+          )}
         </div>
         <div style={{ padding: 20, display: "flex", flexWrap: "wrap", gap: 10 }}>
           <button type="button" className="soft-btn soft-btn-primary" onClick={onShare}>
@@ -100,12 +109,15 @@ export default function EventCrm({ event, onBack, onToggleSoldOut, onShare }) {
                 <th style={{ padding: 12, borderBottom: BORDER, color: SUB, fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.05em" }}>Registro</th>
                 <th style={{ padding: 12, borderBottom: BORDER, color: SUB, fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.05em" }}>Ingreso</th>
                 <th style={{ padding: 12, borderBottom: BORDER, color: SUB, fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.05em" }}>Marketing</th>
+                {needsApproval && (
+                  <th style={{ padding: 12, borderBottom: BORDER, color: SUB, fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.05em" }}>Aprobación</th>
+                )}
               </tr>
             </thead>
             <tbody>
               {regs.length === 0 ? (
                 <tr>
-                  <td colSpan={5} style={{ padding: 24, textAlign: "center", color: SUB }}>
+                  <td colSpan={needsApproval ? 6 : 5} style={{ padding: 24, textAlign: "center", color: SUB }}>
                     Sin inscripciones aún
                   </td>
                 </tr>
@@ -134,6 +146,35 @@ export default function EventCrm({ event, onBack, onToggleSoldOut, onShare }) {
                         </span>
                       </td>
                       <td style={{ padding: 12, color: SUB }}>{r.consentMarketing ? "Sí" : "No"}</td>
+                      {needsApproval && (
+                        <td style={{ padding: 12, whiteSpace: "nowrap" }}>
+                          {r.approved === false ? (
+                            <div style={{ display: "inline-flex", gap: 6 }}>
+                              <button type="button" onClick={() => onSetApproval?.(r.id, true)}
+                                style={{ padding: "5px 12px", borderRadius: 8, fontSize: 11.5, fontWeight: 800, cursor: "pointer", background: "rgba(52,199,89,0.16)", color: "#86efac", border: "1px solid rgba(52,199,89,0.35)" }}>
+                                Aprobar
+                              </button>
+                              <button type="button" onClick={() => onSetApproval?.(r.id, false)}
+                                title="Mantener pendiente" disabled
+                                style={{ padding: "5px 12px", borderRadius: 8, fontSize: 11.5, fontWeight: 700, background: "rgba(251,191,36,0.12)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.3)", cursor: "default" }}>
+                                Pendiente
+                              </button>
+                            </div>
+                          ) : (
+                            <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                              <span style={{ background: "rgba(52,199,89,0.15)", color: "#86efac", padding: "4px 10px", borderRadius: 100, fontSize: 11, fontWeight: 700 }}>
+                                APROBADO
+                              </span>
+                              {!r.used && (
+                                <button type="button" onClick={() => onSetApproval?.(r.id, false)}
+                                  style={{ padding: "4px 10px", borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: "pointer", background: "transparent", color: SUB, border: BORDER }}>
+                                  Revocar
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </td>
+                      )}
                     </tr>
                   );
                 })

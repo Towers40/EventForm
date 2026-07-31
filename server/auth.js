@@ -32,6 +32,18 @@ export function authMiddleware(req, res, next) {
   }
 }
 
+// Igual que authMiddleware pero SIN rechazar: deja `req.user` a null si no hay
+// sesión válida. Lo usan rutas públicas que se comportan distinto según haya
+// cuenta o no (p. ej. eventos que requieren aprobación).
+export function optionalAuth(req, _res, next) {
+  const header = req.headers.authorization;
+  req.user = null;
+  if (header?.startsWith("Bearer ")) {
+    try { req.user = jwt.verify(header.slice(7), JWT_SECRET); } catch { /* sesión inválida → anónimo */ }
+  }
+  next();
+}
+
 export function requireRole(...roles) {
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {

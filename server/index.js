@@ -18,11 +18,12 @@ function requireDb(req, res, next) {
 import {
   authMiddleware,
   hashPassword,
+  optionalAuth,
   requireRole,
   signToken,
   verifyPassword,
 } from "./auth.js";
-import { emailEnabled, sendVerificationCode, sendPasswordResetCode, sendRegistrationConfirmation } from "./mailer.js";
+import { emailEnabled, sendVerificationCode, sendPasswordResetCode, sendRegistrationConfirmation, sendApprovalPending } from "./mailer.js";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -115,6 +116,8 @@ async function getRegsForEvent(eventId) {
     id: r.ticket_id, eventId: r.event_id, data: JSON.parse(r.payload),
     ts: r.created_at, used: Boolean(r.used), checkedInAt: r.checked_in_at,
     consentPrivacy: Boolean(r.consent_privacy), consentMarketing: Boolean(r.consent_marketing),
+    approved: r.approved == null ? true : Boolean(r.approved),
+    email: r.email || null,
   }));
 }
 
@@ -303,6 +306,7 @@ app.get("/api/auth/my-tickets", requireDb, authMiddleware, async (req, res) => {
     // sin esa columna, recae en el escaneo del payload (no pierde trazabilidad).
     const { rows } = await db.execute({
       sql: `SELECT r.ticket_id, r.payload AS reg_payload, r.used, r.checked_in_at, r.created_at,
+                   r.email AS reg_email, r.approved,
                    e.slug, e.payload AS event_payload, e.manual_sold_out
             FROM registrations r
             JOIN events e ON e.id = r.event_id
@@ -315,8 +319,13 @@ app.get("/api/auth/my-tickets", requireDb, authMiddleware, async (req, res) => {
     for (const row of rows) {
       let data = {};
       try { data = JSON.parse(row.reg_payload); } catch { continue; }
-      // Verifica coincidencia exacta del email en algún valor del formulario
-      const match = Object.values(data).some(
+      // Si la inscripción ya quedó atada a este correo (columna `email`), es
+      // suya y punto. El repaso del formulario es solo para los registros
+      // antiguos sin esa columna — y en eventos con aprobación el correo de la
+      // cuenta puede no ser el que se escribió en el formulario, así que exigir
+      // la coincidencia en el payload escondería la entrada.
+      const linked = String(row.reg_email || "").trim().toLowerCase() === email;
+      const match = linked || Object.values(data).some(
         (v) => typeof v === "string" && v.trim().toLowerCase() === email
       );
       if (!match) continue;
@@ -325,6 +334,8 @@ app.get("/api/auth/my-tickets", requireDb, authMiddleware, async (req, res) => {
       tickets.push({
         id: row.ticket_id,
         used: Boolean(row.used),
+        approved: row.approved == null ? true : Boolean(row.approved),
+        requireApproval: Boolean(ev.requireApproval),
         checkedInAt: row.checked_in_at,
         createdAt: row.created_at,
         event: {
@@ -429,7 +440,9 @@ app.get("/api/public/events/:slug", requireDb, async (req, res) => {
     // Solo se expone el avatar si es una URL (los base64 no viajan; ver Descubrir).
     const hostAv = hostRows[0]?.avatar;
     ev.hostAvatar = hostAv && String(hostAv).startsWith("http") ? hostAv : null;
-    res.set("Cache-Control", "public, s-maxage=20, stale-while-revalidate=40");
+    // La página pública es lo que ve el asistente: tras una edición debe
+    // reflejarse casi al instante, así que la caché compartida es mínima.
+    res.set("Cache-Control", "public, max-age=0, s-maxage=5, stale-while-revalidate=10");
     res.json({ event: ev });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -449,7 +462,7 @@ app.get("/api/public/tickets/:ticketId", requireDb, async (req, res) => {
   try {
     const tid = String(req.params.ticketId || "").trim().toUpperCase();
     const { rows } = await db.execute({
-      sql: `SELECT r.ticket_id, r.used, r.checked_in_at, r.cancelled, e.slug, e.payload AS event_payload
+      sql: `SELECT r.ticket_id, r.used, r.checked_in_at, r.cancelled, r.approved, e.slug, e.payload AS event_payload
             FROM registrations r JOIN events e ON e.id = r.event_id
             WHERE r.ticket_id = ?`,
       args: [tid],
@@ -463,6 +476,8 @@ app.get("/api/public/tickets/:ticketId", requireDb, async (req, res) => {
         id: row.ticket_id,
         used: Boolean(row.used),
         cancelled: Boolean(row.cancelled),
+        approved: row.approved == null ? true : Boolean(row.approved),
+        requireApproval: Boolean(ev.requireApproval),
         checkedInAt: row.checked_in_at,
         event: {
           slug: row.slug,
@@ -488,7 +503,7 @@ function capacityMaxOf(ev) {
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
-app.post("/api/public/events/:slug/register", requireDb, async (req, res) => {
+app.post("/api/public/events/:slug/register", requireDb, optionalAuth, async (req, res) => {
   try {
     const { rows: evRows } = await db.execute({ sql: "SELECT * FROM events WHERE slug = ?", args: [req.params.slug] });
     if (!evRows[0]) return res.status(404).json({ error: "Evento no encontrado" });
@@ -496,6 +511,13 @@ app.post("/api/public/events/:slug/register", requireDb, async (req, res) => {
     if (ev.manualSoldOut) return res.status(403).json({ error: "sold_out" });
     const { form, consentPrivacy, consentMarketing } = req.body || {};
     if (!consentPrivacy) return res.status(400).json({ error: "Debes aceptar la política de privacidad" });
+
+    // Eventos con aprobación: el estado del QR vive en la cuenta del asistente
+    // (es donde ve cuándo pasa de pendiente a activo), así que exige sesión.
+    const needsApproval = Boolean(ev.requireApproval);
+    if (needsApproval && !req.user) {
+      return res.status(401).json({ error: "account_required" });
+    }
 
     const max = capacityMaxOf(ev);
     const ticketId = "TICKET-" + uid();
@@ -510,10 +532,18 @@ app.post("/api/public/events/:slug/register", requireDb, async (req, res) => {
       const nameField = (ev.fields || []).find(f => f.type === "text" && /nombre/i.test(f.label));
       recipientName = nameField ? form[nameField.id] : null;
     }
-    const emailNorm = recipientEmail ? String(recipientEmail).trim().toLowerCase() : null;
+    // Con aprobación la entrada queda atada al correo de la cuenta, no al que
+    // se escriba en el formulario: es ese cruce el que hace que "Mis tickets"
+    // muestre el cambio de estado en cualquier dispositivo.
+    const accountEmail = req.user?.email ? String(req.user.email).trim().toLowerCase() : null;
+    const emailNorm = needsApproval
+      ? accountEmail
+      : (recipientEmail ? String(recipientEmail).trim().toLowerCase() : null);
+    if (needsApproval && !recipientEmail) recipientEmail = accountEmail;
 
-    const insertSql = `INSERT INTO registrations (id, event_id, ticket_id, payload, used, checked_in_at, consent_privacy, consent_marketing, created_at, email) VALUES (?, ?, ?, ?, 0, NULL, ?, ?, ?, ?)`;
-    const insertArgs = ["R" + uid(), ev.id, ticketId, JSON.stringify(form), consentPrivacy ? 1 : 0, consentMarketing ? 1 : 0, now, emailNorm];
+    const approved = needsApproval ? 0 : 1;
+    const insertSql = `INSERT INTO registrations (id, event_id, ticket_id, payload, used, checked_in_at, consent_privacy, consent_marketing, created_at, email, approved) VALUES (?, ?, ?, ?, 0, NULL, ?, ?, ?, ?, ?)`;
+    const insertArgs = ["R" + uid(), ev.id, ticketId, JSON.stringify(form), consentPrivacy ? 1 : 0, consentMarketing ? 1 : 0, now, emailNorm, approved];
     const countSql = "SELECT COUNT(*) AS c FROM registrations WHERE event_id = ? AND cancelled = 0";
 
     // Chequeo de cupo + inserción ATÓMICOS (evita sobreventa en simultáneo).
@@ -550,10 +580,18 @@ app.post("/api/public/events/:slug/register", requireDb, async (req, res) => {
     // Correo de confirmación. AWAIT antes de responder: en Vercel serverless la
     // función se congela tras res.json() y un envío fire-and-forget se cancela.
     if (emailEnabled && recipientEmail) {
-      try { await sendRegistrationConfirmation(recipientEmail, recipientName, ticketId, ev); }
+      try {
+        // Pendiente de aprobación → aviso sin QR; el correo con la entrada sale
+        // al aprobar. Si no requiere aprobación, va la entrada de una vez.
+        if (needsApproval) await sendApprovalPending(recipientEmail, recipientName, ev);
+        else await sendRegistrationConfirmation(recipientEmail, recipientName, ticketId, ev);
+      }
       catch (mailErr) { console.error("Error enviando correo de inscripción:", mailErr?.message); }
     }
-    res.status(201).json({ registration: { id: ticketId, eventId: ev.id, data: form, ts: now, used: false }, event: { id: ev.id, title: ev.title, slug: ev.slug } });
+    res.status(201).json({
+      registration: { id: ticketId, eventId: ev.id, data: form, ts: now, used: false, approved: !needsApproval },
+      event: { id: ev.id, title: ev.title, slug: ev.slug },
+    });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -588,6 +626,8 @@ app.get("/api/events", requireDb, authMiddleware, async (req, res) => {
           id: r.ticket_id, eventId: r.event_id, data: JSON.parse(r.payload),
           ts: r.created_at, used: Boolean(r.used), checkedInAt: r.checked_in_at,
           consentPrivacy: Boolean(r.consent_privacy), consentMarketing: Boolean(r.consent_marketing),
+          approved: r.approved == null ? true : Boolean(r.approved),
+          email: r.email || null,
         });
       }
     }
@@ -608,7 +648,11 @@ app.post("/api/events", requireDb, authMiddleware, requireRole("host", "super_ad
     }
 
     const id = payload.id || "E" + uid();
-    const slug = payload.slug || await uniqueSlug(payload.title, id);
+    // El cliente manda un slug derivado del título, así que dos eventos con el
+    // mismo nombre chocaban contra el UNIQUE de `slug` y el INSERT reventaba con
+    // un 500 ("Error al publicar"). Se pasa SIEMPRE por uniqueSlug, que añade
+    // sufijo (-1, -2, …) si ya está tomado.
+    const slug = await uniqueSlug(payload.slug || payload.title, id);
     const hostId = req.user.role === "super_admin" && payload.hostId ? payload.hostId : req.user.sub;
     const now = Date.now();
     const data = { ...payload, id, slug, registrations: payload.registrations || [] };
@@ -651,7 +695,11 @@ app.put("/api/events/:id", requireDb, authMiddleware, async (req, res) => {
       return res.status(400).json({ error: "Datos inválidos." });
     }
 
-    const slug = payload.slug || row.slug;
+    // Mismo motivo que en el POST: si el slug pedido ya lo usa OTRO evento, se
+    // le añade sufijo en vez de dejar que falle el UNIQUE al guardar.
+    const slug = payload.slug && payload.slug !== row.slug
+      ? await uniqueSlug(payload.slug, row.id)
+      : row.slug;
     const regs = await getRegsForEvent(row.id);
     const data = { ...JSON.parse(row.payload), ...payload, id: row.id, slug, registrations: regs };
     
@@ -706,10 +754,53 @@ app.post("/api/events/:id/check-in", requireDb, authMiddleware, async (req, res)
     const regRow = regRows[0];
     if (!regRow) return res.json({ status: "nf" });
     if (regRow.cancelled) return res.json({ status: "cancelled" });
+    // Pendiente de aprobación → el QR no da acceso todavía.
+    if (regRow.approved != null && !regRow.approved) {
+      return res.json({ status: "pending", reg: { id: regRow.ticket_id, data: JSON.parse(regRow.payload) } });
+    }
     if (regRow.used) return res.json({ status: "used", reg: { id: regRow.ticket_id, data: JSON.parse(regRow.payload), checkedInAt: regRow.checked_in_at } });
     const checkedInAt = Date.now();
     await db.execute({ sql: "UPDATE registrations SET used = 1, checked_in_at = ? WHERE id = ?", args: [checkedInAt, regRow.id] });
     res.json({ status: "ok", reg: { id: regRow.ticket_id, data: JSON.parse(regRow.payload), checkedInAt } });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Aprobar / revocar una inscripción de un evento con "Requerir aprobación".
+// Al aprobar, el QR de esa entrada queda activo de inmediato (el asistente lo
+// ve en "Mis tickets") y se le envía la entrada por correo.
+app.patch("/api/events/:id/registrations/:ticketId/approval", requireDb, authMiddleware, async (req, res) => {
+  try {
+    const { rows: evRows } = await db.execute({ sql: "SELECT * FROM events WHERE id = ?", args: [req.params.id] });
+    if (!evRows[0]) return res.status(404).json({ error: "Evento no encontrado" });
+    if (req.user.role !== "super_admin" && evRows[0].host_id !== req.user.sub) return res.status(403).json({ error: "Sin permiso" });
+
+    const ticketId = String(req.params.ticketId || "").trim().toUpperCase();
+    const { rows: regRows } = await db.execute({
+      sql: "SELECT * FROM registrations WHERE ticket_id = ? AND event_id = ?",
+      args: [ticketId, req.params.id],
+    });
+    const regRow = regRows[0];
+    if (!regRow) return res.status(404).json({ error: "Inscripción no encontrada" });
+
+    const approved = req.body?.approved === false ? 0 : 1;
+    const wasApproved = regRow.approved == null ? true : Boolean(regRow.approved);
+    await db.execute({ sql: "UPDATE registrations SET approved = ? WHERE id = ?", args: [approved, regRow.id] });
+
+    // Solo al pasar de pendiente a aprobado se manda la entrada con el QR.
+    if (approved && !wasApproved && emailEnabled) {
+      const ev = parseEvent(evRows[0]);
+      let data = {};
+      try { data = JSON.parse(regRow.payload); } catch { /* payload ilegible */ }
+      const nameField = (ev.fields || []).find(f => f.type === "text" && /nombre/i.test(f.label));
+      const name = nameField ? data[nameField.id] : null;
+      const to = regRow.email
+        || Object.values(data).find(v => typeof v === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v));
+      if (to) {
+        try { await sendRegistrationConfirmation(to, name, regRow.ticket_id, ev); }
+        catch (mailErr) { console.error("Error enviando entrada aprobada:", mailErr?.message); }
+      }
+    }
+    res.json({ ok: true, ticketId, approved: Boolean(approved) });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -816,7 +907,11 @@ app.get("/api/public/events", requireDb, async (req, res) => {
       hostAvatar: r.host_avatar || null,
     }));
 
-    res.set("Cache-Control", "public, s-maxage=60, stale-while-revalidate=120");
+    // Caché corta. Antes era s-maxage=60 + swr=120: tras editar un evento, el
+    // CDN de Vercel podía seguir sirviendo la versión vieja hasta ~3 minutos y
+    // el cambio "no salía" en Descubrir. `max-age=0` obliga además al navegador
+    // a revalidar en vez de aplicar su caché heurística.
+    res.set("Cache-Control", "public, max-age=0, s-maxage=10, stale-while-revalidate=20");
     res.json({ events, total, page: Number(page), limit: Number(limit) });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -834,7 +929,7 @@ app.get("/api/public/categories", requireDb, async (req, res) => {
             GROUP BY COALESCE(NULLIF(category, ''), 'otro') ORDER BY count DESC`,
       args: [today, today, today],
     });
-    res.set("Cache-Control", "public, s-maxage=120, stale-while-revalidate=300");
+    res.set("Cache-Control", "public, max-age=0, s-maxage=30, stale-while-revalidate=60");
     res.json({ categories: rows.map(r => ({ slug: r.category, count: Number(r.count) })) });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });

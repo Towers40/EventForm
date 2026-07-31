@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { api, apiEnabled } from "../lib/api.js";
 import { loadEvents } from "../lib/storage.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import SlideToCancel from "../components/SlideToCancel.jsx";
+import PendingQr, { PendingNotice } from "../components/PendingQr.jsx";
 import "../styles/typeform.css";
 
 const DAYS_ES   = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
@@ -22,10 +23,6 @@ function isPast(ev) {
   return new Date(ds + "T23:59:59") < new Date();
 }
 
-function qrFor(id) {
-  return `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(id)}&bgcolor=ffffff&color=000000&margin=12&qzone=2`;
-}
-
 export default function MisTicketsView() {
   const { token } = useAuth();
   const [tickets, setTickets] = useState([]);
@@ -35,6 +32,7 @@ export default function MisTicketsView() {
   const [eventModal, setEventModal] = useState(null); // { slug, event, loading }
   const [confirmCancel, setConfirmCancel] = useState(null); // { id, slug }
   const [cancelling, setCancelling] = useState(false);
+  const cleanupRef = useRef(null); // corta el sondeo de entradas pendientes
 
   const doCancel = async () => {
     if (!confirmCancel) return;
@@ -66,7 +64,9 @@ export default function MisTicketsView() {
   };
 
   useEffect(() => {
-    (async () => {
+    let stop = false;
+
+    const load = async () => {
       const byId = new Map();
 
       // 1) Entradas vinculadas a la cuenta (cruce por email en el servidor) —
@@ -75,7 +75,11 @@ export default function MisTicketsView() {
         try {
           const { tickets: serverTickets } = await api.myTickets(token);
           for (const t of serverTickets || []) {
-            byId.set(t.id, { slug: t.event?.slug, id: t.id, used: t.used, event: t.event || { title: "Evento", slug: t.event?.slug } });
+            byId.set(t.id, {
+              slug: t.event?.slug, id: t.id, used: t.used,
+              approved: t.approved !== false,
+              event: t.event || { title: "Evento", slug: t.event?.slug },
+            });
           }
         } catch { /* sigue con las locales */ }
       }
@@ -102,12 +106,27 @@ export default function MisTicketsView() {
             event = loadEvents().find(e => e.slug === slug) || event;
           }
         } catch { /* usa snapshot si falla */ }
-        byId.set(reg.id, { slug, id: reg.id, used: Boolean(reg.used), event: event || { title: "Evento", slug } });
+        byId.set(reg.id, { slug, id: reg.id, used: Boolean(reg.used), approved: reg.approved !== false, event: event || { title: "Evento", slug } });
       }));
 
-      setTickets(Array.from(byId.values()));
+      if (stop) return;
+      const list = Array.from(byId.values());
+      setTickets(list);
       setLoading(false);
-    })();
+      return list;
+    };
+
+    load().then(list => {
+      // Con alguna entrada pendiente de aprobación se refresca sola: así el QR
+      // se activa sin que la persona tenga que recargar la app.
+      if (stop || !list?.some(t => t.approved === false)) return;
+      const tick = setInterval(() => { if (!stop) load(); }, 20000);
+      const onFocus = () => { if (!stop) load(); };
+      window.addEventListener("focus", onFocus);
+      cleanupRef.current = () => { clearInterval(tick); window.removeEventListener("focus", onFocus); };
+    });
+
+    return () => { stop = true; cleanupRef.current?.(); cleanupRef.current = null; };
   }, [token]);
 
   const proximos = tickets.filter(t => !isPast(t.event));
@@ -160,7 +179,7 @@ export default function MisTicketsView() {
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {lista.map(({ slug, id, used, event }) => {
+          {lista.map(({ slug, id, used, event, approved = true }) => {
             const past = isPast(event);
             return (
               <div key={id} className="panel-card" style={{ padding: 0, overflow: "hidden" }}>
@@ -173,6 +192,7 @@ export default function MisTicketsView() {
                     <div style={{ fontSize: 12.5, color: "rgba(232,234,240,0.55)", marginTop: 2 }}>{fmt(event.startDate || event.date)}</div>
                     <div style={{ display: "flex", gap: 6, marginTop: 7, flexWrap: "wrap" }}>
                       <span style={{ fontSize: 10.5, fontWeight: 700, padding: "3px 9px", borderRadius: 100, background: past ? "rgba(220,38,38,0.18)" : "rgba(52,199,89,0.16)", color: past ? "#fca5a5" : "#5ee07f" }}>{past ? "Pasado" : "Próximo"}</span>
+                      {!approved && <span style={{ fontSize: 10.5, fontWeight: 700, padding: "3px 9px", borderRadius: 100, background: "rgba(251,191,36,0.16)", color: "#fbbf24" }}>Sujeto a aprobación</span>}
                       {used && <span style={{ fontSize: 10.5, fontWeight: 700, padding: "3px 9px", borderRadius: 100, background: "rgba(107,159,212,0.2)", color: "#c8dff0" }}>QR usado</span>}
                     </div>
                   </div>
@@ -184,13 +204,15 @@ export default function MisTicketsView() {
                 </div>
                 {openQr === id && (
                   <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", padding: 20, textAlign: "center", background: "rgba(0,0,0,0.2)" }}>
-                    <img src={qrFor(id)} alt="QR de acceso" style={{ width: 220, height: 220, borderRadius: 14, background: "#fff", padding: 8 }} />
-                    <p style={{ fontSize: 12, color: "rgba(232,234,240,0.5)", margin: "12px 0 4px" }}>Presenta este QR en la entrada. Solo permite un ingreso.</p>
+                    <PendingQr id={id} size={220} approved={approved} />
+                    {approved
+                      ? <p style={{ fontSize: 12, color: "rgba(232,234,240,0.5)", margin: "12px 0 4px" }}>Presenta este QR en la entrada. Solo permite un ingreso.</p>
+                      : <PendingNotice style={{ margin: "12px 0 8px", textAlign: "left" }} />}
                     <p style={{ fontFamily: "monospace", fontSize: 13, color: "#c8dff0", margin: 0 }}>{id}</p>
                     <button type="button" onClick={() => openEvent(slug, event)} className="soft-btn soft-btn-secondary" style={{ marginTop: 14, fontSize: 13 }}>Ver evento</button>
                     {!past && (
-                      <div style={{ marginTop: 16, maxWidth: 320, marginLeft: "auto", marginRight: "auto" }}>
-                        <SlideToCancel onComplete={() => setConfirmCancel({ id, slug })} disabled={cancelling && confirmCancel?.id === id} />
+                      <div style={{ marginTop: 16 }}>
+                        <SlideToCancel onComplete={() => setConfirmCancel({ id, slug })} disabled={cancelling && confirmCancel?.id === id} maxWidth={260} height={50} />
                       </div>
                     )}
                   </div>

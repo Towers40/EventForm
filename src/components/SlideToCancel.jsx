@@ -8,13 +8,17 @@ export default function SlideToCancel({
   accent = "#f87171",
   bg = "rgba(248,113,113,0.12)",
   border = "rgba(248,113,113,0.3)",
+  // `maxWidth` acota la barra y la centra en su contenedor (móvil y escritorio).
+  // Sin él ocupa todo el ancho, que es como se usa para "Publicar".
+  maxWidth = null,
+  height = 58,
 }) {
   const trackRef = useRef(null);
   const [dragX, setDragX] = useState(0);
   const [dragging, setDragging] = useState(false);
   const startRef = useRef({ pointer: 0, dragX: 0 });
-  const THUMB = 48;
   const PAD = 5;
+  const THUMB = height - PAD * 2;
 
   const maxX = () => (trackRef.current ? trackRef.current.offsetWidth - THUMB - PAD * 2 : 0);
 
@@ -47,7 +51,7 @@ export default function SlideToCancel({
   return (
     <div
       ref={trackRef}
-      style={{ position: "relative", height: 58, borderRadius: 29, background: bg, border: `1px solid ${border}`, overflow: "hidden", userSelect: "none", opacity: disabled ? 0.6 : 1 }}
+      style={{ position: "relative", height, borderRadius: height / 2, background: bg, border: `1px solid ${border}`, overflow: "hidden", userSelect: "none", opacity: disabled ? 0.6 : 1, ...(maxWidth ? { maxWidth, marginLeft: "auto", marginRight: "auto" } : null) }}
     >
       <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: accent, fontWeight: 700, fontSize: 13.5, opacity: 1 - pct, pointerEvents: "none", padding: "0 12px", textAlign: "center" }}>
         {disabled ? "…" : label}

@@ -102,6 +102,18 @@ export function performCheckIn(events, rawCode, eventIdFilter = null) {
 
   if (!foundReg) return { status: "nf", ticketId };
 
+  // Entrada de un evento con aprobación que el anfitrión aún no aprobó: no
+  // abre la puerta ni se marca como usada.
+  if (foundReg.approved === false) {
+    return {
+      status: "pending",
+      ticketId,
+      event: foundEvent,
+      reg: foundReg,
+      participant: buildParticipant(foundEvent, foundReg),
+    };
+  }
+
   if (foundReg.used) {
     return {
       status: "used",

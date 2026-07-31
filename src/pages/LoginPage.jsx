@@ -4,6 +4,17 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { api, apiEnabled } from "../lib/api.js";
 import "../styles/typeform.css";
 
+// Si se llegó al login desde una página de evento que exige cuenta (los que
+// requieren aprobación), se vuelve allí tras entrar en vez de ir a /app.
+function consumeReturnTo() {
+  try {
+    const to = sessionStorage.getItem("ef_return_to");
+    sessionStorage.removeItem("ef_return_to");
+    if (to && to.startsWith("/")) return to;
+  } catch { /* noop */ }
+  return "/app";
+}
+
 // mode: login | forgot | reset
 export default function LoginPage() {
   const { login, loginWithToken } = useAuth();
@@ -37,7 +48,7 @@ export default function LoginPage() {
     setErr(""); setBusy(true);
     try {
       await login(email, password);
-      nav("/app");
+      nav(consumeReturnTo());
     } catch (ex) {
       setErr(ex.message || "Credenciales incorrectas");
     } finally {
@@ -76,7 +87,7 @@ export default function LoginPage() {
     try {
       const { token: jwt, user } = await api.resetPassword(email, resetCode, newPw);
       loginWithToken(jwt, user);
-      nav("/app");
+      nav(consumeReturnTo());
     } catch (ex) {
       setErr(ex.message || "Código incorrecto o expirado");
     } finally {

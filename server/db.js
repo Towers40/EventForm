@@ -74,9 +74,10 @@ export async function initDb() {
     },
     { sql: `CREATE INDEX IF NOT EXISTS idx_events_host ON events(host_id)` },
     { sql: `CREATE INDEX IF NOT EXISTS idx_events_slug ON events(slug)` },
-    // El listado público filtra siempre por visibility; este índice lo poda.
-    { sql: `CREATE INDEX IF NOT EXISTS idx_events_visibility ON events(visibility)` },
     { sql: `CREATE INDEX IF NOT EXISTS idx_reg_event ON registrations(event_id)` },
+    // OJO: los índices sobre columnas que añade la migración de más abajo
+    // (visibility, email, approved) NO pueden ir en este lote — en una base
+    // nueva la columna todavía no existe y el batch entero falla.
   ], "deferred");
 
   // Migraciones. Turso es una base remota (HTTP): cada `db.execute` es un viaje
@@ -92,6 +93,10 @@ export async function initDb() {
     ["registrations", "cancelled",  "INTEGER NOT NULL DEFAULT 0"],
     ["users",         "avatar",     "TEXT"],
     ["registrations", "email",      "TEXT"],
+    // Eventos con "Requerir aprobación": la entrada nace en 0 (pendiente) y el
+    // QR no sirve hasta que el anfitrión la aprueba. El DEFAULT 1 deja las
+    // inscripciones ya existentes como aprobadas, que es como se comportaban.
+    ["registrations", "approved",   "INTEGER NOT NULL DEFAULT 1"],
   ];
   const tablas = [...new Set(migrations.map(m => m[0]))];
   const columnas = {};
@@ -109,10 +114,15 @@ export async function initDb() {
     }
   }
 
-  // Índice para buscar entradas por email del asistente (vista "Mis tickets")
-  try {
-    await db.execute({ sql: "CREATE INDEX IF NOT EXISTS idx_reg_email ON registrations(email)", args: [] });
-  } catch { /* noop */ }
+  // Índices que dependen de columnas añadidas arriba: ya existen, así que aquí
+  // sí se pueden crear (en el lote inicial reventaban con una base nueva).
+  for (const sql of [
+    "CREATE INDEX IF NOT EXISTS idx_events_visibility ON events(visibility)",
+    // Índice para buscar entradas por email del asistente (vista "Mis tickets")
+    "CREATE INDEX IF NOT EXISTS idx_reg_email ON registrations(email)",
+  ]) {
+    try { await db.execute({ sql, args: [] }); } catch { /* noop */ }
+  }
 }
 
 export function parseEvent(row) {

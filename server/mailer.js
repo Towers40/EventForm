@@ -139,6 +139,38 @@ export async function sendRegistrationConfirmation(email, name, ticketId, event)
   });
 }
 
+// Eventos con "Requerir aprobación": al inscribirse NO se manda el QR (todavía
+// no sirve). El correo con la entrada se envía cuando el anfitrión aprueba,
+// reutilizando sendRegistrationConfirmation.
+export async function sendApprovalPending(email, name, event) {
+  if (!emailEnabled) return;
+  const firstName = (name || "asistente").split(" ")[0];
+  const dateStr = event.startDate && event.startTime
+    ? `${event.startDate} · ${event.startTime}`
+    : event.startDate || "Fecha por confirmar";
+
+  await deliver({
+    to: email,
+    subject: `Solicitud recibida para ${event.title} — TapIn`,
+    text: `¡Hola ${firstName}! Recibimos tu solicitud para ${event.title} (${dateStr}).\n\nEste evento requiere la aprobación del organizador. Te avisamos en cuanto la revisen: tu entrada con código QR se activará automáticamente y podrás verla en la app, en "Mis tickets".`,
+    html: emailLayout(`
+      <h2 style="color:#0d1b2a;font-size:20px;font-weight:700;margin:0 0 12px">¡Hola ${firstName}! Recibimos tu solicitud ⏳</h2>
+      <p style="color:#4a5568;font-size:15px;line-height:1.6;margin:0 0 24px">
+        Tu solicitud para <strong>${event.title}</strong> quedó registrada, pero este evento
+        <strong>requiere la aprobación del organizador</strong>.
+      </p>
+      <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:16px 20px;margin-bottom:24px">
+        <p style="margin:0 0 6px;font-size:14px;color:#9a3412;font-weight:700">📅 ${dateStr}</p>
+        <p style="margin:0;font-size:14px;color:#9a3412">Tu código QR todavía no está activo.</p>
+      </div>
+      <p style="color:#4a5568;font-size:15px;line-height:1.6;margin:0">
+        En cuanto el organizador te apruebe, tu entrada se activa sola y te llega por correo.
+        También puedes seguir el estado en la app, en <strong>Mis tickets</strong>.
+      </p>
+    `),
+  });
+}
+
 export async function sendPasswordResetCode(email, name, code) {
   if (!emailEnabled) return;
   const firstName = (name || "usuario").split(" ")[0];

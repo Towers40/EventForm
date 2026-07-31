@@ -2,12 +2,14 @@ import { useState } from "react";
 import NavigateButtons from "./NavigateButtons.jsx";
 import LocationMap from "./LocationMap.jsx";
 import SlideToCancel from "./SlideToCancel.jsx";
+import PendingQr, { PendingNotice } from "./PendingQr.jsx";
 import { publicBaseUrl } from "../lib/platform.js";
 import "../styles/typeform.css";
 
 export default function ConfirmTicket({ ev, reg, onDone, standalone, onCancel, cancelling, onBack }) {
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(reg.id)}&bgcolor=ffffff&color=000000&margin=12&qzone=2`;
   const [confirmOpen, setConfirmOpen] = useState(false);
+  // `approved` solo llega en false cuando el evento requiere aprobación.
+  const approved = reg?.approved !== false;
 
   const inner = (
     <div style={{ maxWidth: 520, margin: "0 auto", padding: "24px 16px 80px" }}>
@@ -33,8 +35,8 @@ export default function ConfirmTicket({ ev, reg, onDone, standalone, onCancel, c
 
       {/* Ticket header */}
       <div style={{ textAlign: "center", marginBottom: 24 }}>
-        <div style={{ fontSize: 11, fontWeight: 800, color: "#4ade80", letterSpacing: 2, marginBottom: 6 }}>
-          ✓ INSCRIPCIÓN CONFIRMADA
+        <div style={{ fontSize: 11, fontWeight: 800, color: approved ? "#4ade80" : "#fbbf24", letterSpacing: 2, marginBottom: 6 }}>
+          {approved ? "✓ INSCRIPCIÓN CONFIRMADA" : "⏳ SUJETO A APROBACIÓN"}
         </div>
         <h2 style={{ fontSize: 22, fontWeight: 800, color: "#e8eaf0", margin: 0 }}>{ev.title}</h2>
       </div>
@@ -48,21 +50,21 @@ export default function ConfirmTicket({ ev, reg, onDone, standalone, onCancel, c
         marginBottom: 24,
         boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
       }}>
-        <img
-          src={qrUrl}
-          alt="QR de acceso"
-          style={{ width: 200, height: 200, borderRadius: 12, display: "block", margin: "0 auto", background: "#fff", padding: 10 }}
-        />
+        <PendingQr id={reg.id} size={200} approved={approved} />
         <p style={{
           fontFamily: "monospace", fontWeight: 700, marginTop: 16,
           fontSize: 13, color: "#6b9fd4", letterSpacing: 1,
         }}>
           {reg.id}
         </p>
-        <p style={{ fontSize: 12, color: "#8fa3b1", margin: "8px 0 0", lineHeight: 1.5 }}>
-          Presenta este QR en la entrada.<br />Solo permite un ingreso.
-        </p>
-        {typeof navigator !== "undefined" && typeof navigator.share === "function" && (
+        {approved ? (
+          <p style={{ fontSize: 12, color: "#8fa3b1", margin: "8px 0 0", lineHeight: 1.5 }}>
+            Presenta este QR en la entrada.<br />Solo permite un ingreso.
+          </p>
+        ) : (
+          <PendingNotice />
+        )}
+        {approved && typeof navigator !== "undefined" && typeof navigator.share === "function" && (
           <button
             type="button"
             onClick={() => navigator.share({
@@ -122,7 +124,7 @@ export default function ConfirmTicket({ ev, reg, onDone, standalone, onCancel, c
       {/* Cancel attendance — barra deslizable */}
       {onCancel && (
         <div style={{ marginTop: 24 }}>
-          <SlideToCancel onComplete={() => setConfirmOpen(true)} disabled={cancelling} />
+          <SlideToCancel onComplete={() => setConfirmOpen(true)} disabled={cancelling} maxWidth={260} height={50} />
         </div>
       )}
 

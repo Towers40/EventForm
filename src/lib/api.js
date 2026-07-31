@@ -75,8 +75,12 @@ export const api = {
   verifyEmail: (token) => request(`/api/auth/verify-email/${token}`),
   publicEvent: (slug) => request(`/api/public/events/${slug}`),
   publicTicket: (ticketId) => request(`/api/public/tickets/${ticketId}`),
-  publicRegister: (slug, body) =>
-    request(`/api/public/events/${slug}/register`, { method: "POST", body: JSON.stringify(body) }),
+  // El token es opcional: solo los eventos con "Requerir aprobación" lo exigen
+  // (el servidor responde 401 account_required si falta).
+  publicRegister: (slug, body, token) =>
+    request(`/api/public/events/${slug}/register`, { method: "POST", body: JSON.stringify(body) }, token),
+  setRegistrationApproval: (token, eventId, ticketId, approved) =>
+    request(`/api/events/${eventId}/registrations/${ticketId}/approval`, { method: "PATCH", body: JSON.stringify({ approved }) }, token),
   cancelRegistration: (ticketId) =>
     request(`/api/public/registrations/${ticketId}/cancel`, { method: "PATCH" }),
   adminOverview: (token) => request("/api/admin/overview", {}, token),

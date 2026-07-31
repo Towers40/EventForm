@@ -10,7 +10,7 @@ function statusOf(ev) {
   return d < new Date() ? "pasado" : "activo";
 }
 
-export default function MisEventosView({ events, onNew, onOpen, onEdit, onValidate, onDelete, onShare, onToggleSoldOut }) {
+export default function MisEventosView({ events, loading, error, onRetry, onNew, onOpen, onEdit, onValidate, onDelete, onShare, onToggleSoldOut }) {
   const [tab, setTab] = useState("todos");
 
   // Los borradores ya no tienen pestaña propia: aparecen dentro de "Todos" con
@@ -54,7 +54,19 @@ export default function MisEventosView({ events, onNew, onOpen, onEdit, onValida
         })}
       </div>
 
-      {lista.length === 0 ? (
+      {/* Cargando y error se distinguen del vacío: antes un fallo del API se
+          veía igual que "no tienes eventos" y parecía que se perdieron. */}
+      {loading && events.length === 0 ? (
+        <div className="panel-card" style={{ padding: "48px 24px", textAlign: "center" }}>
+          <p style={{ color: "#8fa3b1", fontSize: 15, margin: 0 }}>Cargando tus eventos…</p>
+        </div>
+      ) : error && events.length === 0 ? (
+        <div className="panel-card" style={{ padding: "40px 24px", textAlign: "center" }}>
+          <p style={{ color: "#fca5a5", fontSize: 15, margin: "0 0 6px", fontWeight: 700 }}>No se pudieron cargar tus eventos</p>
+          <p style={{ color: "#8fa3b1", fontSize: 13.5, margin: "0 0 20px" }}>{error}</p>
+          <button type="button" className="soft-btn soft-btn-primary" onClick={onRetry}>Reintentar</button>
+        </div>
+      ) : lista.length === 0 ? (
         <div className="panel-card" style={{ padding: "48px 24px", textAlign: "center" }}>
           <p style={{ color: "#8fa3b1", fontSize: 15, margin: 0 }}>
             {tab === "proximos" ? "No tienes eventos próximos."

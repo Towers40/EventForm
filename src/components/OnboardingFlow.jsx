@@ -27,7 +27,7 @@ function makeSlug(title) {
 
 function buildBaseFields(capacity) {
   const fields = [
-    { id: "F" + uid(), type: "text", label: "Nombre completo del asistente", description: "Escribe tus nombres tal como aparecen en tu documento", placeholder: "", required: true, options: [] },
+    { id: "F" + uid(), type: "text", label: "Nombre completo del asistente", description: "", placeholder: "", required: true, options: [] },
     { id: "F" + uid(), type: "email", label: "Correo electrónico", description: "Usa un correo al que tengas acceso; lo verás en tu boleto", placeholder: "", required: true, options: [] },
   ];
   if (capacity === "100-300" || capacity === "300+") {
