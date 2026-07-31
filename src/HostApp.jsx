@@ -1441,19 +1441,90 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
   const [showTools, setShowTools] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [dragId, setDragId] = useState(null);
-  const [dragOverId, setDragOverId] = useState(null);
+  const itemRefs = useRef(new Map());
   const updateOptions = (fid, options) => onUpdate(fid, { options });
 
-  const handleDrop = (targetId) => {
-    if (!dragId || dragId === targetId) return;
-    const fields = [...draft.fields];
-    const from = fields.findIndex((f) => f.id === dragId);
-    const to = fields.findIndex((f) => f.id === targetId);
-    const [moved] = fields.splice(from, 1);
-    fields.splice(to, 0, moved);
-    setDraft((p) => ({ ...p, fields }));
-    setDragId(null); setDragOverId(null);
+  // Reordenar arrastrando. Se usa Pointer Events en vez de la API de arrastre
+  // HTML5 (draggable/onDragStart) porque esa NO dispara en pantallas táctiles,
+  // y en móvil no había forma de reordenar. El arrastre se limita al asa (⣿):
+  // si la tarjeta entera fuera arrastrable, seleccionar texto en el panel de
+  // edición iniciaría un arrastre por accidente.
+  // Orden en curso durante el arrastre. Hace falta un ref porque los
+  // `pointermove` llegan más rápido de lo que React repinta: si cada uno
+  // partiera del `draft` de su render, dos eventos seguidos calcularían desde
+  // el mismo orden viejo y el segundo desharía el movimiento del primero (el
+  // campo se quedaba a mitad de camino y no llegaba al final de la lista).
+  const orderRef = useRef(null);
+
+  const startDrag = (e, fid) => {
+    e.preventDefault();
+    e.stopPropagation();
+    orderRef.current = draft.fields;
+    setDragId(fid);
   };
+
+  const moveDrag = (e) => {
+    if (!dragId) return;
+    const y = e.clientY;
+
+    // Con muchos campos el destino queda fuera de pantalla: se desplaza sola
+    // al acercarse a los bordes.
+    const EDGE = 70;
+    if (y < EDGE) window.scrollBy(0, -14);
+    else if (y > window.innerHeight - EDGE) window.scrollBy(0, 14);
+
+    const fields = orderRef.current || draft.fields;
+    const from = fields.findIndex((f) => f.id === dragId);
+    if (from < 0) return;
+
+    // Destino = primer campo cuyo centro ha cruzado el puntero.
+    let to = from;
+    for (let i = 0; i < fields.length; i++) {
+      if (i === from) continue;
+      const el = itemRefs.current.get(fields[i].id);
+      if (!el) continue;
+      const r = el.getBoundingClientRect();
+      const mid = r.top + r.height / 2;
+      if (i < from && y < mid) { to = i; break; }
+      if (i > from && y > mid) { to = i; }
+    }
+    if (to === from) return;
+
+    const next = [...fields];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    orderRef.current = next;
+    setDraft((p) => ({ ...p, fields: next }));
+  };
+
+  const endDrag = () => { orderRef.current = null; setDragId(null); };
+
+  // Los listeners del arrastre viven en `window`, no en el asa. Con
+  // setPointerCapture sobre el asa el arrastre se quedaba a medias: al
+  // reordenar, React mueve los nodos del DOM, el navegador suelta la captura y
+  // los pointermove dejaban de llegar (el campo avanzaba dos posiciones y ahí
+  // se paraba). En window llegan siempre, pase lo que pase con el DOM.
+  const moveDragRef = useRef(moveDrag);
+  moveDragRef.current = moveDrag;
+
+  useEffect(() => {
+    if (!dragId) return;
+    const onMove = (e) => moveDragRef.current(e);
+    const onUp = () => endDrag();
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
+    // Evita que al arrastrar se vaya seleccionando el texto de las tarjetas.
+    const prevSelect = document.body.style.userSelect;
+    document.body.style.userSelect = "none";
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+      document.body.style.userSelect = prevSelect;
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dragId]);
 
   const bldLabel = {
     display: "block", fontSize: 11, fontWeight: 800, color: "#8fa3b1",
@@ -1569,7 +1640,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
           Campos del formulario
         </h2>
         <p style={{ fontSize: 13, color: "#8fa3b1", margin: "3px 0 0" }}>
-          {draft.fields.length} campo{draft.fields.length !== 1 ? "s" : ""} · Edita, reordena o añade más
+          {draft.fields.length} campo{draft.fields.length !== 1 ? "s" : ""} · Toca para editar · Arrastra ⣿ para cambiar el orden
         </p>
       </div>
 
@@ -1578,18 +1649,19 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
         {draft.fields.map((f) => (
           <div
             key={f.id}
-            draggable
-            onDragStart={() => setDragId(f.id)}
-            onDragOver={(e) => { e.preventDefault(); setDragOverId(f.id); }}
-            onDrop={() => handleDrop(f.id)}
-            onDragEnd={() => { setDragId(null); setDragOverId(null); }}
+            ref={(el) => {
+              if (el) itemRefs.current.set(f.id, el);
+              else itemRefs.current.delete(f.id);
+            }}
             className="panel-card"
             style={{
               overflow: "hidden", position: "relative",
-              opacity: dragId === f.id ? 0.4 : 1,
-              outline: dragOverId === f.id && dragId !== f.id ? "2px solid rgba(107,159,212,0.5)" : "none",
-              cursor: "grab",
-              transition: "outline 0.1s",
+              // La tarjeta arrastrada se levanta; las demás ceden el sitio solas
+              // porque la lista ya está reordenada en el estado.
+              ...(dragId === f.id
+                ? { outline: "2px solid rgba(107,159,212,0.55)", boxShadow: "0 12px 32px rgba(0,0,0,0.45)", zIndex: 2 }
+                : null),
+              transition: dragId ? "none" : "outline 0.1s",
             }}
           >
             {/* × en esquina superior derecha */}
@@ -1618,18 +1690,42 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
               }}
               onClick={() => setEditFid(editFid === f.id ? null : f.id)}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
-                <span style={{ color: "#b8c5d4", fontSize: 14, cursor: "grab" }}>⣿</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 2 }}>
+                {/* Asa de arrastre. También responde a ↑/↓ con el teclado, para
+                    quien no pueda arrastrar. */}
+                <span
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Reordenar el campo ${f.label}`}
+                  title="Arrastra para reordenar (o usa ↑ ↓)"
+                  onPointerDown={(e) => startDrag(e, f.id)}
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => {
+                    if (e.key === "ArrowUp")   { e.preventDefault(); e.stopPropagation(); onMove(f.id, -1); }
+                    if (e.key === "ArrowDown") { e.preventDefault(); e.stopPropagation(); onMove(f.id, 1); }
+                  }}
+                  style={{
+                    display: "inline-flex", alignItems: "center", justifyContent: "center",
+                    width: 30, height: 30, marginLeft: -6, flexShrink: 0, borderRadius: 8,
+                    color: dragId === f.id ? "#6b9fd4" : "#b8c5d4", fontSize: 14,
+                    background: dragId === f.id ? "rgba(107,159,212,0.16)" : "transparent",
+                    cursor: dragId === f.id ? "grabbing" : "grab",
+                    touchAction: "none", // sin esto el móvil hace scroll en vez de arrastrar
+                    userSelect: "none",
+                  }}
+                >
+                  ⣿
+                </span>
                 <span style={{ fontWeight: 700, fontSize: 15, color: "#e8eaf0" }}>
                   {f.label}
                 </span>
               </div>
               {f.description && (
-                <span style={{ fontSize: 12, color: "#8fa3b1", display: "block", marginLeft: 22, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                <span style={{ fontSize: 12, color: "#8fa3b1", display: "block", marginLeft: 28, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {f.description}
                 </span>
               )}
-              <span style={{ fontSize: 11, color: "#b8c5d4", display: "block", marginLeft: 22, marginTop: 4, textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.04em" }}>
+              <span style={{ fontSize: 11, color: "#b8c5d4", display: "block", marginLeft: 28, marginTop: 4, textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.04em" }}>
                 {f.type} {f.required ? "· Obligatorio" : "· Opcional"}
               </span>
             </div>
