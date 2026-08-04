@@ -3,7 +3,7 @@ import express from "express";
 import cors from "cors";
 import { customAlphabet } from "nanoid";
 import { db, dbReady, initDb, parseEvent, slugify } from "./db.js";
-import { uploadToCloudinary, isDataUrl } from "./cloudinary.js";
+import { uploadToCloudinary, isDataUrl, cloudinaryEnabled } from "./cloudinary.js";
 import { migrateBase64Avatars } from "./avatarMigration.js";
 import { migrateBase64EventImages } from "./eventImageMigration.js";
 
@@ -833,6 +833,27 @@ app.post("/api/public/tickets/:ticketId/resale", requireDb, optionalAuth, async 
   }
 });
 
+/**
+ * Sube la portada a Cloudinary si viene incrustada en base64.
+ *
+ * Hasta ahora solo se hacía con el avatar, así que TODA portada quedaba
+ * guardada como `data:image/...` dentro del payload JSON del evento y viajaba
+ * entera en cada respuesta: se midieron 2,65 MB en el listado público y es lo
+ * que hacía lentas "Mis eventos", "Mis tickets" y la verificación de entradas.
+ * Si Cloudinary no está configurado o la subida falla, se conserva el base64
+ * antes que perder la imagen del usuario.
+ */
+async function normalizeCover(payload) {
+  if (!payload || !isDataUrl(payload.headerImage)) return payload;
+  try {
+    const url = await uploadToCloudinary(payload.headerImage, { folder: "eventform/covers" });
+    if (url) return { ...payload, headerImage: url };
+  } catch (e) {
+    console.error("[portada] no se pudo subir a Cloudinary:", e.message);
+  }
+  return payload;
+}
+
 // ─── Eventos (anfitrión) ───────────────────────────────────────────────────
 app.get("/api/events", requireDb, authMiddleware, async (req, res) => {
   try {
@@ -876,7 +897,7 @@ app.get("/api/events", requireDb, authMiddleware, async (req, res) => {
 
 app.post("/api/events", requireDb, authMiddleware, requireRole("host", "super_admin"), async (req, res) => {
   try {
-    const payload = req.body;
+    const payload = await normalizeCover(req.body);
     
     // Validar payload
     if (!payload || typeof payload !== "object") {
@@ -929,7 +950,7 @@ app.put("/api/events/:id", requireDb, authMiddleware, async (req, res) => {
     if (!row) return res.status(404).json({ error: "Evento no encontrado" });
     if (req.user.role !== "super_admin" && row.host_id !== req.user.sub) return res.status(403).json({ error: "Sin permiso para editar este evento" });
     
-    const payload = req.body;
+    const payload = await normalizeCover(req.body);
     if (!payload || typeof payload !== "object") {
       return res.status(400).json({ error: "Datos inválidos." });
     }
@@ -1247,7 +1268,9 @@ app.get("/api/public/categories", requireDb, async (req, res) => {
 
 app.get("/api/health", (_, res) => {
   if (!dbReady) return res.status(503).json({ ok: false, needsConfig: true, error: "Agrega TURSO_URL en Vercel → Settings → Environment Variables" });
-  res.json({ ok: true });
+  // Diagnóstico: sin Cloudinary las portadas se guardan en base64 dentro del
+  // payload y hacen lentas todas las listas. No expone ningún secreto.
+  res.json({ ok: true, cloudinary: cloudinaryEnabled, email: emailEnabled, payments: paymentsEnabled });
 });
 
 // Inicializar DB y arrancar
