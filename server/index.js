@@ -1204,7 +1204,7 @@ app.post("/api/admin/migrate-avatars", requireDb, authMiddleware, requireOwner, 
 // ─── Discover (público) ────────────────────────────────────────────────────
 app.get("/api/public/events", requireDb, async (req, res) => {
   try {
-    const { q, category, city, page = 1, limit = 12 } = req.query;
+    const { q, category, city, sort, page = 1, limit = 12 } = req.query;
     const offset = (Number(page) - 1) * Number(limit);
     const today = new Date().toISOString().split("T")[0];
 
@@ -1258,11 +1258,19 @@ app.get("/api/public/events", requireDb, async (req, res) => {
                    CASE WHEN json_extract(payload, '$.headerImage') LIKE 'http%'
                         THEN json_extract(payload, '$.headerImage') END AS header_image,
                    u.name AS host_name,
-                   CASE WHEN u.avatar LIKE 'http%' THEN u.avatar END AS host_avatar
+                   CASE WHEN u.avatar LIKE 'http%' THEN u.avatar END AS host_avatar,
+                   -- Inscritos: hace falta para destacar lo que la gente ya
+                   -- está llenando. Es una subconsulta por fila, pero solo por
+                   -- las 24 de la página y va por el índice (event_id,cancelled).
+                   (SELECT COUNT(*) FROM registrations r
+                     WHERE r.event_id = events.id AND r.cancelled = 0
+                       AND r.payment_status != 'pending') AS attendees
             FROM events
             LEFT JOIN users u ON u.id = events.host_id
             ${where}
-            ORDER BY COALESCE(json_extract(payload, '$.startDate'), '9999-99-99') ASC
+            ORDER BY ${sort === "popular"
+              ? "attendees DESC, COALESCE(json_extract(payload, '$.startDate'), '9999-99-99') ASC"
+              : "COALESCE(json_extract(payload, '$.startDate'), '9999-99-99') ASC"}
             LIMIT ? OFFSET ?`,
         args: [...args, Number(limit), offset],
       },
@@ -1284,12 +1292,32 @@ app.get("/api/public/events", requireDb, async (req, res) => {
       price: r.price != null ? Number(r.price) : null,
       hostName: r.host_name || "",
       hostAvatar: r.host_avatar || null,
+      attendees: Number(r.attendees || 0),
     }));
 
     // 30 s: suficiente para que una edición salga pronto en Descubrir y para
     // que el listado no golpee la base en cada visita.
     setCache(res, { cdn: 30, swr: 120 });
     res.json({ events, total, page: Number(page), limit: Number(limit) });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Ciudades con eventos próximos, para poder agrupar por lugar en Descubrir.
+app.get("/api/public/cities", requireDb, async (req, res) => {
+  try {
+    const today = new Date().toISOString().split("T")[0];
+    const { rows } = await db.execute({
+      sql: `SELECT json_extract(payload, '$.city') AS city, COUNT(*) AS count FROM events
+            WHERE visibility = 'public' AND json_extract(payload, '$.city') IS NOT NULL
+              AND json_extract(payload, '$.city') != ''
+              AND (json_extract(payload, '$.endDate') >= ?
+                OR (json_extract(payload, '$.endDate') IS NULL AND json_extract(payload, '$.startDate') >= ?)
+                OR (json_extract(payload, '$.endDate') = '' AND json_extract(payload, '$.startDate') >= ?))
+            GROUP BY city ORDER BY count DESC, city ASC LIMIT 20`,
+      args: [today, today, today],
+    });
+    setCache(res, { cdn: 120, swr: 300 });
+    res.json({ cities: rows.map(r => ({ name: r.city, count: Number(r.count) })) });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

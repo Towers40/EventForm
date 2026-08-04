@@ -84,8 +84,13 @@ const ClockIcon = () => (
 // Fila compacta por evento: miniatura pequeña a la izquierda; a su lado la hora
 // (con fin), el nombre con el icono de categoría, la ubicación y el promotor —
 // todo en tono atenuado salvo el nombre. A la derecha: precio y placa de fecha.
-function EventCard({ ev }) {
+// A partir de aquí un evento se considera que "está llenando". Es un número
+// bajo a propósito: en eventos de barrio, 8 personas ya es señal.
+const POPULAR_MIN = 8;
+
+function EventCard({ ev, destacado = false }) {
   const live  = isLive(ev);
+  const gente = Number(ev.attendees || 0);
   // Los eventos sin categoría definida se muestran como "Otro" por defecto.
   const cat   = DISCOVER_CATEGORIES.find(c => c.slug === ev.category)
     || DISCOVER_CATEGORIES.find(c => c.slug === "otro");
@@ -105,7 +110,17 @@ function EventCard({ ev }) {
       }}
     >
       {/* Miniatura (la categoría ahora va junto al nombre, no en la imagen) */}
-      <div style={{ flexShrink: 0, width: 76, height: 76, borderRadius: 14, overflow: "hidden", background: "#111" }}>
+      <div style={{ position: "relative", flexShrink: 0, width: 76, height: 76, borderRadius: 14, overflow: "hidden", background: "#111" }}>
+        {destacado && gente >= POPULAR_MIN && (
+          <span style={{
+            position: "absolute", top: 4, left: 4, zIndex: 1,
+            display: "inline-flex", alignItems: "center", gap: 3,
+            background: "rgba(251,146,60,0.92)", color: "#1a1200",
+            fontSize: 9.5, fontWeight: 800, padding: "2px 6px", borderRadius: 100,
+          }}>
+            <FlameIcon size={9} /> TOP
+          </span>
+        )}
         {ev.headerImage ? (
           <img src={ev.headerImage} alt={ev.title} loading="lazy" decoding="async" width={76} height={76} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         ) : (
@@ -142,19 +157,22 @@ function EventCard({ ev }) {
         )}
 
         {/* 2) Nombre del evento + icono de categoría al lado */}
-        <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 6 }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 7, marginBottom: 6 }}>
           {cat && CAT_ICONS[cat.slug] && (
             <span title={cat.label} style={{
               flexShrink: 0, display: "inline-flex", alignItems: "center", justifyContent: "center",
-              width: 22, height: 22, borderRadius: "50%",
+              width: 22, height: 22, borderRadius: "50%", marginTop: 1,
               background: `${cat.color}22`, border: `1px solid ${cat.color}55`,
             }}>
               {CAT_ICONS[cat.slug](cat.color, 13)}
             </span>
           )}
+          {/* Dos líneas antes de recortar: en 3 columnas o en el carrusel de
+              móvil, una sola línea dejaba títulos como "Carrera 5K del pa…". */}
           <h3 style={{
             margin: 0, fontSize: 15.5, fontWeight: 700, color: "#e8eaf0", lineHeight: 1.3,
-            minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+            minWidth: 0, overflow: "hidden", display: "-webkit-box",
+            WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
           }}>
             {ev.title}
           </h3>
@@ -169,7 +187,7 @@ function EventCard({ ev }) {
         )}
 
         {/* 4) Promotor (con su foto/avatar) */}
-        <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap", rowGap: 5 }}>
           {ev.hostAvatar ? (
             <img src={ev.hostAvatar} alt="" loading="lazy" decoding="async" width={20} height={20} style={{ width: 20, height: 20, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
           ) : (
@@ -177,9 +195,20 @@ function EventCard({ ev }) {
               {(ev.hostName || "?").slice(0, 1).toUpperCase()}
             </span>
           )}
-          <span style={{ fontSize: 12.5, color: "rgba(232,234,240,0.5)" }}>
+          <span style={{ fontSize: 12.5, color: "rgba(232,234,240,0.5)", minWidth: 0 }}>
             {ev.hostName ? `Por ${ev.hostName}` : "Organizador"}
           </span>
+          {gente > 0 && (
+            <span style={{
+              flexShrink: 0, marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 4,
+              fontSize: 11.5, fontWeight: 700, padding: "2px 8px", borderRadius: 100,
+              background: gente >= POPULAR_MIN ? "rgba(251,146,60,0.14)" : "rgba(255,255,255,0.06)",
+              color: gente >= POPULAR_MIN ? "#fb923c" : "rgba(232,234,240,0.45)",
+            }}>
+              {gente >= POPULAR_MIN && <FlameIcon />}
+              {gente}
+            </span>
+          )}
         </div>
       </div>
 
@@ -212,7 +241,7 @@ function CategoryPill({ cat, count, active, onClick }) {
         display: "flex", alignItems: "center", gap: 12,
         background: active ? cat.color : "rgba(255,255,255,0.07)",
         border: `1px solid ${active ? cat.color : "rgba(255,255,255,0.11)"}`,
-        borderRadius: 16, padding: "14px 16px",
+        borderRadius: 16, padding: "12px 13px",
         cursor: "pointer", textAlign: "left",
         transition: "all 0.15s",
         boxShadow: active ? `0 4px 20px ${cat.color}55` : "none",
@@ -222,7 +251,7 @@ function CategoryPill({ cat, count, active, onClick }) {
     >
       {/* Icon side — LEFT */}
       <div style={{
-        flexShrink: 0, width: 38, height: 38,
+        flexShrink: 0, width: 34, height: 34,
         display: "flex", alignItems: "center", justifyContent: "center",
         background: active ? "rgba(255,255,255,0.18)" : `${cat.color}22`,
         borderRadius: 10,
@@ -230,19 +259,34 @@ function CategoryPill({ cat, count, active, onClick }) {
         {Icon ? Icon(iconColor) : <span style={{ fontSize: 22 }}>{cat.emoji}</span>}
       </div>
       {/* Text side — RIGHT */}
-      <div>
-        <div style={{ fontSize: 13, fontWeight: 600, color: active ? "#fff" : "#e8eaf0", lineHeight: 1.3, marginBottom: count != null ? 3 : 0 }}>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: 12.5, fontWeight: 600, color: active ? "#fff" : "#e8eaf0", lineHeight: 1.3, marginBottom: count != null ? 2 : 0 }}>
           {cat.label}
         </div>
         {count != null && (
-          <div style={{ fontSize: 14, fontWeight: 400, color: active ? "rgba(255,255,255,0.75)" : "rgba(232,234,240,0.42)", lineHeight: 1 }}>
-            {count > 999 ? `${(count/1000).toFixed(1)}K` : count} eventos
+          <div style={{ fontSize: 12, fontWeight: 400, color: active ? "rgba(255,255,255,0.75)" : "rgba(232,234,240,0.42)", lineHeight: 1 }}>
+            {count > 999 ? `${(count/1000).toFixed(1)}K` : count} {count === 1 ? "evento" : "eventos"}
           </div>
         )}
       </div>
     </button>
   );
 }
+
+const FlameIcon = ({ size = 11 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" style={{ flexShrink: 0 }}>
+    <path d="M12 2s1 3.5-1.5 6C8 10.5 6 12.4 6 15a6 6 0 0 0 12 0c0-2.2-1-3.6-2-5-.6 1-1.3 1.6-2 1.6 1-3.2-.6-7-2-9.6z"/>
+  </svg>
+);
+
+const chipStyle = (activo) => ({
+  flexShrink: 0, whiteSpace: "nowrap", cursor: "pointer",
+  padding: "9px 16px", borderRadius: 999, fontSize: 13.5,
+  fontWeight: activo ? 700 : 600,
+  background: activo ? "rgba(107,159,212,0.22)" : "rgba(255,255,255,0.06)",
+  border: activo ? "1px solid rgba(107,159,212,0.5)" : "1px solid rgba(255,255,255,0.1)",
+  color: activo ? "#e8eaf0" : "rgba(232,234,240,0.65)",
+});
 
 const PAGE_SIZE = 24; // por request; se cargan más con el botón "Cargar más"
 
@@ -255,19 +299,27 @@ export default function DiscoverPage({ embedded = false }) {
   const [error,          setError]          = useState(null);
   const [search,         setSearch]         = useState("");
   const [activeCategory, setActiveCategory] = useState(null);
+  const [activeCity,     setActiveCity]     = useState(null);
   const [categoryCounts, setCategoryCounts] = useState({});
+  const [cities,         setCities]         = useState([]);
+  const [populares,      setPopulares]      = useState([]);
   const searchTimer = useRef(null);
+
+  // Con algún filtro puesto, la persona ya sabe lo que busca: las secciones
+  // de descubrimiento estorban y se ocultan.
+  const filtrando = Boolean(search || activeCategory || activeCity);
 
   // Una sola función para primera página (append=false, reemplaza) y siguientes
   // (append=true, agrega). Así el listado escala a cientos de eventos sin traer
   // todo de golpe: cada request pide solo PAGE_SIZE.
-  async function fetchEvents(q, category, pageToLoad = 1, append = false) {
+  async function fetchEvents(q, category, pageToLoad = 1, append = false, city = activeCity) {
     if (append) setLoadingMore(true); else setLoading(true);
     setError(null);
     try {
       const params = { page: pageToLoad, limit: PAGE_SIZE };
       if (q)        params.q        = q;
       if (category) params.category = category;
+      if (city)     params.city     = city;
       const { events: evs, total: tot } = await api.discoverEvents(params);
       setTotal(Number(tot || 0));
       setPage(pageToLoad);
@@ -288,21 +340,48 @@ export default function DiscoverPage({ embedded = false }) {
     } catch {}
   }
 
+  async function fetchCities() {
+    try { setCities((await api.discoverCities()).cities || []); } catch {}
+  }
+
+  // Lo que la gente ya está llenando. Va en su propia consulta ordenada por
+  // inscritos, no recortando la página actual: si no, "popular" dependería de
+  // qué eventos hayan caído en la primera página.
+  async function fetchPopulares() {
+    try {
+      const { events: evs } = await api.discoverEvents({ page: 1, limit: 6, sort: "popular" });
+      setPopulares((evs || []).filter(e => (e.attendees || 0) > 0));
+    } catch {}
+  }
+
   useEffect(() => {
     fetchEvents("", null, 1);
     fetchCategories();
+    fetchCities();
+    fetchPopulares();
   }, []);
 
   function handleSearch(val) {
     setSearch(val);
     clearTimeout(searchTimer.current);
-    searchTimer.current = setTimeout(() => fetchEvents(val, activeCategory, 1), 350);
+    searchTimer.current = setTimeout(() => fetchEvents(val, activeCategory, 1, false, activeCity), 350);
   }
 
   function handleCategory(slug) {
     const next = activeCategory === slug ? null : slug;
     setActiveCategory(next);
-    fetchEvents(search, next, 1);
+    fetchEvents(search, next, 1, false, activeCity);
+  }
+
+  function handleCity(name) {
+    const next = activeCity === name ? null : name;
+    setActiveCity(next);
+    fetchEvents(search, activeCategory, 1, false, next);
+  }
+
+  function limpiarFiltros() {
+    setSearch(""); setActiveCategory(null); setActiveCity(null);
+    fetchEvents("", null, 1, false, null);
   }
 
   const hasMore = events.length < total;
@@ -385,7 +464,7 @@ export default function DiscoverPage({ embedded = false }) {
           </h2>
           <div style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))",
+            gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))",
             gap: 10,
           }}>
             {DISCOVER_CATEGORIES.map(cat => (
@@ -400,6 +479,46 @@ export default function DiscoverPage({ embedded = false }) {
           </div>
         </section>
 
+        {/* ── Ciudades ── */}
+        {cities.length > 1 && (
+          <section style={{ marginBottom: 40 }}>
+            <h2 style={{ fontSize: 18, fontWeight: 800, marginBottom: 14, color: "#e8eaf0" }}>
+              ¿Dónde?
+            </h2>
+            {/* En móvil se desliza a los lados: con 20 ciudades, apiladas
+                empujarían el listado fuera de la pantalla. */}
+            <div className="ef-hscroll" style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4 }}>
+              <button type="button" onClick={() => handleCity(null)}
+                style={chipStyle(!activeCity)}>
+                Todas
+              </button>
+              {cities.map(c => (
+                <button key={c.name} type="button" onClick={() => handleCity(c.name)}
+                  style={chipStyle(activeCity === c.name)}>
+                  {c.name}
+                  <span style={{ opacity: 0.6, marginLeft: 6, fontWeight: 600 }}>{c.count}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* ── Lo más popular ── */}
+        {!filtrando && populares.length > 0 && (
+          <section style={{ marginBottom: 48 }}>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
+              <h2 style={{ fontSize: 18, fontWeight: 800, color: "#e8eaf0", margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ color: "#fb923c", display: "inline-flex" }}><FlameIcon size={17} /></span>
+                Lo que se está llenando
+              </h2>
+              <span style={{ fontSize: 13, color: "#8fa3b1" }}>Los eventos con más gente apuntada</span>
+            </div>
+            <div className="ef-pop ef-hscroll">
+              {populares.map(ev => <EventCard key={"pop-" + ev.id} ev={ev} destacado />)}
+            </div>
+          </section>
+        )}
+
         {/* ── Events grid ── */}
         <section>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 8 }}>
@@ -412,6 +531,9 @@ export default function DiscoverPage({ embedded = false }) {
                   {activeCat.label}
                 </>
               ) : "Próximos eventos"}
+              {activeCity && (
+                <span style={{ fontSize: 14, fontWeight: 600, color: "#8fa3b1" }}>en {activeCity}</span>
+              )}
             </h2>
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
               {!loading && total > 0 && (
@@ -419,14 +541,14 @@ export default function DiscoverPage({ embedded = false }) {
                   {total} resultado{total !== 1 ? "s" : ""}
                 </span>
               )}
-              {activeCategory && (
+              {filtrando && (
                 <button
                   type="button"
                   className="ef-hover-fill"
-                  onClick={() => { setActiveCategory(null); fetchEvents(search, null, 1); }}
+                  onClick={limpiarFiltros}
                   style={{ background: "transparent", color: "#6b9fd4", border: "1px solid #6b9fd4", borderRadius: 20, padding: "5px 12px", fontSize: 12, cursor: "pointer", fontWeight: 600 }}
                 >
-                  × Quitar filtro
+                  × Quitar filtros
                 </button>
               )}
             </div>
@@ -443,7 +565,7 @@ export default function DiscoverPage({ embedded = false }) {
               <p style={{ color: "#8fa3b1", fontSize: 15, marginBottom: 16 }}>{error}</p>
               <button
                 className="ef-hover-fill"
-                onClick={() => fetchEvents(search, activeCategory)}
+                onClick={() => fetchEvents(search, activeCategory, 1, false, activeCity)}
                 style={{ background: "rgba(107,159,212,0.22)", color: "#e8eaf0", border: "1px solid rgba(107,159,212,0.4)", borderRadius: 10, padding: "11px 22px", cursor: "pointer", fontWeight: 700, fontSize: 14 }}
               >
                 Reintentar
@@ -453,12 +575,12 @@ export default function DiscoverPage({ embedded = false }) {
             <div style={{ textAlign: "center", padding: "60px 0" }}>
               <div style={{ fontSize: 52, marginBottom: 16 }}>🗓️</div>
               <p style={{ color: "#8fa3b1", fontSize: 16, marginBottom: 20 }}>
-                {search || activeCategory ? "No hay eventos con esos filtros." : "No hay eventos públicos todavía."}
+                {filtrando ? "No hay eventos con esos filtros." : "No hay eventos públicos todavía."}
               </p>
-              {(search || activeCategory) && (
+              {filtrando && (
                 <button
                   className="ef-hover-fill"
-                  onClick={() => { setSearch(""); setActiveCategory(null); fetchEvents("", null, 1); }}
+                  onClick={limpiarFiltros}
                   style={{ background: "transparent", color: "#6b9fd4", border: "1px solid #6b9fd4", borderRadius: 10, padding: "10px 20px", cursor: "pointer", fontWeight: 600, fontSize: 14 }}
                 >
                   Ver todos los eventos
@@ -467,7 +589,7 @@ export default function DiscoverPage({ embedded = false }) {
             </div>
           ) : (
             <>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <div className="ef-ev-grid">
                 {events.map(ev => <EventCard key={ev.id} ev={ev} />)}
               </div>
               {hasMore && (
@@ -476,7 +598,7 @@ export default function DiscoverPage({ embedded = false }) {
                     type="button"
                     className="ef-hover-fill"
                     disabled={loadingMore}
-                    onClick={() => fetchEvents(search, activeCategory, page + 1, true)}
+                    onClick={() => fetchEvents(search, activeCategory, page + 1, true, activeCity)}
                     style={{
                       background: "rgba(107,159,212,0.18)", color: "#c8dff0",
                       border: "1px solid rgba(107,159,212,0.35)", borderRadius: 12,
@@ -525,6 +647,33 @@ export default function DiscoverPage({ embedded = false }) {
           50%      { transform: scale(1.15); opacity: 0.75; }
         }
         @media (max-width: 480px) { .hide-mobile { display: none !important; } }
+
+        /* Listado: una columna en móvil, dos en tableta y tres en escritorio.
+           La tarjeta es una fila compacta, así que en 3 columnas sigue
+           cabiendo todo sin recortar información. */
+        .ef-ev-grid { display: grid; gap: 10px; grid-template-columns: 1fr; }
+        @media (min-width: 760px)  { .ef-ev-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (min-width: 1100px) { .ef-ev-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+        /* Destacados: en móvil se pasan deslizando (sin comerse la pantalla);
+           en escritorio se despliegan en rejilla. */
+        .ef-pop {
+          display: grid; gap: 10px;
+          grid-auto-flow: column; grid-auto-columns: 92%;
+          overflow-x: auto; scroll-snap-type: x mandatory;
+          padding-bottom: 4px;
+        }
+        .ef-pop > * { scroll-snap-align: start; }
+        @media (min-width: 760px) {
+          .ef-pop {
+            grid-auto-flow: row; grid-auto-columns: auto;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            overflow: visible;
+          }
+        }
+        @media (min-width: 1100px) {
+          .ef-pop { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        }
       `}</style>
     </div>
   );

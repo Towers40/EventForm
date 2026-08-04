@@ -99,4 +99,5 @@ export const api = {
     return request(`/api/public/events${qs ? `?${qs}` : ""}`);
   },
   discoverCategories: () => request("/api/public/categories"),
+  discoverCities: () => request("/api/public/cities"),
 };
