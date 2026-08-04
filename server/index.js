@@ -24,6 +24,12 @@ import {
   verifyPassword,
 } from "./auth.js";
 import { emailEnabled, sendVerificationCode, sendPasswordResetCode, sendRegistrationConfirmation, sendApprovalPending } from "./mailer.js";
+import { capacityMaxOf } from "./capacity.js";
+import { getPaymentProvider, paymentsEnabled, PAYMENT_STATUS, REG_PAYMENT, PaymentError, computeOrder } from "./payments/index.js";
+import {
+  createOrder, getOrder, getOrderByRef, approveOrder, cancelOrder, markWebhookSeen,
+  releaseExpiredHolds, countOccupied, listForResale, unlistResale, countResaleListed, refundTicket,
+} from "./payments/orders.js";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -62,7 +68,13 @@ app.use(cors({
   },
   credentials: true,
 }));
-app.use(express.json({ limit: "6mb" }));
+// Se guarda el cuerpo sin parsear: la firma del webhook de la pasarela se
+// calcula sobre los bytes exactos que llegaron, no sobre el JSON reserializado
+// (un espacio o un orden de claves distinto la invalidaría).
+app.use(express.json({
+  limit: "6mb",
+  verify: (req, _res, buf) => { req.rawBody = buf?.toString("utf8") || ""; },
+}));
 
 // Alfabeto solo alfanumérico (sin "_" ni "-") para IDs/tickets legibles y
 // sin caracteres que compliquen el parseo del QR.
@@ -108,8 +120,11 @@ function rowToUser(row) {
 }
 
 async function getRegsForEvent(eventId) {
+  // Un checkout a medias no es un inscrito: el anfitrión no debe verlo en su
+  // lista ni contarlo como venta.
   const { rows } = await db.execute({
-    sql: "SELECT * FROM registrations WHERE event_id = ? AND cancelled = 0 ORDER BY created_at DESC",
+    sql: `SELECT * FROM registrations WHERE event_id = ? AND cancelled = 0
+          AND payment_status != 'pending' ORDER BY created_at DESC`,
     args: [eventId],
   });
   return rows.map((r) => ({
@@ -306,11 +321,11 @@ app.get("/api/auth/my-tickets", requireDb, authMiddleware, async (req, res) => {
     // sin esa columna, recae en el escaneo del payload (no pierde trazabilidad).
     const { rows } = await db.execute({
       sql: `SELECT r.ticket_id, r.payload AS reg_payload, r.used, r.checked_in_at, r.created_at,
-                   r.email AS reg_email, r.approved,
+                   r.email AS reg_email, r.approved, r.resale_status, r.payment_status,
                    e.slug, e.payload AS event_payload, e.manual_sold_out
             FROM registrations r
             JOIN events e ON e.id = r.event_id
-            WHERE r.cancelled = 0
+            WHERE r.cancelled = 0 AND r.payment_status != 'pending'
               AND (lower(r.email) = ? OR (r.email IS NULL AND lower(r.payload) LIKE ?))
             ORDER BY r.created_at DESC`,
       args: [email, `%${email}%`],
@@ -336,6 +351,9 @@ app.get("/api/auth/my-tickets", requireDb, authMiddleware, async (req, res) => {
         used: Boolean(row.used),
         approved: row.approved == null ? true : Boolean(row.approved),
         requireApproval: Boolean(ev.requireApproval),
+        // Reventa: solo tiene sentido ofrecer una entrada que se pagó.
+        resale: row.resale_status || "none",
+        paid: row.payment_status === "paid",
         checkedInAt: row.checked_in_at,
         createdAt: row.created_at,
         event: {
@@ -430,8 +448,11 @@ app.get("/api/public/events/:slug", requireDb, async (req, res) => {
     const { rows } = await db.execute({ sql: "SELECT * FROM events WHERE slug = ?", args: [req.params.slug] });
     if (!rows[0]) return res.status(404).json({ error: "Evento no encontrado" });
     const ev = parseEvent(rows[0]);
-    const { rows: cnt } = await db.execute({ sql: "SELECT COUNT(*) as c FROM registrations WHERE event_id = ? AND cancelled = 0", args: [ev.id] });
-    ev.registrationCount = Number(cnt[0]?.c || 0);
+    // El aforo que ve el público descuenta las entradas ofrecidas en reventa:
+    // esos asientos vuelven a estar disponibles.
+    await releaseExpiredHolds(ev.id);
+    ev.registrationCount = await countOccupied(ev.id);
+    ev.resaleAvailable = await countResaleListed(ev.id);
     ev.registrations = undefined;
     ev.publicUrl = `${APP_URL}/e/${ev.slug}`;
     const { rows: hostRows } = await db.execute({ sql: "SELECT name, email, avatar FROM users WHERE id = ?", args: [ev.hostId] });
@@ -494,14 +515,8 @@ app.get("/api/public/tickets/:ticketId", requireDb, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// Calcula la capacidad máxima (rangos antiguos o número del formulario nuevo)
-function capacityMaxOf(ev) {
-  const maxMap = { "under-50": 49, "0-50": 50, "50-100": 100, "100-300": 300, "300+": 10000 };
-  if (ev.capacity === "under-50") { const c = Number(ev.capacityCustom); return c > 0 && c < 50 ? c : 49; }
-  if (ev.capacity in maxMap) return maxMap[ev.capacity];
-  const n = Number(ev.capacity);
-  return Number.isFinite(n) && n > 0 ? n : null;
-}
+// La capacidad máxima ahora vive en ./capacity.js (la comparten las rutas y la
+// recuperación de reservas caducadas en pagos).
 
 app.post("/api/public/events/:slug/register", requireDb, optionalAuth, async (req, res) => {
   try {
@@ -509,6 +524,13 @@ app.post("/api/public/events/:slug/register", requireDb, optionalAuth, async (re
     if (!evRows[0]) return res.status(404).json({ error: "Evento no encontrado" });
     const ev = parseEvent(evRows[0]);
     if (ev.manualSoldOut) return res.status(403).json({ error: "sold_out" });
+    // Los eventos de pago van por /orders: aquí se emitiría el QR sin cobrar.
+    // Solo se bloquea si hay pasarela activa: mientras no la haya, el precio es
+    // informativo y la inscripción sigue funcionando como hasta ahora (si no,
+    // este cambio dejaría inservibles los eventos con precio ya publicados).
+    if (paymentsEnabled && ev.isPaid && Number(ev.price) > 0) {
+      return res.status(400).json({ error: "payment_required", message: "Este evento requiere pago. Usa el checkout." });
+    }
     const { form, consentPrivacy, consentMarketing } = req.body || {};
     if (!consentPrivacy) return res.status(400).json({ error: "Debes aceptar la política de privacidad" });
 
@@ -560,10 +582,13 @@ app.post("/api/public/events/:slug/register", requireDb, optionalAuth, async (re
       sql: insertSql,
       args: ["R" + uid(), ev.id, tid, JSON.stringify(form), consentPrivacy ? 1 : 0, consentMarketing ? 1 : 0, now, emailNorm, approved],
     }));
-    const countSql = "SELECT COUNT(*) AS c FROM registrations WHERE event_id = ? AND cancelled = 0";
+    // Las entradas en reventa no ocupan cupo (su asiento se está ofreciendo) y
+    // las reservas de pago caducadas se liberan antes de contar.
+    await releaseExpiredHolds(ev.id);
+    const countSql = "SELECT COUNT(*) AS c FROM registrations WHERE event_id = ? AND cancelled = 0 AND resale_status != 'listed'";
     // Tope por persona: se cuenta por el correo con el que quedan atadas las
     // entradas, que es el mismo cruce que usa "Mis tickets".
-    const mineSql = "SELECT COUNT(*) AS c FROM registrations WHERE event_id = ? AND cancelled = 0 AND lower(email) = ?";
+    const mineSql = "SELECT COUNT(*) AS c FROM registrations WHERE event_id = ? AND cancelled = 0 AND lower(email) = ? AND resale_status != 'listed'";
 
     // Chequeo de cupo + inserción ATÓMICOS (evita sobreventa en simultáneo).
     let useFallback = false;
@@ -635,6 +660,153 @@ app.post("/api/public/events/:slug/register", requireDb, optionalAuth, async (re
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ─── Pagos ─────────────────────────────────────────────────────────────────
+
+// Desglose de una compra ANTES de pagar: el comprador ve el precio, el cargo
+// por servicio y el total antes de decidir.
+app.get("/api/public/events/:slug/quote", requireDb, async (req, res) => {
+  try {
+    const { rows } = await db.execute({ sql: "SELECT * FROM events WHERE slug = ?", args: [req.params.slug] });
+    if (!rows[0]) return res.status(404).json({ error: "Evento no encontrado" });
+    const ev = parseEvent(rows[0]);
+    const qty = Math.max(1, Math.floor(Number(req.query.quantity) || 1));
+    if (!ev.isPaid || !(Number(ev.price) > 0)) {
+      return res.json({ free: true, quantity: qty, subtotal: 0, serviceFee: 0, total: 0 });
+    }
+    const q = computeOrder({ unitPrice: Number(ev.price), quantity: qty });
+    // El comprador no tiene por qué ver el reparto interno.
+    res.json({ free: false, quantity: q.quantity, unitPrice: q.unitPrice, subtotal: q.subtotal, serviceFee: q.serviceFee, total: q.total, currency: "COP" });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Inicia el cobro: reserva los cupos y devuelve la URL del checkout.
+app.post("/api/public/events/:slug/orders", requireDb, optionalAuth, async (req, res) => {
+  try {
+    if (!paymentsEnabled) return res.status(503).json({ error: "payments_disabled", message: "Los pagos no están habilitados todavía." });
+    const { rows } = await db.execute({ sql: "SELECT * FROM events WHERE slug = ?", args: [req.params.slug] });
+    if (!rows[0]) return res.status(404).json({ error: "Evento no encontrado" });
+    const ev = parseEvent(rows[0]);
+    if (ev.manualSoldOut) return res.status(403).json({ error: "sold_out" });
+
+    const { form, quantity, consentPrivacy, consentMarketing } = req.body || {};
+    if (!consentPrivacy) return res.status(400).json({ error: "Debes aceptar la política de privacidad" });
+    if (ev.requireApproval && !req.user) return res.status(401).json({ error: "account_required" });
+
+    // Correo del comprador: el de la cuenta manda, y si no, el del formulario.
+    let email = req.user?.email || null;
+    if (!email && form) {
+      const campo = (ev.fields || []).find(f => f.type === "email");
+      email = (campo ? form[campo.id] : null)
+        || Object.values(form).find(v => typeof v === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v))
+        || null;
+    }
+    if (!email) return res.status(400).json({ error: "Necesitamos un correo para enviarte las entradas." });
+
+    const orden = await createOrder({
+      event: ev,
+      form, quantity, consentPrivacy, consentMarketing,
+      buyerEmail: String(email).trim().toLowerCase(),
+      buyerUserId: req.user?.sub || null,
+      capacityMax: capacityMaxOf(ev),
+      maxPerUser: Math.max(1, Math.min(Number(ev.maxPerUser) || 1, 20)),
+      urls: { returnUrl: `${APP_URL}/pago/${"{ORDER}"}` },
+    });
+
+    res.status(201).json({
+      orderId: orden.orderId,
+      checkoutUrl: orden.checkoutUrl,
+      reservedUntil: orden.reservedUntil,
+      subtotal: orden.subtotal, serviceFee: orden.serviceFee, total: orden.total,
+    });
+  } catch (e) {
+    if (e instanceof PaymentError) return res.status(e.status).json({ error: e.code, message: e.message, ...(e.raw || {}) });
+    console.error("[POST /orders]", e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Estado de la orden — lo consulta la pantalla de resultado (PSE puede tardar).
+app.get("/api/public/orders/:id", requireDb, async (req, res) => {
+  try {
+    const o = await getOrder(req.params.id);
+    if (!o) return res.status(404).json({ error: "Orden no encontrada" });
+    const { rows } = await db.execute({
+      sql: "SELECT ticket_id, approved FROM registrations WHERE order_id = ? AND cancelled = 0 ORDER BY created_at",
+      args: [o.id],
+    });
+    const { rows: evRows } = await db.execute({ sql: "SELECT slug FROM events WHERE id = ?", args: [o.event_id] });
+    res.set("Cache-Control", "no-store");
+    res.json({
+      order: {
+        id: o.id, status: o.status, total: o.total, subtotal: o.subtotal, serviceFee: o.service_fee,
+        quantity: o.quantity, reservedUntil: o.reserved_until, checkoutUrl: o.checkout_url,
+        eventSlug: evRows[0]?.slug || null,
+        tickets: o.status === PAYMENT_STATUS.APPROVED
+          ? rows.map(r => ({ id: r.ticket_id, approved: r.approved == null ? true : Boolean(r.approved), used: false }))
+          : [],
+      },
+    });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Webhook de la pasarela. Es la ÚNICA vía por la que una entrada pasa a válida:
+// nunca se confía en la redirección del navegador, que el comprador puede
+// falsificar o no completar.
+app.post("/api/payments/webhook/:provider", requireDb, async (req, res) => {
+  try {
+    const provider = getPaymentProvider();
+    if (req.params.provider !== provider.name) return res.status(404).json({ error: "Pasarela desconocida" });
+
+    if (!provider.verifyWebhook({ headers: req.headers, rawBody: req.rawBody })) {
+      console.warn("[webhook] firma inválida");
+      return res.status(401).json({ error: "firma inválida" });
+    }
+
+    const evt = provider.parseWebhook({ headers: req.headers, body: req.body });
+    const order = evt.orderId ? await getOrder(evt.orderId) : await getOrderByRef(evt.providerRef);
+    if (!order) return res.status(404).json({ error: "Orden no encontrada" });
+
+    // Idempotencia: la pasarela reintenta hasta recibir 200.
+    const clave = `${provider.name}:${evt.providerRef}:${evt.status}`;
+    const primeraVez = await markWebhookSeen({ eventKey: clave, orderId: order.id, provider: provider.name, status: evt.status });
+    if (!primeraVez) return res.json({ ok: true, duplicated: true });
+
+    if (evt.status === PAYMENT_STATUS.APPROVED) {
+      const r = await approveOrder(order.id);
+      // Un solo correo con todas las entradas de la compra.
+      if (r && !r.yaEstaba && emailEnabled && order.buyer_email) {
+        const { rows: evRows } = await db.execute({ sql: "SELECT * FROM events WHERE id = ?", args: [order.event_id] });
+        const ev = parseEvent(evRows[0]);
+        try {
+          if (ev.requireApproval) await sendApprovalPending(order.buyer_email, null, ev);
+          else await sendRegistrationConfirmation(order.buyer_email, null, r.ticketIds, ev);
+        } catch (mailErr) { console.error("Error enviando entradas:", mailErr?.message); }
+      }
+      if (r?.resold?.length) console.log(`[reventa] ${r.resold.length} entrada(s) recompradas y devueltas`);
+    } else if (evt.status === PAYMENT_STATUS.DECLINED) {
+      await cancelOrder(order.id, PAYMENT_STATUS.DECLINED);
+    }
+    res.json({ ok: true });
+  } catch (e) {
+    console.error("[webhook]", e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ─── Reventa ───────────────────────────────────────────────────────────────
+
+app.post("/api/public/tickets/:ticketId/resale", requireDb, optionalAuth, async (req, res) => {
+  try {
+    const r = req.body?.listed === false
+      ? await unlistResale(req.params.ticketId, { email: req.user?.email })
+      : await listForResale(req.params.ticketId, { email: req.user?.email });
+    res.json(r);
+  } catch (e) {
+    if (e instanceof PaymentError) return res.status(e.status).json({ error: e.code, message: e.message });
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ─── Eventos (anfitrión) ───────────────────────────────────────────────────
 app.get("/api/events", requireDb, authMiddleware, async (req, res) => {
   try {
@@ -655,7 +827,8 @@ app.get("/api/events", requireDb, authMiddleware, async (req, res) => {
       const ids = events.map((e) => e.id);
       const placeholders = ids.map(() => "?").join(",");
       const { rows: regRows } = await db.execute({
-        sql: `SELECT * FROM registrations WHERE cancelled = 0 AND event_id IN (${placeholders}) ORDER BY created_at DESC`,
+        sql: `SELECT * FROM registrations WHERE cancelled = 0 AND payment_status != 'pending'
+              AND event_id IN (${placeholders}) ORDER BY created_at DESC`,
         args: ids,
       });
       const byEvent = new Map(events.map((e) => [e.id, e]));
@@ -794,6 +967,10 @@ app.post("/api/events/:id/check-in", requireDb, authMiddleware, async (req, res)
     const regRow = regRows[0];
     if (!regRow) return res.json({ status: "nf" });
     if (regRow.cancelled) return res.json({ status: "cancelled" });
+    // Sin pagar (checkout abandonado o devuelta) → no da acceso.
+    if (regRow.payment_status && regRow.payment_status !== REG_PAYMENT.NOT_REQUIRED && regRow.payment_status !== REG_PAYMENT.PAID) {
+      return res.json({ status: "unpaid", reg: { id: regRow.ticket_id, data: JSON.parse(regRow.payload) } });
+    }
     // Pendiente de aprobación → el QR no da acceso todavía.
     if (regRow.approved != null && !regRow.approved) {
       return res.json({ status: "pending", reg: { id: regRow.ticket_id, data: JSON.parse(regRow.payload) } });

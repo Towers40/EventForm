@@ -72,9 +72,55 @@ export async function initDb() {
         FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
       )`,
     },
+    {
+      // Órdenes de pago. Una orden agrupa las entradas de UNA compra (que
+      // pueden ser varias) y guarda el reparto tal como se calculó en el
+      // momento: si mañana cambia la comisión, lo ya cobrado no se reescribe.
+      sql: `CREATE TABLE IF NOT EXISTS payment_orders (
+        id TEXT PRIMARY KEY,
+        event_id TEXT NOT NULL,
+        buyer_email TEXT,
+        buyer_user_id TEXT,
+        quantity INTEGER NOT NULL DEFAULT 1,
+        unit_price INTEGER NOT NULL DEFAULT 0,
+        subtotal INTEGER NOT NULL DEFAULT 0,
+        service_fee INTEGER NOT NULL DEFAULT 0,
+        total INTEGER NOT NULL DEFAULT 0,
+        platform_fee INTEGER NOT NULL DEFAULT 0,
+        organizer_net INTEGER NOT NULL DEFAULT 0,
+        currency TEXT NOT NULL DEFAULT 'COP',
+        status TEXT NOT NULL DEFAULT 'pending',
+        provider TEXT,
+        provider_ref TEXT,
+        checkout_url TEXT,
+        form_payload TEXT,
+        consent_privacy INTEGER NOT NULL DEFAULT 0,
+        consent_marketing INTEGER NOT NULL DEFAULT 0,
+        reserved_until INTEGER,
+        refunded_amount INTEGER NOT NULL DEFAULT 0,
+        resale_of TEXT,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
+      )`,
+    },
+    {
+      // Eventos de webhook ya procesados. La pasarela reintenta hasta recibir
+      // un 200, así que sin esta tabla una confirmación repetida emitiría los
+      // QR dos veces.
+      sql: `CREATE TABLE IF NOT EXISTS payment_events (
+        id TEXT PRIMARY KEY,
+        order_id TEXT,
+        provider TEXT,
+        status TEXT,
+        received_at INTEGER NOT NULL
+      )`,
+    },
     { sql: `CREATE INDEX IF NOT EXISTS idx_events_host ON events(host_id)` },
     { sql: `CREATE INDEX IF NOT EXISTS idx_events_slug ON events(slug)` },
     { sql: `CREATE INDEX IF NOT EXISTS idx_reg_event ON registrations(event_id)` },
+    { sql: `CREATE INDEX IF NOT EXISTS idx_orders_event ON payment_orders(event_id)` },
+    { sql: `CREATE INDEX IF NOT EXISTS idx_orders_ref ON payment_orders(provider_ref)` },
     // OJO: los índices sobre columnas que añade la migración de más abajo
     // (visibility, email, approved) NO pueden ir en este lote — en una base
     // nueva la columna todavía no existe y el batch entero falla.
@@ -97,6 +143,18 @@ export async function initDb() {
     // QR no sirve hasta que el anfitrión la aprueba. El DEFAULT 1 deja las
     // inscripciones ya existentes como aprobadas, que es como se comportaban.
     ["registrations", "approved",   "INTEGER NOT NULL DEFAULT 1"],
+    // Pagos. `not_required` por defecto deja intactas las inscripciones de
+    // eventos gratuitos y todo lo ya existente.
+    ["registrations", "order_id",       "TEXT"],
+    ["registrations", "payment_status", "TEXT NOT NULL DEFAULT 'not_required'"],
+    // Reventa: la entrada sigue siendo válida mientras está en venta; solo
+    // deja de serlo cuando otra persona ocupa el cupo.
+    ["registrations", "resale_status",  "TEXT NOT NULL DEFAULT 'none'"], // none | listed | sold
+    ["registrations", "resale_listed_at", "INTEGER"],
+    // Cuenta del organizador como receptor del split en la pasarela.
+    ["users", "payout_provider",   "TEXT"],
+    ["users", "payout_account_id", "TEXT"],
+    ["users", "payout_status",     "TEXT NOT NULL DEFAULT 'none'"], // none | pending | verified
   ];
   const tablas = [...new Set(migrations.map(m => m[0]))];
   const columnas = {};
@@ -120,6 +178,9 @@ export async function initDb() {
     "CREATE INDEX IF NOT EXISTS idx_events_visibility ON events(visibility)",
     // Índice para buscar entradas por email del asistente (vista "Mis tickets")
     "CREATE INDEX IF NOT EXISTS idx_reg_email ON registrations(email)",
+    "CREATE INDEX IF NOT EXISTS idx_reg_order ON registrations(order_id)",
+    // El listado de reventa filtra por evento + estado.
+    "CREATE INDEX IF NOT EXISTS idx_reg_resale ON registrations(event_id, resale_status)",
   ]) {
     try { await db.execute({ sql, args: [] }); } catch { /* noop */ }
   }
