@@ -79,8 +79,13 @@ export const api = {
   // (el servidor responde 401 account_required si falta).
   publicRegister: (slug, body, token) =>
     request(`/api/public/events/${slug}/register`, { method: "POST", body: JSON.stringify(body) }, token),
-  setRegistrationApproval: (token, eventId, ticketId, approved) =>
-    request(`/api/events/${eventId}/registrations/${ticketId}/approval`, { method: "PATCH", body: JSON.stringify({ approved }) }, token),
+  // Acepta un ticket o varios. En lote, el servidor manda UN solo correo por
+  // persona con todas sus entradas aprobadas.
+  setRegistrationApproval: (token, eventId, ticketIds, approved) => {
+    const ids = Array.isArray(ticketIds) ? ticketIds : [ticketIds];
+    return request(`/api/events/${eventId}/registrations/approval`,
+      { method: "PATCH", body: JSON.stringify({ ticketIds: ids, approved }) }, token);
+  },
   cancelRegistration: (ticketId) =>
     request(`/api/public/registrations/${ticketId}/cancel`, { method: "PATCH" }),
   adminOverview: (token) => request("/api/admin/overview", {}, token),

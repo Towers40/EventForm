@@ -982,6 +982,58 @@ app.post("/api/events/:id/check-in", requireDb, authMiddleware, async (req, res)
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// Aprobar / revocar VARIAS inscripciones de una vez (normalmente todas las de
+// una misma persona). Manda UN solo correo con todas las entradas aprobadas,
+// en vez de uno por entrada.
+app.patch("/api/events/:id/registrations/approval", requireDb, authMiddleware, async (req, res) => {
+  try {
+    const { rows: evRows } = await db.execute({ sql: "SELECT * FROM events WHERE id = ?", args: [req.params.id] });
+    if (!evRows[0]) return res.status(404).json({ error: "Evento no encontrado" });
+    if (req.user.role !== "super_admin" && evRows[0].host_id !== req.user.sub) return res.status(403).json({ error: "Sin permiso" });
+
+    const ids = (Array.isArray(req.body?.ticketIds) ? req.body.ticketIds : [])
+      .map(t => String(t || "").trim().toUpperCase()).filter(Boolean);
+    if (!ids.length) return res.status(400).json({ error: "Sin entradas que actualizar" });
+    const approved = req.body?.approved === false ? 0 : 1;
+
+    const placeholders = ids.map(() => "?").join(",");
+    const { rows: regs } = await db.execute({
+      sql: `SELECT * FROM registrations WHERE event_id = ? AND ticket_id IN (${placeholders})`,
+      args: [req.params.id, ...ids],
+    });
+    if (!regs.length) return res.status(404).json({ error: "Inscripciones no encontradas" });
+
+    // Solo las que cambian de verdad disparan correo.
+    const nuevas = regs.filter(r => (r.approved == null ? true : Boolean(r.approved)) !== Boolean(approved));
+    await db.execute({
+      sql: `UPDATE registrations SET approved = ? WHERE event_id = ? AND ticket_id IN (${placeholders})`,
+      args: [approved, req.params.id, ...ids],
+    });
+
+    if (approved && nuevas.length && emailEnabled) {
+      const ev = parseEvent(evRows[0]);
+      // Se agrupa por destinatario: cada persona recibe un único correo con
+      // todas sus entradas, aunque el lote traiga varias personas.
+      const porCorreo = new Map();
+      for (const r of nuevas) {
+        let data = {};
+        try { data = JSON.parse(r.payload); } catch { /* payload ilegible */ }
+        const nameField = (ev.fields || []).find(f => f.type === "text" && /nombre/i.test(f.label));
+        const to = r.email
+          || Object.values(data).find(v => typeof v === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v));
+        if (!to) continue;
+        if (!porCorreo.has(to)) porCorreo.set(to, { nombre: nameField ? data[nameField.id] : null, ids: [] });
+        porCorreo.get(to).ids.push(r.ticket_id);
+      }
+      for (const [to, { nombre, ids: tids }] of porCorreo) {
+        try { await sendRegistrationConfirmation(to, nombre, tids, ev); }
+        catch (mailErr) { console.error("Error enviando entradas aprobadas:", mailErr?.message); }
+      }
+    }
+    res.json({ ok: true, updated: ids.length, changed: nuevas.length, approved: Boolean(approved) });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // Aprobar / revocar una inscripción de un evento con "Requerir aprobación".
 // Al aprobar, el QR de esa entrada queda activo de inmediato (el asistente lo
 // ve en "Mis tickets") y se le envía la entrada por correo.

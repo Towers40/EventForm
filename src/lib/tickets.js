@@ -169,6 +169,44 @@ export function buildParticipant(event, reg) {
   return { name: primary, rows };
 }
 
+/**
+ * Agrupa las inscripciones por persona.
+ *
+ * Quien reserva 3 entradas genera 3 inscripciones (cada una con su QR), pero
+ * para el anfitrión es UNA persona: verla repetida en tres renglones idénticos
+ * no aporta nada y ensucia la lista. Se agrupa por correo cuando lo hay —es lo
+ * único fiable— y si no, por nombre.
+ */
+export function groupRegistrations(event, regs = []) {
+  const grupos = new Map();
+  for (const r of regs) {
+    const p = buildParticipant(event, r);
+    const email = String(r.email || emailOf(event, r) || "").trim().toLowerCase();
+    const clave = email || `nombre:${p.name.trim().toLowerCase()}`;
+    if (!grupos.has(clave)) {
+      grupos.set(clave, { key: clave, name: p.name, email: email || null, rows: p.rows, items: [] });
+    }
+    grupos.get(clave).items.push(r);
+  }
+  return Array.from(grupos.values()).map((g) => ({
+    ...g,
+    // La más reciente primero, como en el listado original.
+    items: g.items.sort((a, b) => (b.ts || 0) - (a.ts || 0)),
+    ts: Math.max(...g.items.map((i) => i.ts || 0)),
+    total: g.items.length,
+    pendientes: g.items.filter((i) => i.approved === false).length,
+    usadas: g.items.filter((i) => i.used).length,
+  })).sort((a, b) => b.ts - a.ts);
+}
+
+function emailOf(event, reg) {
+  const campo = (event.fields || []).find((f) => f.type === "email");
+  if (campo && reg.data?.[campo.id]) return reg.data[campo.id];
+  return Object.values(reg.data || {}).find(
+    (v) => typeof v === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
+  ) || null;
+}
+
 export function daysInMonth(month, year) {
   const m = Number(month);
   const y = Number(year);

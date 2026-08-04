@@ -1,4 +1,5 @@
-import { buildParticipant } from "../lib/tickets.js";
+import { useState } from "react";
+import { buildParticipant, groupRegistrations } from "../lib/tickets.js";
 import { capacityLabel, isSoldOut } from "../lib/capacity.js";
 
 const SUB  = "rgba(232,234,240,0.5)";
@@ -41,11 +42,16 @@ function exportCsv(event, registrations) {
   a.click();
 }
 
-export default function EventCrm({ event, onBack, onToggleSoldOut, onShare, onSetApproval }) {
+export default function EventCrm({ event, onBack, onToggleSoldOut, onShare, onSetApproval, initialFilter = "todos" }) {
   const regs = event.registrations || [];
   const checked = regs.filter((r) => r.used).length;
   const needsApproval = Boolean(event.requireApproval);
   const pending = regs.filter((r) => r.approved === false).length;
+
+  const [filtro, setFiltro] = useState(initialFilter);
+  // Una fila por persona, no por entrada: quien reservó 3 aparecía 3 veces.
+  const grupos = groupRegistrations(event, regs);
+  const visibles = filtro === "pendientes" ? grupos.filter((g) => g.pendientes > 0) : grupos;
 
   return (
     <div>
@@ -99,74 +105,89 @@ export default function EventCrm({ event, onBack, onToggleSoldOut, onShare, onSe
         </div>
       </div>
 
+      {/* Filtro de aprobación */}
+      {needsApproval && (
+        <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+          {[
+            { key: "todos", label: `Todos (${grupos.length})` },
+            { key: "pendientes", label: `Por aprobar (${grupos.filter(g => g.pendientes > 0).length})` },
+          ].map((f) => (
+            <button key={f.key} type="button" onClick={() => setFiltro(f.key)}
+              style={{
+                padding: "8px 16px", borderRadius: 999, cursor: "pointer", fontSize: 13,
+                fontWeight: filtro === f.key ? 700 : 600,
+                background: filtro === f.key ? "rgba(107,159,212,0.22)" : "rgba(255,255,255,0.05)",
+                border: filtro === f.key ? "1px solid rgba(107,159,212,0.45)" : BORDER,
+                color: filtro === f.key ? "#e8eaf0" : SUB,
+              }}>
+              {f.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="panel-card">
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
             <thead>
               <tr style={{ background: "rgba(255,255,255,0.04)", textAlign: "left" }}>
-                <th style={{ padding: 12, borderBottom: BORDER, color: SUB, fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.05em" }}>Asistente</th>
-                <th style={{ padding: 12, borderBottom: BORDER, color: SUB, fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.05em" }}>Ticket</th>
-                <th style={{ padding: 12, borderBottom: BORDER, color: SUB, fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.05em" }}>Registro</th>
-                <th style={{ padding: 12, borderBottom: BORDER, color: SUB, fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.05em" }}>Ingreso</th>
-                <th style={{ padding: 12, borderBottom: BORDER, color: SUB, fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.05em" }}>Marketing</th>
-                {needsApproval && (
-                  <th style={{ padding: 12, borderBottom: BORDER, color: SUB, fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.05em" }}>Aprobación</th>
-                )}
+                {["Asistente", "Entradas", "Registro", "Ingreso", "Marketing", ...(needsApproval ? ["Aprobación"] : [])].map((h) => (
+                  <th key={h} style={{ padding: 12, borderBottom: BORDER, color: SUB, fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.05em" }}>{h}</th>
+                ))}
               </tr>
             </thead>
             <tbody>
-              {regs.length === 0 ? (
+              {visibles.length === 0 ? (
                 <tr>
                   <td colSpan={needsApproval ? 6 : 5} style={{ padding: 24, textAlign: "center", color: SUB }}>
-                    Sin inscripciones aún
+                    {filtro === "pendientes" ? "No hay solicitudes por aprobar" : "Sin inscripciones aún"}
                   </td>
                 </tr>
               ) : (
-                regs.map((r) => {
-                  const p = buildParticipant(event, r);
+                visibles.map((g) => {
+                  const ids = g.items.map((i) => i.id);
+                  const pendientesIds = g.items.filter((i) => i.approved === false).map((i) => i.id);
                   return (
-                    <tr key={r.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-                      <td style={{ padding: 12, fontWeight: 700, color: TEXT }}>{p.name}</td>
-                      <td style={{ padding: 12, fontFamily: "monospace", fontSize: 11, color: SUB }}>{r.id}</td>
-                      <td style={{ padding: 12, color: SUB }}>
-                        {new Date(r.ts).toLocaleString("es-CO")}
+                    <tr key={g.key} style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                      <td style={{ padding: 12, color: TEXT }}>
+                        <div style={{ fontWeight: 700 }}>{g.name}</div>
+                        {g.email && <div style={{ fontSize: 11.5, color: SUB, marginTop: 2 }}>{g.email}</div>}
                       </td>
-                      <td style={{ padding: 12 }}>
-                        <span
-                          style={{
-                            background: r.used ? "rgba(107,159,212,0.2)" : "rgba(52,199,89,0.15)",
-                            color: r.used ? "#6b9fd4" : "#86efac",
-                            padding: "4px 10px",
-                            borderRadius: 100,
-                            fontSize: 11,
-                            fontWeight: 700,
-                          }}
-                        >
-                          {r.used ? "INGRESÓ" : "PENDIENTE"}
+                      <td style={{ padding: 12, whiteSpace: "nowrap" }}>
+                        <span style={{ fontWeight: 800, color: g.total > 1 ? "#6b9fd4" : TEXT, fontSize: 14 }}>{g.total}</span>
+                        <span style={{ color: SUB, fontSize: 11.5, marginLeft: 5 }}>{g.total === 1 ? "entrada" : "entradas"}</span>
+                        {/* Los códigos solo cuando son pocos: con 5 la celda se vuelve ilegible. */}
+                        {g.total <= 3 && (
+                          <div style={{ fontFamily: "monospace", fontSize: 10.5, color: SUB, marginTop: 3, lineHeight: 1.5 }}>
+                            {ids.join(" · ")}
+                          </div>
+                        )}
+                      </td>
+                      <td style={{ padding: 12, color: SUB, whiteSpace: "nowrap" }}>{new Date(g.ts).toLocaleString("es-CO")}</td>
+                      <td style={{ padding: 12, whiteSpace: "nowrap" }}>
+                        <span style={{
+                          background: g.usadas ? "rgba(107,159,212,0.2)" : "rgba(52,199,89,0.15)",
+                          color: g.usadas ? "#6b9fd4" : "#86efac",
+                          padding: "4px 10px", borderRadius: 100, fontSize: 11, fontWeight: 700,
+                        }}>
+                          {g.usadas === 0 ? "PENDIENTE" : g.usadas === g.total ? "INGRESÓ" : `${g.usadas}/${g.total} INGRESARON`}
                         </span>
                       </td>
-                      <td style={{ padding: 12, color: SUB }}>{r.consentMarketing ? "Sí" : "No"}</td>
+                      <td style={{ padding: 12, color: SUB }}>{g.items.some((i) => i.consentMarketing) ? "Sí" : "No"}</td>
                       {needsApproval && (
                         <td style={{ padding: 12, whiteSpace: "nowrap" }}>
-                          {r.approved === false ? (
-                            <div style={{ display: "inline-flex", gap: 6 }}>
-                              <button type="button" onClick={() => onSetApproval?.(r.id, true)}
-                                style={{ padding: "5px 12px", borderRadius: 8, fontSize: 11.5, fontWeight: 800, cursor: "pointer", background: "rgba(52,199,89,0.16)", color: "#86efac", border: "1px solid rgba(52,199,89,0.35)" }}>
-                                Aprobar
-                              </button>
-                              <button type="button" onClick={() => onSetApproval?.(r.id, false)}
-                                title="Mantener pendiente" disabled
-                                style={{ padding: "5px 12px", borderRadius: 8, fontSize: 11.5, fontWeight: 700, background: "rgba(251,191,36,0.12)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.3)", cursor: "default" }}>
-                                Pendiente
-                              </button>
-                            </div>
+                          {g.pendientes > 0 ? (
+                            <button type="button" onClick={() => onSetApproval?.(pendientesIds, true)}
+                              style={{ padding: "6px 14px", borderRadius: 8, fontSize: 11.5, fontWeight: 800, cursor: "pointer", background: "rgba(52,199,89,0.16)", color: "#86efac", border: "1px solid rgba(52,199,89,0.35)" }}>
+                              {g.pendientes === g.total ? `Aprobar ${g.total > 1 ? "las " + g.total : ""}` : `Aprobar ${g.pendientes} restantes`}
+                            </button>
                           ) : (
                             <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
                               <span style={{ background: "rgba(52,199,89,0.15)", color: "#86efac", padding: "4px 10px", borderRadius: 100, fontSize: 11, fontWeight: 700 }}>
                                 APROBADO
                               </span>
-                              {!r.used && (
-                                <button type="button" onClick={() => onSetApproval?.(r.id, false)}
+                              {g.usadas === 0 && (
+                                <button type="button" onClick={() => onSetApproval?.(ids, false)}
                                   style={{ padding: "4px 10px", borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: "pointer", background: "transparent", color: SUB, border: BORDER }}>
                                   Revocar
                                 </button>

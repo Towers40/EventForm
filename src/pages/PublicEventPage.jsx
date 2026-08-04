@@ -135,6 +135,7 @@ export default function PublicEventPage() {
   const [phase, setPhase]          = useState("event");
   const [err, setErr]              = useState("");
   const [cancelling, setCancelling] = useState(false);
+  const [refreshTick, setRefreshTick] = useState(0); // fuerza recarga del estado
 
   useEffect(() => {
     let cancelled = false;
@@ -153,7 +154,11 @@ export default function PublicEventPage() {
     const eventP = apiEnabled
       ? api.publicEvent(slug).then(r => r.event)
       : Promise.resolve(loadEvents().find(e => e.slug === slug));
-    const ticketsP = (!localReg && apiEnabled && token)
+    // Se consulta SIEMPRE que haya sesión, incluso con una entrada guardada en
+    // el dispositivo: esa copia se escribió al inscribirse y no se entera de
+    // nada después. Por eso un QR aprobado seguía saliendo borroso aquí — la
+    // página se quedaba con el "pendiente" del primer día.
+    const ticketsP = (apiEnabled && token)
       ? api.myTickets(token).then(r => r.tickets).catch(() => null)
       : Promise.resolve(null);
 
@@ -165,19 +170,37 @@ export default function PublicEventPage() {
 
     ticketsP.then(tickets => {
       if (cancelled) return;
-      if (!localReg && tickets) {
+      if (tickets) {
         const mias = tickets.filter(t => t.event?.slug === slug);
         if (mias.length) {
+          // El servidor manda sobre la copia local: es donde vive el estado de
+          // aprobación al día.
           const norm = mias.map(t => ({ id: t.id, used: Boolean(t.used), approved: t.approved !== false }));
           setReg(norm[0]);
           setRegs(norm.length > 1 ? norm : null);
+          try {
+            const key = `ef_ticket_${slug}`;
+            const saved = JSON.parse(localStorage.getItem(key) || "null");
+            if (saved) localStorage.setItem(key, JSON.stringify({ ...saved, ...norm[0], _all: norm }));
+          } catch { /* noop */ }
         }
       }
       setRegLoading(false);
     });
 
     return () => { cancelled = true; };
-  }, [slug, token]);
+  }, [slug, token, refreshTick]);
+
+  // Con alguna entrada pendiente de aprobación se refresca al volver a la
+  // pestaña y cada 20 s, para que el QR se destape sin recargar a mano.
+  useEffect(() => {
+    const pendientes = (regs || (reg ? [reg] : [])).some(t => t?.approved === false);
+    if (!pendientes || !apiEnabled || !token) return;
+    const bump = () => setRefreshTick(n => n + 1);
+    const tick = setInterval(bump, 20000);
+    window.addEventListener("focus", bump);
+    return () => { clearInterval(tick); window.removeEventListener("focus", bump); };
+  }, [regs, reg, token]);
 
   // Los eventos con aprobación exigen cuenta: es en "Mis tickets" donde la
   // persona ve si su QR sigue pendiente o ya se activó.

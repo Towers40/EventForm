@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { isSoldOut, capacityLabel } from "../lib/capacity.js";
-import { buildParticipant } from "../lib/tickets.js";
+import { groupRegistrations } from "../lib/tickets.js";
 import "../styles/typeform.css";
 
 function statusOf(ev) {
@@ -86,7 +86,7 @@ export default function MisEventosView({ events, loading, error, onRetry, onNew,
               ? <DraftCard key={ev.id} ev={ev} onEdit={() => onEdit(ev)} onDelete={() => onDelete(ev.id)} />
               : <EventCard
                   key={ev.id} ev={ev}
-                  onOpen={() => onOpen(ev.id)} onEdit={() => onEdit(ev)}
+                  onOpen={(filtro) => onOpen(ev.id, filtro)} onEdit={() => onEdit(ev)}
                   onValidate={() => onValidate(ev.id)} onDelete={() => onDelete(ev.id)}
                   onShare={() => onShare(ev)} onToggleSoldOut={(v) => onToggleSoldOut(ev.id, v)}
                 />
@@ -109,6 +109,9 @@ function EventCard({ ev, onOpen, onEdit, onValidate, onDelete, onShare, onToggle
   const [expanded, setExpanded] = useState(false);
   const regs = ev.registrations || [];
   const checkins = regs.filter(r => r.used).length;
+  const grupos = groupRegistrations(ev, regs);
+  // Personas (no entradas) con alguna solicitud sin aprobar.
+  const porAprobar = grupos.filter(g => g.pendientes > 0);
   const sold = isSoldOut(ev);
   const isPast = statusOf(ev) === "pasado";
 
@@ -176,9 +179,31 @@ function EventCard({ ev, onOpen, onEdit, onValidate, onDelete, onShare, onToggle
         );
       })()}
 
+      {/* Aviso de solicitudes por aprobar: lleva directo a la lista filtrada,
+          que es lo que el anfitrión quiere hacer al verlo. */}
+      {porAprobar.length > 0 && (
+        <button type="button" className="ef-hover-fill" onClick={() => onOpen("pendientes")}
+          style={{
+            width: "100%", display: "flex", alignItems: "center", gap: 10, textAlign: "left",
+            padding: "12px 20px", border: "none", cursor: "pointer",
+            borderTop: "1px solid rgba(251,191,36,0.25)", background: "rgba(251,191,36,0.1)", color: "#fbbf24",
+          }}>
+          <svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+            <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" />
+          </svg>
+          <span style={{ flex: 1, fontSize: 13, fontWeight: 700 }}>
+            {porAprobar.length} {porAprobar.length === 1 ? "solicitud" : "solicitudes"} por aprobar
+            <span style={{ display: "block", fontSize: 11.5, fontWeight: 600, opacity: 0.85, marginTop: 1 }}>
+              Su QR no funciona hasta que las apruebes
+            </span>
+          </span>
+          <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="m9 18 6-6-6-6" /></svg>
+        </button>
+      )}
+
       {/* Acciones — centradas */}
       <div style={{ padding: "14px 16px", borderTop: "1px solid rgba(255,255,255,0.07)", display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
-        <button type="button" className="soft-btn soft-btn-primary ef-hover-fill" style={{ fontSize: 12, padding: "8px 14px" }} onClick={onOpen}>
+        <button type="button" className="soft-btn soft-btn-primary ef-hover-fill" style={{ fontSize: 12, padding: "8px 14px" }} onClick={() => onOpen()}>
           Inscritos
         </button>
         <button type="button" className="soft-btn soft-btn-secondary" title="Compartir" aria-label="Compartir" style={{ fontSize: 12, padding: "8px 12px", display: "inline-flex", alignItems: "center", justifyContent: "center" }} onClick={onShare}>
@@ -206,23 +231,29 @@ function EventCard({ ev, onOpen, onEdit, onValidate, onDelete, onShare, onToggle
           <p style={{ fontSize: 12, fontWeight: 700, color: "#8fa3b1", textTransform: "uppercase", letterSpacing: "0.06em", margin: "16px 0 10px" }}>
             Últimos inscritos
           </p>
-          {[...regs].reverse().slice(0, 10).map(r => {
-            const p = buildParticipant(ev, r);
-            return (
-              <div key={r.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-                <div>
-                  <span style={{ fontSize: 14, fontWeight: 600, color: "#e8eaf0" }}>{p.name}</span>
-                  <span style={{ fontSize: 11, color: "#8fa3b1", marginLeft: 8 }}>{new Date(r.ts).toLocaleString("es-CO")}</span>
-                </div>
-                <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 100, background: r.used ? "rgba(107,159,212,0.25)" : "rgba(52,199,89,0.15)", color: r.used ? "#6b9fd4" : "#86efac" }}>
-                  {r.used ? "CHECK-IN" : "ACTIVO"}
-                </span>
+          {/* Una línea por PERSONA con su número de entradas: antes quien
+              reservaba 3 aparecía tres veces con el mismo nombre. */}
+          {grupos.slice(0, 10).map(g => (
+            <div key={g.key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+              <div style={{ minWidth: 0 }}>
+                <span style={{ fontSize: 14, fontWeight: 600, color: "#e8eaf0" }}>{g.name}</span>
+                {g.total > 1 && (
+                  <span style={{ fontSize: 11, fontWeight: 800, color: "#6b9fd4", marginLeft: 7, background: "rgba(107,159,212,0.16)", padding: "2px 7px", borderRadius: 100 }}>
+                    ×{g.total}
+                  </span>
+                )}
+                <span style={{ fontSize: 11, color: "#8fa3b1", marginLeft: 8 }}>{new Date(g.ts).toLocaleString("es-CO")}</span>
               </div>
-            );
-          })}
-          {regs.length > 10 && (
-            <button type="button" className="soft-btn soft-btn-secondary" style={{ fontSize: 12, marginTop: 12, width: "100%" }} onClick={onOpen}>
-              Ver todos los {regs.length} inscritos →
+              <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 100,
+                background: g.pendientes ? "rgba(251,191,36,0.16)" : g.usadas ? "rgba(107,159,212,0.25)" : "rgba(52,199,89,0.15)",
+                color: g.pendientes ? "#fbbf24" : g.usadas ? "#6b9fd4" : "#86efac" }}>
+                {g.pendientes ? "POR APROBAR" : g.usadas === g.total ? "CHECK-IN" : g.usadas ? `${g.usadas}/${g.total}` : "ACTIVO"}
+              </span>
+            </div>
+          ))}
+          {grupos.length > 10 && (
+            <button type="button" className="soft-btn soft-btn-secondary" style={{ fontSize: 12, marginTop: 12, width: "100%" }} onClick={() => onOpen()}>
+              Ver los {grupos.length} inscritos →
             </button>
           )}
         </div>

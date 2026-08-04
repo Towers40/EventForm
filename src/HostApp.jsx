@@ -199,6 +199,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
   const [events, setEvents] = useState(() => (apiOn ? [] : loadEvents()));
   const [eventsLoading, setEventsLoading] = useState(apiOn);
   const [eventsError, setEventsError] = useState(null);
+  const [crmFilter, setCrmFilter] = useState("todos"); // con qué filtro abrir Inscritos
   const [shareEv, setShareEv] = useState(null);
   const [evId, setEvId] = useState(null);
   const [regId, setRegId] = useState(null);
@@ -283,15 +284,16 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
     refreshEvents();
   }, [refreshEvents, isSuperAdmin]);
 
-  const setRegistrationApproval = async (eventId, ticketId, approved) => {
+  const setRegistrationApproval = async (eventId, ticketIds, approved) => {
     if (!apiOn || !token) return;
+    const ids = new Set(Array.isArray(ticketIds) ? ticketIds : [ticketIds]);
     // Optimista: el anfitrión ve el cambio al instante y el servidor confirma.
     setEvents((p) => p.map((e) => e.id !== eventId ? e : {
       ...e,
-      registrations: (e.registrations || []).map((r) => r.id === ticketId ? { ...r, approved } : r),
+      registrations: (e.registrations || []).map((r) => ids.has(r.id) ? { ...r, approved } : r),
     }));
     try {
-      await api.setRegistrationApproval(token, eventId, ticketId, approved);
+      await api.setRegistrationApproval(token, eventId, [...ids], approved);
     } catch (err) {
       alert("No se pudo actualizar la aprobación: " + (err?.message || "error"));
       refreshEvents();
@@ -790,7 +792,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
             error={eventsError}
             onRetry={refreshEvents}
             onNew={startNew}
-            onOpen={(id) => go("crm", id)}
+            onOpen={(id, filtro = "todos") => { setCrmFilter(filtro); go("crm", id); }}
             onEdit={editEvent}
             onValidate={(id) => openValidate(id)}
             onDelete={deleteEvent}
@@ -832,7 +834,8 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
             onBack={() => go("mis_eventos")}
             onToggleSoldOut={(v) => toggleSoldOut(ev.id, v)}
             onShare={() => setShareEv(ev)}
-            onSetApproval={(ticketId, approved) => setRegistrationApproval(ev.id, ticketId, approved)}
+            initialFilter={crmFilter}
+            onSetApproval={(ticketIds, approved) => setRegistrationApproval(ev.id, ticketIds, approved)}
           />
         )}
         {view === "detail" && ev && (
