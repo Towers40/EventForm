@@ -2,8 +2,7 @@ import { useState } from "react";
 import NavigateButtons from "./NavigateButtons.jsx";
 import LocationMap from "./LocationMap.jsx";
 import SlideToCancel from "./SlideToCancel.jsx";
-import PendingQr, { PendingNotice } from "./PendingQr.jsx";
-import { publicBaseUrl } from "../lib/platform.js";
+import TicketCarousel from "./TicketCarousel.jsx";
 import "../styles/typeform.css";
 
 export default function ConfirmTicket({ ev, reg, regs, onDone, standalone, onCancel, cancelling, onBack }) {
@@ -51,58 +50,8 @@ export default function ConfirmTicket({ ev, reg, regs, onDone, standalone, onCan
         )}
       </div>
 
-      {/* Una tarjeta de QR por entrada */}
-      {tickets.map((t, i) => (
-        <div key={t.id} style={{
-          background: "#1a1c1e",
-          border: "1px solid rgba(255,255,255,0.1)",
-          borderRadius: 20, padding: "28px 20px",
-          textAlign: "center",
-          marginBottom: i === tickets.length - 1 ? 24 : 12,
-          boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
-        }}>
-          {varias && (
-            <div style={{ fontSize: 11, fontWeight: 800, color: "#6b9fd4", letterSpacing: 1.5, marginBottom: 14, textTransform: "uppercase" }}>
-              Entrada {i + 1} de {tickets.length}
-            </div>
-          )}
-          <PendingQr id={t.id} size={200} approved={t.approved !== false} />
-          <p style={{
-            fontFamily: "monospace", fontWeight: 700, marginTop: 16,
-            fontSize: 13, color: "#6b9fd4", letterSpacing: 1,
-          }}>
-            {t.id}
-          </p>
-          {t.approved !== false ? (
-            <p style={{ fontSize: 12, color: "#8fa3b1", margin: "8px 0 0", lineHeight: 1.5 }}>
-              Presenta este QR en la entrada.<br />Solo permite un ingreso.
-            </p>
-          ) : (
-            <PendingNotice />
-          )}
-          {t.approved !== false && typeof navigator !== "undefined" && typeof navigator.share === "function" && (
-            <button
-              type="button"
-              onClick={() => navigator.share({
-                title: `Mi entrada: ${ev.title}`,
-                text: `Mi entrada (QR) para ${ev.title} — ID: ${t.id}`,
-                url: `${publicBaseUrl()}/t/${t.id}`,
-              }).catch(() => {})}
-              style={{
-                marginTop: 16, width: "100%",
-                padding: "13px",
-                background: "rgba(107,159,212,0.08)",
-                color: "#6b9fd4", borderRadius: 12,
-                border: "1px solid rgba(107,159,212,0.25)",
-                fontWeight: 700, fontSize: 14, cursor: "pointer",
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-              }}
-            >
-              ↗ {varias ? `Compartir entrada ${i + 1}` : "Compartir ticket"}
-            </button>
-          )}
-        </div>
-      ))}
+      {/* Entradas: una al lado de otra, se pasa deslizando */}
+      <TicketCarousel tickets={tickets} eventTitle={ev.title} />
 
       {/* Map */}
       {ev.lat != null && ev.lng != null && (

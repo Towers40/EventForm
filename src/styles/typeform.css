@@ -677,3 +677,13 @@ body::after {
 .wbtn:hover .wbtn-text-multi {
   animation: wbtn-shine 1.6s ease-in-out forwards;
 }
+
+/* Carrusel horizontal (entradas múltiples): scroll con snap y sin barra
+   visible. La barra no se puede ocultar con estilos en línea, por eso vive
+   aquí como clase. */
+.ef-hscroll {
+  scrollbar-width: none;          /* Firefox */
+  -ms-overflow-style: none;       /* Edge antiguo */
+  overscroll-behavior-x: contain; /* no arrastra la página al llegar al final */
+}
+.ef-hscroll::-webkit-scrollbar { display: none; }

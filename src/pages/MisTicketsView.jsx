@@ -3,7 +3,7 @@ import { api, apiEnabled } from "../lib/api.js";
 import { loadEvents } from "../lib/storage.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import SlideToCancel from "../components/SlideToCancel.jsx";
-import PendingQr, { PendingNotice } from "../components/PendingQr.jsx";
+import TicketCarousel from "../components/TicketCarousel.jsx";
 import "../styles/typeform.css";
 
 const DAYS_ES   = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
@@ -29,6 +29,7 @@ export default function MisTicketsView() {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("proximos");
   const [openQr, setOpenQr] = useState(null);
+  const [activeIdx, setActiveIdx] = useState({}); // entrada visible por evento
   const [eventModal, setEventModal] = useState(null); // { slug, event, loading }
   const [confirmCancel, setConfirmCancel] = useState(null); // { id, slug }
   const [cancelling, setCancelling] = useState(false);
@@ -40,9 +41,22 @@ export default function MisTicketsView() {
     setCancelling(true);
     try {
       if (apiEnabled) await api.cancelRegistration(id);
-      try { localStorage.removeItem(`ef_ticket_${slug}`); } catch { /* noop */ }
+      const quedan = tickets.filter(t => t.id !== id && (t.slug || t.event?.slug) === slug);
+      try {
+        // Con varias entradas del mismo evento, la caché local solo se borra
+        // cuando se cancela la última: si no, desaparecerían todas de golpe.
+        const key = `ef_ticket_${slug}`;
+        if (!quedan.length) localStorage.removeItem(key);
+        else {
+          const saved = JSON.parse(localStorage.getItem(key) || "null");
+          if (saved) {
+            const all = (saved._all || []).filter(r => r.id !== id);
+            localStorage.setItem(key, JSON.stringify({ ...saved, ...(saved.id === id ? all[0] : {}), _all: all }));
+          }
+        }
+      } catch { /* noop */ }
       setTickets(prev => prev.filter(t => t.id !== id));
-      setOpenQr(null);
+      if (!quedan.length) setOpenQr(null);
       setConfirmCancel(null);
     } catch (e) {
       alert("No se pudo cancelar: " + (e?.message || "error"));
@@ -129,8 +143,20 @@ export default function MisTicketsView() {
     return () => { stop = true; cleanupRef.current?.(); cleanupRef.current = null; };
   }, [token]);
 
-  const proximos = tickets.filter(t => !isPast(t.event));
-  const pasados  = tickets.filter(t => isPast(t.event));
+  // Las entradas del MISMO evento van juntas en una tarjeta: quien reservó 3
+  // no ve tres filas repetidas, sino una con las tres pasables a los lados.
+  const grupos = (() => {
+    const porEvento = new Map();
+    for (const t of tickets) {
+      const clave = t.slug || t.event?.slug || t.id;
+      if (!porEvento.has(clave)) porEvento.set(clave, { key: clave, slug: t.slug, event: t.event, items: [] });
+      porEvento.get(clave).items.push({ id: t.id, used: t.used, approved: t.approved !== false });
+    }
+    return Array.from(porEvento.values());
+  })();
+
+  const proximos = grupos.filter(g => !isPast(g.event));
+  const pasados  = grupos.filter(g => isPast(g.event));
   const usados   = tickets.filter(t => t.used).length;
   const lista    = tab === "proximos" ? proximos : pasados;
 
@@ -179,10 +205,16 @@ export default function MisTicketsView() {
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {lista.map(({ slug, id, used, event, approved = true }) => {
+          {lista.map((grupo) => {
+            const { key, slug, event, items } = grupo;
             const past = isPast(event);
+            const varias = items.length > 1;
+            const abierto = openQr === key;
+            const visible = items[Math.min(activeIdx[key] || 0, items.length - 1)] || items[0];
+            const pendientes = items.filter(i => !i.approved).length;
+            const usadas = items.filter(i => i.used).length;
             return (
-              <div key={id} className="panel-card" style={{ padding: 0, overflow: "hidden" }}>
+              <div key={key} className="panel-card" style={{ padding: 0, overflow: "hidden" }}>
                 <div style={{ display: "flex", gap: 14, padding: 16, alignItems: "center" }}>
                   <div style={{ width: 56, height: 56, borderRadius: 12, flexShrink: 0, overflow: "hidden", background: "rgba(107,159,212,0.18)" }}>
                     {event.headerImage && <img src={event.headerImage} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
@@ -192,27 +224,35 @@ export default function MisTicketsView() {
                     <div style={{ fontSize: 12.5, color: "rgba(232,234,240,0.55)", marginTop: 2 }}>{fmt(event.startDate || event.date)}</div>
                     <div style={{ display: "flex", gap: 6, marginTop: 7, flexWrap: "wrap" }}>
                       <span style={{ fontSize: 10.5, fontWeight: 700, padding: "3px 9px", borderRadius: 100, background: past ? "rgba(220,38,38,0.18)" : "rgba(52,199,89,0.16)", color: past ? "#fca5a5" : "#5ee07f" }}>{past ? "Pasado" : "Próximo"}</span>
-                      {!approved && <span style={{ fontSize: 10.5, fontWeight: 700, padding: "3px 9px", borderRadius: 100, background: "rgba(251,191,36,0.16)", color: "#fbbf24" }}>Sujeto a aprobación</span>}
-                      {used && <span style={{ fontSize: 10.5, fontWeight: 700, padding: "3px 9px", borderRadius: 100, background: "rgba(107,159,212,0.2)", color: "#c8dff0" }}>QR usado</span>}
+                      {varias && <span style={{ fontSize: 10.5, fontWeight: 700, padding: "3px 9px", borderRadius: 100, background: "rgba(107,159,212,0.2)", color: "#c8dff0" }}>{items.length} entradas</span>}
+                      {pendientes > 0 && <span style={{ fontSize: 10.5, fontWeight: 700, padding: "3px 9px", borderRadius: 100, background: "rgba(251,191,36,0.16)", color: "#fbbf24" }}>Sujeto a aprobación</span>}
+                      {usadas > 0 && <span style={{ fontSize: 10.5, fontWeight: 700, padding: "3px 9px", borderRadius: 100, background: "rgba(107,159,212,0.2)", color: "#c8dff0" }}>{varias ? `${usadas} usada${usadas === 1 ? "" : "s"}` : "QR usado"}</span>}
                     </div>
                   </div>
-                  <button type="button" className="ef-hover-fill" onClick={() => setOpenQr(openQr === id ? null : id)}
-                    style={{ flexShrink: 0, display: "inline-flex", flexDirection: "column", alignItems: "center", gap: 3, background: openQr === id ? "rgba(107,159,212,0.22)" : "rgba(255,255,255,0.06)", border: "1px solid rgba(107,159,212,0.3)", borderRadius: 12, padding: "8px 10px", color: "#c8dff0", cursor: "pointer", fontSize: 11, fontWeight: 700 }}>
+                  <button type="button" className="ef-hover-fill" onClick={() => setOpenQr(abierto ? null : key)}
+                    style={{ flexShrink: 0, display: "inline-flex", flexDirection: "column", alignItems: "center", gap: 3, background: abierto ? "rgba(107,159,212,0.22)" : "rgba(255,255,255,0.06)", border: "1px solid rgba(107,159,212,0.3)", borderRadius: 12, padding: "8px 10px", color: "#c8dff0", cursor: "pointer", fontSize: 11, fontWeight: 700 }}>
                     <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M21 21v.01M21 14v.01M14 21v.01"/></svg>
-                    QR
+                    {varias ? `${items.length} QR` : "QR"}
                   </button>
                 </div>
-                {openQr === id && (
+                {abierto && (
                   <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", padding: 20, textAlign: "center", background: "rgba(0,0,0,0.2)" }}>
-                    <PendingQr id={id} size={220} approved={approved} />
-                    {approved
-                      ? <p style={{ fontSize: 12, color: "rgba(232,234,240,0.5)", margin: "12px 0 4px" }}>Presenta este QR en la entrada. Solo permite un ingreso.</p>
-                      : <PendingNotice style={{ margin: "12px 0 8px", textAlign: "left" }} />}
-                    <p style={{ fontFamily: "monospace", fontSize: 13, color: "#c8dff0", margin: 0 }}>{id}</p>
-                    <button type="button" onClick={() => openEvent(slug, event)} className="soft-btn soft-btn-secondary" style={{ marginTop: 14, fontSize: 13 }}>Ver evento</button>
-                    {!past && (
+                    <TicketCarousel
+                      tickets={items}
+                      eventTitle={event.title || "Evento"}
+                      qrSize={200}
+                      onIndexChange={(i) => setActiveIdx((p) => (p[key] === i ? p : { ...p, [key]: i }))}
+                    />
+                    <button type="button" onClick={() => openEvent(slug, event)} className="soft-btn soft-btn-secondary" style={{ fontSize: 13 }}>Ver evento</button>
+                    {!past && visible && (
                       <div style={{ marginTop: 16 }}>
-                        <SlideToCancel onComplete={() => setConfirmCancel({ id, slug })} disabled={cancelling && confirmCancel?.id === id} maxWidth={260} height={50} />
+                        {/* Cancela la entrada que se está viendo, no todo el grupo. */}
+                        <SlideToCancel
+                          label={varias ? `Cancelar entrada ${items.indexOf(visible) + 1}` : "Cancelar asistencia"}
+                          onComplete={() => setConfirmCancel({ id: visible.id, slug, varias })}
+                          disabled={cancelling && confirmCancel?.id === visible.id}
+                          maxWidth={varias ? 280 : 260} height={50}
+                        />
                       </div>
                     )}
                   </div>
@@ -231,8 +271,14 @@ export default function MisTicketsView() {
             <div style={{ width: 52, height: 52, borderRadius: "50%", background: "rgba(248,113,113,0.15)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
               <svg width={26} height={26} viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             </div>
-            <h3 style={{ fontSize: 18, fontWeight: 800, color: "#e8eaf0", margin: "0 0 8px" }}>¿Estás seguro que quieres cancelar tu participación?</h3>
-            <p style={{ fontSize: 13.5, color: "rgba(232,234,240,0.6)", margin: "0 0 22px", lineHeight: 1.5 }}>Tu entrada quedará anulada y perderás tu lugar en este evento.</p>
+            <h3 style={{ fontSize: 18, fontWeight: 800, color: "#e8eaf0", margin: "0 0 8px" }}>
+              {confirmCancel.varias ? "¿Cancelar esta entrada?" : "¿Estás seguro que quieres cancelar tu participación?"}
+            </h3>
+            <p style={{ fontSize: 13.5, color: "rgba(232,234,240,0.6)", margin: "0 0 22px", lineHeight: 1.5 }}>
+              {confirmCancel.varias
+                ? "Solo se anula esta entrada; las demás que reservaste siguen activas y su lugar se libera para otra persona."
+                : "Tu entrada quedará anulada y perderás tu lugar en este evento."}
+            </p>
             <div style={{ display: "flex", gap: 10 }}>
               <button type="button" className="ef-hover-fill" onClick={() => setConfirmCancel(null)} disabled={cancelling}
                 style={{ flex: 1, padding: 13, borderRadius: 12, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.18)", color: "#e8eaf0", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>

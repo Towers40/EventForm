@@ -617,8 +617,9 @@ app.post("/api/public/events/:slug/register", requireDb, optionalAuth, async (re
       try {
         // Pendiente de aprobación → aviso sin QR; el correo con la entrada sale
         // al aprobar. Si no requiere aprobación, va una entrada por cada QR.
+        // Un solo correo con todos los QR, no uno por entrada.
         if (needsApproval) await sendApprovalPending(recipientEmail, recipientName, ev);
-        else for (const tid of ticketIds) await sendRegistrationConfirmation(recipientEmail, recipientName, tid, ev);
+        else await sendRegistrationConfirmation(recipientEmail, recipientName, ticketIds, ev);
       }
       catch (mailErr) { console.error("Error enviando correo de inscripción:", mailErr?.message); }
     }

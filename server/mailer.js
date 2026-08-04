@@ -92,49 +92,68 @@ export async function sendVerificationCode(email, name, code) {
   });
 }
 
-export async function sendRegistrationConfirmation(email, name, ticketId, event) {
+// Acepta una entrada o varias: quien reserva 3 recibe UN correo con los 3 QR,
+// no tres correos sueltos.
+export async function sendRegistrationConfirmation(email, name, ticketIds, event) {
   if (!emailEnabled) return;
+  const ids = (Array.isArray(ticketIds) ? ticketIds : [ticketIds]).filter(Boolean);
+  if (!ids.length) return;
+  const varias = ids.length > 1;
   const firstName = (name || "asistente").split(" ")[0];
-  const qrRemote = `https://api.qrserver.com/v1/create-qr-code/?size=480x480&data=${encodeURIComponent(ticketId)}&bgcolor=ffffff&color=000000&margin=16&qzone=2`;
   const dateStr = event.startDate && event.startTime
     ? `${event.startDate} · ${event.startTime}`
     : event.startDate || "Fecha por confirmar";
   const loc = [event.city, event.location || event.address].filter(Boolean).join(" — ") || "Lugar por confirmar";
 
-  // Incrustar el QR como adjunto inline (cid) para que no salga "en blanco"
+  const qrRemote = (id) => `https://api.qrserver.com/v1/create-qr-code/?size=480x480&data=${encodeURIComponent(id)}&bgcolor=ffffff&color=000000&margin=16&qzone=2`;
+
+  // Cada QR se incrusta como adjunto inline (cid) para que no salga "en blanco"
   // ni dependa de cargar una imagen externa. Si falla, usa la URL remota.
-  let attachments = [];
-  let qrSrc = qrRemote;
-  try {
-    const r = await fetch(qrRemote, { signal: AbortSignal.timeout(5000) });
-    if (r.ok) {
+  const attachments = [];
+  const srcs = await Promise.all(ids.map(async (id, i) => {
+    try {
+      const r = await fetch(qrRemote(id), { signal: AbortSignal.timeout(5000) });
+      if (!r.ok) return qrRemote(id);
       const buf = Buffer.from(await r.arrayBuffer());
-      attachments = [{ filename: "entrada-qr.png", content: buf, cid: "qrticket", contentType: "image/png" }];
-      qrSrc = "cid:qrticket";
-    }
-  } catch { /* fallback a URL remota */ }
+      const cid = `qrticket${i}`;
+      attachments.push({ filename: `entrada-${i + 1}-qr.png`, content: buf, cid, contentType: "image/png" });
+      return `cid:${cid}`;
+    } catch { return qrRemote(id); }
+  }));
+
+  const bloques = ids.map((id, i) => `
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 ${i === ids.length - 1 ? 28 : 20}px">
+        <tr><td align="center" style="text-align:center">
+          ${varias ? `<p style="font-size:12px;font-weight:800;color:#0d3b66;letter-spacing:1px;margin:0 0 10px;text-transform:uppercase">Entrada ${i + 1} de ${ids.length}</p>` : ""}
+          <img src="${srcs[i]}" alt="QR de acceso" width="180" height="180" style="width:180px;height:180px;border-radius:12px;border:2px solid #0d3b66;background:#fff;display:inline-block"/>
+          <p style="font-family:monospace;font-weight:800;font-size:13px;color:#0d3b66;margin:12px 0 4px;letter-spacing:1px">${id}</p>
+          <p style="color:#718096;font-size:12px;margin:0">Presenta este QR en la entrada. Solo permite un ingreso.</p>
+        </td></tr>
+      </table>`).join("");
 
   await deliver({
     to: email,
-    subject: `Tu entrada para ${event.title} — TapIn`,
+    subject: varias
+      ? `Tus ${ids.length} entradas para ${event.title} — TapIn`
+      : `Tu entrada para ${event.title} — TapIn`,
     attachments,
-    text: `¡Hola ${firstName}, tu lugar está confirmado!\n\nEvento: ${event.title}\nFecha: ${dateStr}\nLugar: ${loc}\n\nID de tu entrada: ${ticketId}\nPresenta el código QR de este correo en la entrada. Solo permite un ingreso.`,
+    text: `¡Hola ${firstName}, ${varias ? `tus ${ids.length} lugares están confirmados` : "tu lugar está confirmado"}!\n\n`
+      + `Evento: ${event.title}\nFecha: ${dateStr}\nLugar: ${loc}\n\n`
+      + `${varias ? "IDs de tus entradas" : "ID de tu entrada"}: ${ids.join(", ")}\n`
+      + `Presenta ${varias ? "un código QR por persona" : "el código QR de este correo"} en la entrada. Cada uno permite un solo ingreso.`,
     html: emailLayout(`
-      <h2 style="color:#0d1b2a;font-size:20px;font-weight:700;margin:0 0 12px">¡Hola ${firstName}, tu lugar está confirmado! 🎉</h2>
+      <h2 style="color:#0d1b2a;font-size:20px;font-weight:700;margin:0 0 12px">
+        ¡Hola ${firstName}, ${varias ? `tus ${ids.length} lugares están confirmados` : "tu lugar está confirmado"}! 🎉
+      </h2>
       <p style="color:#4a5568;font-size:15px;line-height:1.6;margin:0 0 24px">
         Tu registro para <strong>${event.title}</strong> ha sido confirmado. Guarda este correo.
+        ${varias ? "Cada acompañante entra con su propio código." : ""}
       </p>
       <div style="background:#f0f6fc;border-radius:12px;padding:16px 20px;margin-bottom:28px">
         <p style="margin:0 0 6px;font-size:14px;color:#0d3b66;font-weight:700">📅 ${dateStr}</p>
         <p style="margin:0;font-size:14px;color:#0d3b66;font-weight:700">📍 ${loc}</p>
       </div>
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 28px">
-        <tr><td align="center" style="text-align:center">
-          <img src="${qrSrc}" alt="QR de acceso" width="180" height="180" style="width:180px;height:180px;border-radius:12px;border:2px solid #0d3b66;background:#fff;display:inline-block"/>
-          <p style="font-family:monospace;font-weight:800;font-size:13px;color:#0d3b66;margin:12px 0 4px;letter-spacing:1px">${ticketId}</p>
-          <p style="color:#718096;font-size:12px;margin:0">Presenta este QR en la entrada. Solo permite un ingreso.</p>
-        </td></tr>
-      </table>
+      ${bloques}
     `),
   });
 }
