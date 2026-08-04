@@ -455,7 +455,7 @@ export default function DiscoverPage({ embedded = false }) {
         </div>
       </div>
 
-      <div style={{ maxWidth: 1120, margin: "0 auto", padding: "0 24px 80px" }}>
+      <div style={{ maxWidth: 1560, margin: "0 auto", padding: "0 24px 80px" }}>
 
         {/* ── Categories ── */}
         <section style={{ marginBottom: 52 }}>
@@ -654,6 +654,7 @@ export default function DiscoverPage({ embedded = false }) {
         .ef-ev-grid { display: grid; gap: 10px; grid-template-columns: 1fr; }
         @media (min-width: 760px)  { .ef-ev-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         @media (min-width: 1100px) { .ef-ev-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+        @media (min-width: 1400px) { .ef-ev-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 
         /* Destacados: en móvil se pasan deslizando (sin comerse la pantalla);
            en escritorio se despliegan en rejilla. */
@@ -673,6 +674,9 @@ export default function DiscoverPage({ embedded = false }) {
         }
         @media (min-width: 1100px) {
           .ef-pop { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        }
+        @media (min-width: 1400px) {
+          .ef-pop { grid-template-columns: repeat(4, minmax(0, 1fr)); }
         }
       `}</style>
     </div>

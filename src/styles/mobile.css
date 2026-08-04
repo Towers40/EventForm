@@ -23,7 +23,7 @@
    donde una columna estrecha se lee mejor. Los listados (Mis eventos,
    Descubrir) se ahogaban ahí: en un monitor quedaban tres columnas de 195 px.
    Se ensanchan con .app-main-wide en vez de subir el límite a todo. */
-.app-main-wide { max-width: 1240px !important; }
+.app-main-wide { max-width: 1560px !important; }
 
 .app-main {
   max-width: 640px;

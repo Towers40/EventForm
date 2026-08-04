@@ -31,7 +31,7 @@ export default function MisEventosView({ events, loading, error, onRetry, onNew,
   ];
 
   return (
-    <div style={{ maxWidth: 1240, margin: "0 auto" }}>
+    <div style={{ maxWidth: 1560, margin: "0 auto" }}>
       <style>{GRID_CSS}</style>
       <h1 style={{ fontSize: 24, fontWeight: 700, margin: "0 0 18px", color: "#e8eaf0", textAlign: "center" }}>Mis eventos</h1>
       {/* Los bloques de estado no se estiran a 1240 px: un mensaje centrado en
@@ -119,7 +119,7 @@ const GRID_CSS = `
 @media (min-width: 1180px) {
   .ef-mis-eventos { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
-@media (min-width: 1560px) {
+@media (min-width: 1400px) {
   .ef-mis-eventos { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 `;
