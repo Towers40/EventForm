@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
 import DeepLinks from "./lib/useDeepLinks.js";
 import { apiEnabled } from "./lib/api.js";
+import BuildBanner from "./components/BuildBanner.jsx";
 
 // Carga diferida por ruta (code-splitting): el visitante de un evento público
 // no descarga el código completo del panel del anfitrión (HostApp), y viceversa.
@@ -38,6 +39,9 @@ export default function AppRouter() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        {/* Va en el router para que aparezca en TODAS las rutas, incluidas las
+            públicas, que no tienen el pie con la versión. */}
+        <BuildBanner />
         <DeepLinks />
         <Suspense fallback={<Loading />}>
           <Routes>
