@@ -1,0 +1,7 @@
+<!-- Icono para pestañas ancladas de Safari: silueta monocroma, sin fondo.
+     Safari lo tiñe con el color de `mask-icon` en el HTML. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16">
+  <path fill="black" d="M4.2 10.4a1.9 1.9 0 1 1 0 3.8 1.9 1.9 0 0 1 0-3.8z"/>
+  <path fill="none" stroke="black" stroke-width="1.9" stroke-linecap="round" d="M4.2 7.2A5.1 5.1 0 0 1 9.3 12.3"/>
+  <path fill="none" stroke="black" stroke-width="1.9" stroke-linecap="round" d="M4.2 3.3A9 9 0 0 1 13.2 12.3"/>
+</svg>

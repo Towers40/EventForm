@@ -2,7 +2,15 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
+    <!-- Safari no muestra de forma fiable un favicon SVG: hace falta .ico y PNG.
+         El orden importa poco (cada navegador elige), pero el .ico va primero
+         porque es el que buscan los que no leen estas etiquetas. -->
+    <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/icon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/icon-16.png" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- Pestañas ancladas de Safari: silueta monocroma que él tiñe. -->
+    <link rel="mask-icon" href="/mask-icon.svg" color="#5ee07f" />
     <!-- iOS NO admite SVG en apple-touch-icon: sin este PNG, al añadir la app
          a la pantalla de inicio sale una miniatura de la web en vez del logo. -->
     <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png" />
