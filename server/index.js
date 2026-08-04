@@ -868,6 +868,26 @@ app.get("/api/events", requireDb, authMiddleware, async (req, res) => {
       return ev;
     });
 
+    // Curación automática: los eventos creados antes de que la portada se
+    // subiera a Cloudinary la llevan incrustada en base64 (cientos de KB que
+    // viajan en CADA carga de "Mis eventos" y de la verificación de entradas).
+    // Se suben aquí, la primera vez que el anfitrión abre su lista, y a partir
+    // de ahí la respuesta es pequeña. Se hace en paralelo y sin romper nada si
+    // Cloudinary falla: en el peor caso queda como estaba.
+    const pesados = events.filter((e) => isDataUrl(e.headerImage));
+    if (pesados.length && cloudinaryEnabled) {
+      await Promise.all(pesados.map(async (ev) => {
+        try {
+          const url = await uploadToCloudinary(ev.headerImage, { folder: "eventform/covers" });
+          if (!url) return;
+          const fila = rows.find((r) => r.id === ev.id);
+          const data = { ...JSON.parse(fila.payload), headerImage: url };
+          await db.execute({ sql: "UPDATE events SET payload = ? WHERE id = ?", args: [JSON.stringify(data), ev.id] });
+          ev.headerImage = url;
+        } catch (e) { console.error("[portada] migración perezosa falló:", e.message); }
+      }));
+    }
+
     // Inscripciones en UNA sola consulta agrupada (evita N+1). Se conservan
     // completas para no perder trazabilidad en CRM/Detalle/Dashboard.
     if (events.length) {
