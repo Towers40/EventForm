@@ -5,6 +5,7 @@ import { customAlphabet } from "nanoid";
 import { db, dbReady, initDb, parseEvent, slugify } from "./db.js";
 import { uploadToCloudinary, isDataUrl } from "./cloudinary.js";
 import { migrateBase64Avatars } from "./avatarMigration.js";
+import { migrateBase64EventImages } from "./eventImageMigration.js";
 
 /**
  * Caché de CDN.
@@ -376,7 +377,9 @@ app.get("/api/auth/my-tickets", requireDb, authMiddleware, async (req, res) => {
           title: ev.title || "Evento",
           startDate: ev.startDate || "",
           date: ev.date || "",
-          headerImage: ev.headerImage || "",
+          // Solo URLs: aquí la portada es una miniatura de 56 px y arrastrar
+          // cientos de KB en base64 por cada entrada no tiene sentido.
+          headerImage: String(ev.headerImage || "").startsWith("http") ? ev.headerImage : "",
           city: ev.city || "",
           location: ev.location || "",
         },
@@ -1113,6 +1116,15 @@ app.get("/api/admin/overview", requireDb, authMiddleware, requireRole("super_adm
 
 // Migra los avatares antiguos en base64 a URLs de Cloudinary. Se ejecuta en el
 // servidor (que ya tiene las credenciales), así el admin no necesita terminal.
+// Sube a Cloudinary las portadas que quedaron guardadas en base64.
+app.post("/api/admin/migrate-event-images", requireDb, authMiddleware, requireOwner, async (req, res) => {
+  try {
+    const resultado = await migrateBase64EventImages({ apply: req.body?.apply !== false });
+    if (resultado.error) return res.status(400).json(resultado);
+    res.json(resultado);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.post("/api/admin/migrate-avatars", requireDb, authMiddleware, requireOwner, async (req, res) => {
   try {
     const result = await migrateBase64Avatars({ apply: true });
@@ -1173,7 +1185,12 @@ app.get("/api/public/events", requireDb, async (req, res) => {
                    json_extract(payload, '$.startTime')   AS start_time,
                    json_extract(payload, '$.endDate')     AS end_date,
                    json_extract(payload, '$.endTime')     AS end_time,
-                   json_extract(payload, '$.headerImage') AS header_image,
+                   -- Solo URLs: una portada guardada en base64 pesa cientos de
+                   -- KB y viaja entera en cada carga del listado (se midieron
+                   -- 2,65 MB para 5 eventos). Sin ella la tarjeta cae al
+                   -- degradado, que es infinitamente mejor que 500 KB.
+                   CASE WHEN json_extract(payload, '$.headerImage') LIKE 'http%'
+                        THEN json_extract(payload, '$.headerImage') END AS header_image,
                    u.name AS host_name,
                    CASE WHEN u.avatar LIKE 'http%' THEN u.avatar END AS host_avatar
             FROM events

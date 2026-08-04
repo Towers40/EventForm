@@ -114,14 +114,17 @@ export default function MiCuentaView() {
   const isSuperAdmin = user?.role === "super_admin" || user?.isOwner;
   const [migrateBusy, setMigrateBusy] = useState(false);
   const [migrateMsg, setMigrateMsg] = useState({ text: "", ok: false });
-  const handleMigrateAvatars = async () => {
+  // Sube a Cloudinary lo que quedó guardado en base64. Es lo que más pesa en
+  // las respuestas: una portada incrustada son cientos de KB que viajan en
+  // cada carga de Descubrir.
+  const migrar = (fn, nombre) => async () => {
     setMigrateBusy(true);
     setMigrateMsg({ text: "", ok: false });
     try {
-      const r = await api.migrateAvatars(token);
+      const r = await fn(token);
       const txt = r.scanned === 0
-        ? "No quedan avatares en base64. Todo migrado. ✔"
-        : `Migrados ${r.migrated} de ${r.scanned}${r.failed ? ` (${r.failed} fallidos)` : ""}.`;
+        ? `No quedan ${nombre} en base64. Todo migrado. ✔`
+        : `Migradas ${r.migrated} de ${r.scanned}${r.failed ? ` (${r.failed} fallidas)` : ""}.`;
       setMigrateMsg({ text: txt, ok: !r.failed });
     } catch (ex) {
       setMigrateMsg({ text: ex?.message || "No se pudo migrar.", ok: false });
@@ -129,6 +132,8 @@ export default function MiCuentaView() {
       setMigrateBusy(false);
     }
   };
+  const handleMigrateAvatars = migrar(api.migrateAvatars, "avatares");
+  const handleMigrateCovers = migrar(api.migrateEventImages, "portadas");
 
   return (
     <div style={{ maxWidth: 560, margin: "0 auto" }}>
@@ -246,12 +251,17 @@ export default function MiCuentaView() {
           </div>
           <div style={{ padding: 20 }}>
             <p style={{ margin: "0 0 14px", fontSize: 13, color: "#8fa3b1", lineHeight: 1.5 }}>
-              Sube a Cloudinary los avatares antiguos que están guardados en base64
-              y los reemplaza por su URL. Es seguro repetirlo: solo toca los que aún
-              estén en base64.
+              Sube a Cloudinary las imágenes antiguas guardadas en base64 y las
+              reemplaza por su URL. Es seguro repetirlo: solo toca las que aún estén
+              en base64. <strong style={{ color: "#fbbf24" }}>Las portadas incrustadas son
+              lo que más pesa</strong> — una sola puede añadir cientos de KB a cada carga
+              de Descubrir.
             </p>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <button type="button" className="soft-btn soft-btn-primary ef-hover-fill" style={{ fontSize: 13 }} disabled={migrateBusy} onClick={handleMigrateAvatars}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              <button type="button" className="soft-btn soft-btn-primary ef-hover-fill" style={{ fontSize: 13 }} disabled={migrateBusy} onClick={handleMigrateCovers}>
+                {migrateBusy ? "Migrando…" : "Migrar portadas de eventos"}
+              </button>
+              <button type="button" className="soft-btn soft-btn-secondary ef-hover-fill" style={{ fontSize: 13 }} disabled={migrateBusy} onClick={handleMigrateAvatars}>
                 {migrateBusy ? "Migrando…" : "Migrar avatares"}
               </button>
               {migrateMsg.text && <span style={{ fontSize: 13, color: migrateMsg.ok ? "#16a34a" : "#e53e3e", fontWeight: 700 }}>{migrateMsg.text}</span>}
