@@ -875,6 +875,11 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
       {view !== "create_wizard" && (
         <footer style={{ background: "transparent", borderTop: "1px solid rgba(255,255,255,0.07)", padding: 20, textAlign: "center", fontSize: 12, color: "rgba(232,234,240,0.3)", marginTop: 48, paddingBottom: 110 }}>
           {BRAND_NAME} Colombia © 2026
+          {/* Versión del build. Si aquí pone "preview", estás en una URL
+              congelada en un commit viejo y no verás los últimos cambios. */}
+          <span style={{ display: "block", marginTop: 6, fontSize: 10.5, letterSpacing: "0.04em", color: __BUILD_ENV__ === "production" ? "rgba(232,234,240,0.22)" : "#fbbf24" }}>
+            {__BUILD_ENV__ === "production" ? `v ${__BUILD_ID__}` : `${__BUILD_ENV__} · ${__BUILD_ID__} — no es producción`}
+          </span>
         </footer>
       )}
 
