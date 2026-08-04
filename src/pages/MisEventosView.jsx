@@ -128,6 +128,13 @@ function EventCard({ ev, onOpen, onEdit, onValidate, onDelete, onShare, onToggle
         <div style={{ width: "100%", aspectRatio: "16/7", overflow: "hidden", cursor: "pointer" }} onClick={() => setExpanded(e => !e)}>
           <img src={ev.headerImage} alt={ev.title} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: `${ev.imagePos?.x ?? 50}% ${ev.imagePos?.y ?? 50}%`, display: "block" }} />
         </div>
+      ) : ev.coverNeedsMigration ? (
+        // La portada estaba guardada dentro del evento y no se envía (hacía
+        // que la lista pesara megas). Se sube sola en las próximas cargas.
+        <div style={{ width: "100%", aspectRatio: "16/7", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, background: "linear-gradient(135deg,#1a2540,#0d1520)", color: "rgba(232,234,240,0.5)", fontSize: 12, textAlign: "center", padding: "0 20px" }}>
+          <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-4.35-4.35a2 2 0 0 0-2.83 0L4 20"/></svg>
+          Optimizando la portada…
+        </div>
       ) : (
         <div style={{ width: "100%", height: 6, background: "linear-gradient(90deg, #0d3b66, #1a5f8a)" }} />
       )}

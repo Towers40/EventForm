@@ -15,25 +15,27 @@ export async function migrateBase64EventImages({ apply = false, onProgress } = {
   if (!db) return { error: "db_no_config" };
   if (!cloudinaryEnabled) return { error: "cloudinary_no_config" };
 
-  const { rows } = await db.execute({
-    sql: `SELECT id, slug, payload FROM events
-          WHERE json_extract(payload, '$.headerImage') LIKE 'data:%'`,
+  // IDs primero, SIN el payload. Traerlos todos con su portada incrustada era
+  // justo lo que agotaba la memoria de Turso ("SQLITE_NOMEM"); cada payload se
+  // lee después de uno en uno.
+  const { rows: pendientes } = await db.execute({
+    sql: `SELECT id, slug FROM events WHERE json_extract(payload, '$.headerImage') LIKE 'data:%'`,
     args: [],
   });
 
-  const resultado = { scanned: rows.length, migrated: 0, failed: 0, items: [] };
-  for (const ev of rows) {
+  const resultado = { scanned: pendientes.length, migrated: 0, failed: 0, items: [] };
+  for (const ev of pendientes) {
     let data;
-    try { data = JSON.parse(ev.payload); } catch { continue; }
+    if (!apply) {
+      resultado.items.push({ slug: ev.slug, status: "pending" });
+      onProgress?.({ slug: ev.slug, status: "pending" });
+      continue;
+    }
+    const { rows: full } = await db.execute({ sql: "SELECT payload FROM events WHERE id = ?", args: [ev.id] });
+    try { data = JSON.parse(full[0]?.payload || "{}"); } catch { continue; }
     if (!isDataUrl(data.headerImage)) continue;
 
     const kb = Math.round(data.headerImage.length / 1024);
-    if (!apply) {
-      resultado.items.push({ slug: ev.slug, kb, status: "pending" });
-      onProgress?.({ slug: ev.slug, kb, status: "pending" });
-      continue;
-    }
-
     const url = await uploadToCloudinary(data.headerImage, { folder: "eventform/covers" });
     if (!url) {
       resultado.failed++;

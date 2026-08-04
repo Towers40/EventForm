@@ -857,35 +857,48 @@ async function normalizeCover(payload) {
 // ─── Eventos (anfitrión) ───────────────────────────────────────────────────
 app.get("/api/events", requireDb, authMiddleware, async (req, res) => {
   try {
+    // La portada en base64 se recorta EN SQL, no al llegar. Con `SELECT *` el
+    // resultado arrastraba cientos de KB por evento y Turso llegó a responder
+    // "SQLITE_NOMEM: out of memory": la lista no cargaba en absoluto. Aquí se
+    // sustituye por una marca y el cliente pinta el degradado; la imagen se
+    // recupera en cuanto se migre a Cloudinary.
+    const COLS = `id, host_id, slug, manual_sold_out, visibility, category, is_paid, price, created_at, updated_at,
+      CASE WHEN json_extract(payload,'$.headerImage') LIKE 'data:%'
+           THEN json_set(payload,'$.headerImage','') ELSE payload END AS payload,
+      CASE WHEN json_extract(payload,'$.headerImage') LIKE 'data:%' THEN 1 ELSE 0 END AS cover_heavy`;
     const sql = req.user.role === "super_admin"
-      ? { sql: "SELECT * FROM events ORDER BY updated_at DESC", args: [] }
-      : { sql: "SELECT * FROM events WHERE host_id = ? ORDER BY updated_at DESC", args: [req.user.sub] };
+      ? { sql: `SELECT ${COLS} FROM events ORDER BY updated_at DESC`, args: [] }
+      : { sql: `SELECT ${COLS} FROM events WHERE host_id = ? ORDER BY updated_at DESC`, args: [req.user.sub] };
     const { rows } = await db.execute(sql);
     const events = rows.map((r) => {
       const ev = parseEvent(r);
       ev.publicUrl = `${APP_URL}/e/${ev.slug}`;
+      ev.coverNeedsMigration = Boolean(r.cover_heavy);
       ev.registrations = [];
       return ev;
     });
 
-    // Curación automática: los eventos creados antes de que la portada se
-    // subiera a Cloudinary la llevan incrustada en base64 (cientos de KB que
-    // viajan en CADA carga de "Mis eventos" y de la verificación de entradas).
-    // Se suben aquí, la primera vez que el anfitrión abre su lista, y a partir
-    // de ahí la respuesta es pequeña. Se hace en paralelo y sin romper nada si
-    // Cloudinary falla: en el peor caso queda como estaba.
-    const pesados = events.filter((e) => isDataUrl(e.headerImage));
-    if (pesados.length && cloudinaryEnabled) {
-      await Promise.all(pesados.map(async (ev) => {
-        try {
-          const url = await uploadToCloudinary(ev.headerImage, { folder: "eventform/covers" });
-          if (!url) return;
-          const fila = rows.find((r) => r.id === ev.id);
-          const data = { ...JSON.parse(fila.payload), headerImage: url };
-          await db.execute({ sql: "UPDATE events SET payload = ? WHERE id = ?", args: [JSON.stringify(data), ev.id] });
-          ev.headerImage = url;
-        } catch (e) { console.error("[portada] migración perezosa falló:", e.message); }
-      }));
+    // Curación automática, de UNA en una. Migrar todas a la vez fue justo lo
+    // que agotó la memoria: cada portada se lee entera para subirla. Así, cada
+    // visita a "Mis eventos" arregla un evento y en pocas cargas no queda
+    // ninguno pesado, sin picos de memoria.
+    const pendiente = events.find((e) => e.coverNeedsMigration);
+    if (pendiente && cloudinaryEnabled) {
+      try {
+        const { rows: full } = await db.execute({
+          sql: "SELECT payload FROM events WHERE id = ?", args: [pendiente.id],
+        });
+        const data = JSON.parse(full[0].payload);
+        if (isDataUrl(data.headerImage)) {
+          const url = await uploadToCloudinary(data.headerImage, { folder: "eventform/covers" });
+          if (url) {
+            data.headerImage = url;
+            await db.execute({ sql: "UPDATE events SET payload = ? WHERE id = ?", args: [JSON.stringify(data), pendiente.id] });
+            pendiente.headerImage = url;
+            pendiente.coverNeedsMigration = false;
+          }
+        }
+      } catch (e) { console.error("[portada] migración perezosa falló:", e.message); }
     }
 
     // Inscripciones en UNA sola consulta agrupada (evita N+1). Se conservan
