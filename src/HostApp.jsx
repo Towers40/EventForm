@@ -25,6 +25,7 @@ import {
   performCheckIn,
   validateRegistrationForm,
   buildParticipant,
+  groupRegistrations,
   parseTicketCode,
 } from "./lib/tickets.js";
 import { isSoldOut, capacityLabel, getCapacityMax } from "./lib/capacity.js";
@@ -843,8 +844,9 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
             ev={ev}
             onEdit={() => editEvent(ev)}
             onValidate={() => openValidate(ev.id)}
-            onCrm={() => go("crm", ev.id)}
+            onCrm={(filtro = "todos") => { setCrmFilter(filtro); go("crm", ev.id); }}
             onShare={() => setShareEv(ev)}
+            onSetApproval={(ticketIds, approved) => setRegistrationApproval(ev.id, ticketIds, approved)}
             publicUrl={`${publicBaseUrl()}/e/${ev.slug || ev.id}`}
           />
         )}
@@ -2022,7 +2024,11 @@ function iconBtn() {
 }
 
 // ─── DETALLE DEL EVENTO ────────────────────────────────────────────────────────
-function Detail({ ev, onEdit, onValidate, onCrm, onShare, publicUrl: pubUrl }) {
+function Detail({ ev, onEdit, onValidate, onCrm, onShare, onSetApproval, publicUrl: pubUrl }) {
+  // Una fila por PERSONA, no por entrada: quien reserva 3 (o se inscribe 3
+  // veces con el mismo correo) salía repetido tres veces con el mismo nombre.
+  const grupos = groupRegistrations(ev, ev.registrations || []);
+  const porAprobar = grupos.filter((g) => g.pendientes > 0);
   return (
     <div>
       <EventHeader event={ev} />
@@ -2048,7 +2054,13 @@ function Detail({ ev, onEdit, onValidate, onCrm, onShare, publicUrl: pubUrl }) {
         <p style={{ margin: 0, fontSize: 14, fontWeight: 800 }}>{capacityLabel(ev)}</p>
         {ev.lat != null && <LocationMap lat={ev.lat} lng={ev.lng} height={200} />}
         <div className="admin-actions" style={{ display: "flex", gap: 8, marginTop: 16, flexWrap: "wrap" }}>
-          <button type="button" className="soft-btn soft-btn-primary" onClick={onCrm}>CRM inscritos</button>
+          <button type="button" className="soft-btn soft-btn-primary" onClick={() => onCrm()}>CRM inscritos</button>
+          {porAprobar.length > 0 && (
+            <button type="button" className="soft-btn ef-hover-fill" onClick={() => onCrm("pendientes")}
+              style={{ background: "rgba(251,191,36,0.16)", color: "#92400e", border: "1px solid rgba(251,191,36,0.5)", fontWeight: 800 }}>
+              Aprobar {porAprobar.length} {porAprobar.length === 1 ? "solicitud" : "solicitudes"}
+            </button>
+          )}
           <button type="button" className="soft-btn soft-btn-secondary" onClick={onShare}>Compartir enlace</button>
           <button type="button" className="soft-btn soft-btn-secondary" onClick={onEdit}>Editar formulario</button>
           <button type="button" className="soft-btn soft-btn-secondary" onClick={onValidate} style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>Verificar <IconScan size={16} /></button>
@@ -2056,30 +2068,44 @@ function Detail({ ev, onEdit, onValidate, onCrm, onShare, publicUrl: pubUrl }) {
         </div>
       </div>
 
-      <h3 style={{ fontSize: 18, fontWeight: 900, marginBottom: 12 }}>Resumen ({ev.registrations.length})</h3>
+      <h3 style={{ fontSize: 18, fontWeight: 900, marginBottom: 12 }}>
+        Resumen ({grupos.length} {grupos.length === 1 ? "persona" : "personas"} · {(ev.registrations || []).length} {(ev.registrations || []).length === 1 ? "entrada" : "entradas"})
+      </h3>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {ev.registrations.length === 0 ? (
+        {grupos.length === 0 ? (
           <p style={{ fontSize: 14, color: NEGRO_MUTED_50 }}>Aún no hay inscripciones.</p>
         ) : (
-          ev.registrations.map((r) => {
-            const p = buildParticipant(ev, r);
-            return (
-              <div key={r.id} style={{ border: `2px solid ${NEGRO_PURO}`, padding: 14, borderRadius: 10, display: "flex", justifyContent: "space-between", alignItems: "center", background: BLANCO_CONTRASTE, gap: 12 }}>
-                <div>
-                  <div style={{ fontWeight: 800, fontSize: 14 }}>{p.name}</div>
-                  <div style={{ fontSize: 12, color: NEGRO_MUTED_50, fontFamily: "monospace" }}>{r.id}</div>
-                  {r.checkedInAt && (
-                    <div style={{ fontSize: 11, color: NEGRO_MUTED_70, marginTop: 4 }}>
-                      Check-in: {new Date(r.checkedInAt).toLocaleString("es-MX")}
-                    </div>
+          grupos.map((g) => (
+            <div key={g.key} style={{ border: `2px solid ${NEGRO_PURO}`, padding: 14, borderRadius: 10, display: "flex", justifyContent: "space-between", alignItems: "center", background: BLANCO_CONTRASTE, gap: 12 }}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontWeight: 800, fontSize: 14 }}>
+                  {g.name}
+                  {g.total > 1 && (
+                    <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 800, color: BLANCO_CONTRASTE, background: NEGRO_PURO, padding: "2px 8px", borderRadius: 100 }}>
+                      {g.total} entradas
+                    </span>
                   )}
                 </div>
-                <span style={{ background: r.used ? NEGRO_PURO : VERDE_CORPORATIVO, color: BLANCO_CONTRASTE, padding: "4px 10px", borderRadius: 100, fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" }}>
-                  {r.used ? "CHECK-IN" : "ACTIVO"}
-                </span>
+                {g.email && <div style={{ fontSize: 12, color: NEGRO_MUTED_50 }}>{g.email}</div>}
+                <div style={{ fontSize: 11, color: NEGRO_MUTED_50, fontFamily: "monospace", marginTop: 2 }}>
+                  {g.items.slice(0, 3).map((i) => i.id).join(" · ")}{g.total > 3 ? ` +${g.total - 3}` : ""}
+                </div>
               </div>
-            );
-          })
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                {g.pendientes > 0 ? (
+                  <button type="button"
+                    onClick={() => onSetApproval?.(g.items.filter((i) => i.approved === false).map((i) => i.id), true)}
+                    style={{ background: VERDE_CORPORATIVO, color: BLANCO_CONTRASTE, padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 800, border: "none", cursor: "pointer", whiteSpace: "nowrap" }}>
+                    Aprobar {g.pendientes > 1 ? `las ${g.pendientes}` : ""}
+                  </button>
+                ) : (
+                  <span style={{ background: g.usadas ? NEGRO_PURO : VERDE_CORPORATIVO, color: BLANCO_CONTRASTE, padding: "4px 10px", borderRadius: 100, fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" }}>
+                    {g.usadas === g.total ? "CHECK-IN" : g.usadas ? `${g.usadas}/${g.total}` : "ACTIVO"}
+                  </span>
+                )}
+              </div>
+            </div>
+          ))
         )}
       </div>
     </div>

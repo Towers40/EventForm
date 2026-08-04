@@ -6,6 +6,21 @@ import { db, dbReady, initDb, parseEvent, slugify } from "./db.js";
 import { uploadToCloudinary, isDataUrl } from "./cloudinary.js";
 import { migrateBase64Avatars } from "./avatarMigration.js";
 
+/**
+ * Caché de CDN.
+ *
+ * Se envían las DOS cabeceras a propósito: en producción se observó que el
+ * borde de Vercel devolvía `x-vercel-cache: MISS` en peticiones seguidas
+ * usando solo `s-maxage`, así que cada visita golpeaba la función y Turso
+ * (~1,2 s en caliente, ~8 s en frío). `CDN-Cache-Control` es la cabecera que
+ * el borde interpreta de forma explícita; `Cache-Control` queda para el
+ * navegador, con max-age=0 para que revalide y no muestre datos viejos.
+ */
+function setCache(res, { cdn = 30, swr = 60 } = {}) {
+  res.set("Cache-Control", `public, max-age=0, s-maxage=${cdn}, stale-while-revalidate=${swr}`);
+  res.set("CDN-Cache-Control", `public, s-maxage=${cdn}, stale-while-revalidate=${swr}`);
+}
+
 // Middleware: rechaza rutas de DB si no está configurada
 function requireDb(req, res, next) {
   if (!dbReady || !db) {
@@ -448,22 +463,30 @@ app.get("/api/public/events/:slug", requireDb, async (req, res) => {
     const { rows } = await db.execute({ sql: "SELECT * FROM events WHERE slug = ?", args: [req.params.slug] });
     if (!rows[0]) return res.status(404).json({ error: "Evento no encontrado" });
     const ev = parseEvent(rows[0]);
-    // El aforo que ve el público descuenta las entradas ofrecidas en reventa:
-    // esos asientos vuelven a estar disponibles.
-    await releaseExpiredHolds(ev.id);
-    ev.registrationCount = await countOccupied(ev.id);
-    ev.resaleAvailable = await countResaleListed(ev.id);
+    // Liberar reservas caducadas es una ESCRITURA y esto es una ruta de lectura
+    // que se llama en cada visita. Solo tiene sentido si el evento cobra y hay
+    // pasarela activa; si no, son dos viajes de red por visita para nada.
+    if (paymentsEnabled && ev.isPaid && Number(ev.price) > 0) await releaseExpiredHolds(ev.id);
+
+    // Aforo, reventa y datos del organizador en UN solo viaje.
+    const [ocupRes, resaleRes, hostRes] = await db.batch([
+      { sql: `SELECT COUNT(*) AS c FROM registrations WHERE event_id = ? AND cancelled = 0 AND resale_status != 'listed'`, args: [ev.id] },
+      { sql: `SELECT COUNT(*) AS c FROM registrations WHERE event_id = ? AND resale_status = 'listed' AND cancelled = 0`, args: [ev.id] },
+      { sql: "SELECT name, email, avatar FROM users WHERE id = ?", args: [ev.hostId] },
+    ], "read");
+    ev.registrationCount = Number(ocupRes.rows[0]?.c || 0);
+    ev.resaleAvailable = Number(resaleRes.rows[0]?.c || 0);
     ev.registrations = undefined;
     ev.publicUrl = `${APP_URL}/e/${ev.slug}`;
-    const { rows: hostRows } = await db.execute({ sql: "SELECT name, email, avatar FROM users WHERE id = ?", args: [ev.hostId] });
+    const hostRows = hostRes.rows;
     ev.hostName = hostRows[0]?.name || "";
     ev.hostEmail = hostRows[0]?.email || "";
     // Solo se expone el avatar si es una URL (los base64 no viajan; ver Descubrir).
     const hostAv = hostRows[0]?.avatar;
     ev.hostAvatar = hostAv && String(hostAv).startsWith("http") ? hostAv : null;
     // La página pública es lo que ve el asistente: tras una edición debe
-    // reflejarse casi al instante, así que la caché compartida es mínima.
-    res.set("Cache-Control", "public, max-age=0, s-maxage=5, stale-while-revalidate=10");
+    // reflejarse pronto, pero sin caché era 1 función + 4 consultas por visita.
+    setCache(res, { cdn: 15, swr: 60 });
     res.json({ event: ev });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -1131,8 +1154,8 @@ app.get("/api/public/events", requireDb, async (req, res) => {
 
     const where = "WHERE " + conditions.join(" AND ");
 
-    const { rows: countRows } = await db.execute({ sql: `SELECT COUNT(*) as total FROM events ${where}`, args });
-    const total = Number(countRows[0]?.total || 0);
+    // El conteo y el listado van en UN batch: con Turso cada execute es un
+    // viaje de red y hacerlos en serie duplicaba la latencia de Descubrir.
 
     // Proyección esbelta: solo los campos que pinta la tarjeta del listado, en
     // vez de `events.*` (que arrastra el `payload` entero con decenas de campos
@@ -1140,7 +1163,9 @@ app.get("/api/public/events", requireDb, async (req, res) => {
     // avatares en base64 pesan ~50 KB y, multiplicados por evento, hacían la
     // respuesta de varios MB; con base64 la tarjeta cae a la inicial. Se elimina
     // también la subconsulta de conteo de inscritos (el listado no la muestra).
-    const { rows } = await db.execute({
+    const [countRes, listRes] = await db.batch([
+      { sql: `SELECT COUNT(*) as total FROM events ${where}`, args },
+      {
       sql: `SELECT events.id, events.slug, events.category, events.is_paid, events.price,
                    json_extract(payload, '$.title')       AS title,
                    json_extract(payload, '$.city')        AS city,
@@ -1156,10 +1181,12 @@ app.get("/api/public/events", requireDb, async (req, res) => {
             ${where}
             ORDER BY COALESCE(json_extract(payload, '$.startDate'), '9999-99-99') ASC
             LIMIT ? OFFSET ?`,
-      args: [...args, Number(limit), offset],
-    });
+        args: [...args, Number(limit), offset],
+      },
+    ], "read");
 
-    const events = rows.map(r => ({
+    const total = Number(countRes.rows[0]?.total || 0);
+    const events = listRes.rows.map(r => ({
       id: r.id,
       slug: r.slug,
       title: r.title || "Evento",
@@ -1176,11 +1203,9 @@ app.get("/api/public/events", requireDb, async (req, res) => {
       hostAvatar: r.host_avatar || null,
     }));
 
-    // Caché corta. Antes era s-maxage=60 + swr=120: tras editar un evento, el
-    // CDN de Vercel podía seguir sirviendo la versión vieja hasta ~3 minutos y
-    // el cambio "no salía" en Descubrir. `max-age=0` obliga además al navegador
-    // a revalidar en vez de aplicar su caché heurística.
-    res.set("Cache-Control", "public, max-age=0, s-maxage=10, stale-while-revalidate=20");
+    // 30 s: suficiente para que una edición salga pronto en Descubrir y para
+    // que el listado no golpee la base en cada visita.
+    setCache(res, { cdn: 30, swr: 120 });
     res.json({ events, total, page: Number(page), limit: Number(limit) });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -1198,7 +1223,7 @@ app.get("/api/public/categories", requireDb, async (req, res) => {
             GROUP BY COALESCE(NULLIF(category, ''), 'otro') ORDER BY count DESC`,
       args: [today, today, today],
     });
-    res.set("Cache-Control", "public, max-age=0, s-maxage=30, stale-while-revalidate=60");
+    setCache(res, { cdn: 120, swr: 300 });
     res.json({ categories: rows.map(r => ({ slug: r.category, count: Number(r.count) })) });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });

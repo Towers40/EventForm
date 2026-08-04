@@ -154,13 +154,37 @@ export default function PublicEventPage() {
     const eventP = apiEnabled
       ? api.publicEvent(slug).then(r => r.event)
       : Promise.resolve(loadEvents().find(e => e.slug === slug));
-    // Se consulta SIEMPRE que haya sesión, incluso con una entrada guardada en
-    // el dispositivo: esa copia se escribió al inscribirse y no se entera de
-    // nada después. Por eso un QR aprobado seguía saliendo borroso aquí — la
-    // página se quedaba con el "pendiente" del primer día.
+    // La copia guardada en el dispositivo se escribió al inscribirse y no se
+    // entera de nada después: por eso un QR ya aprobado seguía saliendo
+    // borroso aquí. Hay que refrescar el estado SIEMPRE, y no solo con sesión
+    // iniciada — quien llega desde Descubrir puede no haber entrado a su
+    // cuenta en este navegador.
     const ticketsP = (apiEnabled && token)
       ? api.myTickets(token).then(r => r.tickets).catch(() => null)
       : Promise.resolve(null);
+
+    // Sin sesión: se pregunta por cada entrada guardada, que es público.
+    const localIds = localReg
+      ? (localReg._all?.length ? localReg._all.map(t => t.id) : [localReg.id]).filter(Boolean)
+      : [];
+    const localesP = (!token && apiEnabled && localIds.length)
+      ? Promise.all(localIds.map(id =>
+          api.publicTicket(id)
+            .then(r => ({ id, used: Boolean(r.ticket.used), approved: r.ticket.approved !== false, cancelled: Boolean(r.ticket.cancelled) }))
+            .catch(() => null)))
+        .then(list => list.filter(Boolean).filter(t => !t.cancelled))
+      : Promise.resolve(null);
+
+    localesP.then(list => {
+      if (cancelled || !list?.length) return;
+      setReg(list[0]);
+      setRegs(list.length > 1 ? list : null);
+      try {
+        const key = `ef_ticket_${slug}`;
+        const saved = JSON.parse(localStorage.getItem(key) || "null");
+        if (saved) localStorage.setItem(key, JSON.stringify({ ...saved, ...list[0], _all: list }));
+      } catch { /* noop */ }
+    });
 
     eventP.then(ev => {
       if (cancelled) return;
@@ -195,7 +219,7 @@ export default function PublicEventPage() {
   // pestaña y cada 20 s, para que el QR se destape sin recargar a mano.
   useEffect(() => {
     const pendientes = (regs || (reg ? [reg] : [])).some(t => t?.approved === false);
-    if (!pendientes || !apiEnabled || !token) return;
+    if (!pendientes || !apiEnabled) return;
     const bump = () => setRefreshTick(n => n + 1);
     const tick = setInterval(bump, 20000);
     window.addEventListener("focus", bump);

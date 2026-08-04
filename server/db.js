@@ -172,18 +172,22 @@ export async function initDb() {
     }
   }
 
-  // Índices que dependen de columnas añadidas arriba: ya existen, así que aquí
-  // sí se pueden crear (en el lote inicial reventaban con una base nueva).
-  for (const sql of [
-    "CREATE INDEX IF NOT EXISTS idx_events_visibility ON events(visibility)",
-    // Índice para buscar entradas por email del asistente (vista "Mis tickets")
-    "CREATE INDEX IF NOT EXISTS idx_reg_email ON registrations(email)",
-    "CREATE INDEX IF NOT EXISTS idx_reg_order ON registrations(order_id)",
-    // El listado de reventa filtra por evento + estado.
-    "CREATE INDEX IF NOT EXISTS idx_reg_resale ON registrations(event_id, resale_status)",
-  ]) {
-    try { await db.execute({ sql, args: [] }); } catch { /* noop */ }
-  }
+  // Índices que dependen de columnas añadidas arriba. Van en UN SOLO batch: con
+  // Turso cada execute es un viaje de red y, en el arranque en frío de la
+  // función serverless, cuatro viajes seguidos se suman al tiempo de la primera
+  // respuesta que ve el usuario.
+  try {
+    await db.batch([
+      { sql: "CREATE INDEX IF NOT EXISTS idx_events_visibility ON events(visibility)" },
+      // Índice para buscar entradas por email del asistente (vista "Mis tickets")
+      { sql: "CREATE INDEX IF NOT EXISTS idx_reg_email ON registrations(email)" },
+      { sql: "CREATE INDEX IF NOT EXISTS idx_reg_order ON registrations(order_id)" },
+      // El listado de reventa filtra por evento + estado.
+      { sql: "CREATE INDEX IF NOT EXISTS idx_reg_resale ON registrations(event_id, resale_status)" },
+      // "Mis eventos" y el CRM filtran siempre por evento + cancelled.
+      { sql: "CREATE INDEX IF NOT EXISTS idx_reg_event_active ON registrations(event_id, cancelled)" },
+    ], "deferred");
+  } catch { /* noop */ }
 }
 
 export function parseEvent(row) {
