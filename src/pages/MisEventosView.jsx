@@ -31,8 +31,11 @@ export default function MisEventosView({ events, loading, error, onRetry, onNew,
   ];
 
   return (
-    <div style={{ maxWidth: 760, margin: "0 auto" }}>
+    <div style={{ maxWidth: 1240, margin: "0 auto" }}>
+      <style>{GRID_CSS}</style>
       <h1 style={{ fontSize: 24, fontWeight: 700, margin: "0 0 18px", color: "#e8eaf0", textAlign: "center" }}>Mis eventos</h1>
+      {/* Los bloques de estado no se estiran a 1240 px: un mensaje centrado en
+          una franja tan ancha queda desangelado. */}
 
       {/* Filtros centrados, siempre en una sola línea (móvil y escritorio) */}
       <div style={{ display: "flex", justifyContent: "center", flexWrap: "nowrap", gap: 4, marginBottom: 24 }}>
@@ -57,17 +60,17 @@ export default function MisEventosView({ events, loading, error, onRetry, onNew,
       {/* Cargando y error se distinguen del vacío: antes un fallo del API se
           veía igual que "no tienes eventos" y parecía que se perdieron. */}
       {loading && events.length === 0 ? (
-        <div className="panel-card" style={{ padding: "48px 24px", textAlign: "center" }}>
+        <div className="panel-card" style={{ padding: "48px 24px", textAlign: "center", maxWidth: 760, margin: "0 auto" }}>
           <p style={{ color: "#8fa3b1", fontSize: 15, margin: 0 }}>Cargando tus eventos…</p>
         </div>
       ) : error && events.length === 0 ? (
-        <div className="panel-card" style={{ padding: "40px 24px", textAlign: "center" }}>
+        <div className="panel-card" style={{ padding: "40px 24px", textAlign: "center", maxWidth: 760, margin: "0 auto" }}>
           <p style={{ color: "#fca5a5", fontSize: 15, margin: "0 0 6px", fontWeight: 700 }}>No se pudieron cargar tus eventos</p>
           <p style={{ color: "#8fa3b1", fontSize: 13.5, margin: "0 0 20px" }}>{error}</p>
           <button type="button" className="soft-btn soft-btn-primary" onClick={onRetry}>Reintentar</button>
         </div>
       ) : lista.length === 0 ? (
-        <div className="panel-card" style={{ padding: "48px 24px", textAlign: "center" }}>
+        <div className="panel-card" style={{ padding: "48px 24px", textAlign: "center", maxWidth: 760, margin: "0 auto" }}>
           <p style={{ color: "#8fa3b1", fontSize: 15, margin: 0 }}>
             {tab === "proximos" ? "No tienes eventos próximos."
               : tab === "pasados" ? "No tienes eventos pasados."
@@ -80,7 +83,7 @@ export default function MisEventosView({ events, loading, error, onRetry, onNew,
           )}
         </div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div className="ef-mis-eventos">
           {lista.map(ev => (
             ev.isDraft
               ? <DraftCard key={ev.id} ev={ev} onEdit={() => onEdit(ev)} onDelete={() => onDelete(ev.id)} />
@@ -96,6 +99,30 @@ export default function MisEventosView({ events, loading, error, onRetry, onNew,
     </div>
   );
 }
+
+// Rejilla de eventos. En escritorio la columna única de 760 px desperdiciaba
+// media pantalla; ahora se reparten en dos, tres o cuatro columnas según el
+// ancho. `align-items: start` evita que una tarjeta desplegada estire a sus
+// vecinas.
+const GRID_CSS = `
+.ef-mis-eventos {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr;
+  align-items: start;
+  max-width: 760px;
+  margin: 0 auto;
+}
+@media (min-width: 820px) {
+  .ef-mis-eventos { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: none; }
+}
+@media (min-width: 1180px) {
+  .ef-mis-eventos { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (min-width: 1560px) {
+  .ef-mis-eventos { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+`;
 
 function fmtDate(dateStr) {
   if (!dateStr) return null;

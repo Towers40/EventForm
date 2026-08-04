@@ -782,7 +782,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
         <ShareEventModal event={shareEv} onClose={() => setShareEv(null)} />
       )}
 
-      <main className="app-main">
+      <main className={`app-main${["mis_eventos", "discover"].includes(view) ? " app-main-wide" : ""}`}>
         {view === "inicio" && (
           <InicioView events={events} onNew={startNew} onGoTo={(v) => go(v)} />
         )}
