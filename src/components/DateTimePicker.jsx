@@ -1,13 +1,14 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { resolveLimit, hoursFor, minutesFor, clampToLimit, MINUTE_VALUES } from "../lib/datetime.js";
 
 const MONTHS_ES  = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
 const DAYS_ES    = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
 const ITEM_H     = 46; // height per row (px)
 const VISIBLE    = 5;  // rows shown at once
 
-function generateDates(minDate) {
+function generateDates(desde) {
   const opts = [];
-  const start = minDate ? new Date(minDate + "T12:00:00") : new Date();
+  const start = new Date(desde + "T12:00:00");
   for (let i = 0; i < 120; i++) {
     const d = new Date(start);
     d.setDate(d.getDate() + i);
@@ -22,8 +23,6 @@ function generateDates(minDate) {
   return opts;
 }
 
-const HOURS   = Array.from({ length: 24 }, (_, i) => ({ value: i, label: String(i).padStart(2, "0") }));
-const MINUTES = [0, 15, 30, 45].map(m => ({ value: m, label: String(m).padStart(2, "0") }));
 
 function parseDateLabel(dateStr) {
   if (!dateStr) return null;
@@ -129,16 +128,25 @@ function WheelCol({ items, selectedKey, getKey, getLabel, onChange, flex }) {
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
-export default function DateTimePicker({ date, time, onChange, minDate, label }) {
+export default function DateTimePicker({ date, time, onChange, minDate, minTime, label }) {
   const [open, setOpen]   = useState(false);
   const [pos,  setPos]    = useState(null);
   const wrapRef           = useRef(null);
-  const dateOptions       = generateDates(minDate);
+  // La cota incluye la HORA: en el día de hoy no se pueden ofrecer horas ya
+  // pasadas. Antes solo se acotaba el día y se podía crear un evento hoy a una
+  // hora anterior a la actual.
+  const limit             = resolveLimit({ minDate, minTime });
+  const dateOptions       = generateDates(limit.date);
 
+  const curDate = date || limit.date;
   const hour   = time ? parseInt(time.split(":")[0], 10) : null;
   const minute = time ? parseInt(time.split(":")[1], 10) : null;
   // Round minute to nearest 15 for wheel
-  const minuteSnapped = minute != null ? [0,15,30,45].reduce((a, b) => Math.abs(b - minute) < Math.abs(a - minute) ? b : a) : null;
+  const minuteSnapped = minute != null ? MINUTE_VALUES.reduce((a, b) => Math.abs(b - minute) < Math.abs(a - minute) ? b : a) : null;
+
+  const HOURS   = hoursFor(curDate, limit);
+  const MINUTES = minutesFor(curDate, hour ?? HOURS[0]?.value ?? 8, limit);
+  const emit    = (d, t) => onChange(clampToLimit({ date: d, time: t }, limit));
 
   // Click-outside close
   useEffect(() => {
@@ -237,10 +245,10 @@ export default function DateTimePicker({ date, time, onChange, minDate, label })
             <WheelCol
               flex={2}
               items={dateOptions}
-              selectedKey={date || dateOptions[0]?.value}
+              selectedKey={curDate}
               getKey={i => i.value}
               getLabel={i => i.label}
-              onChange={d => onChange({ date: d, time })}
+              onChange={d => emit(d, time || limit.time)}
             />
             {/* Vertical divider */}
             <div style={{ width: 1, background: "rgba(255,255,255,0.07)", alignSelf: "stretch", margin: "8px 0" }} />
@@ -248,12 +256,12 @@ export default function DateTimePicker({ date, time, onChange, minDate, label })
             <WheelCol
               flex={1}
               items={HOURS}
-              selectedKey={hour ?? 8}
+              selectedKey={hour ?? HOURS[0]?.value ?? 8}
               getKey={i => i.value}
               getLabel={i => i.label}
               onChange={h => {
                 const m = minuteSnapped ?? 0;
-                onChange({ date, time: `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}` });
+                emit(curDate, `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`);
               }}
             />
             {/* Vertical divider */}
@@ -266,8 +274,8 @@ export default function DateTimePicker({ date, time, onChange, minDate, label })
               getKey={i => i.value}
               getLabel={i => i.label}
               onChange={m => {
-                const h = hour ?? 8;
-                onChange({ date, time: `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}` });
+                const h = hour ?? HOURS[0]?.value ?? 8;
+                emit(curDate, `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`);
               }}
             />
           </div>

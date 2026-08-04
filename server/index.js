@@ -40,7 +40,7 @@ import {
   verifyPassword,
 } from "./auth.js";
 import { emailEnabled, sendVerificationCode, sendPasswordResetCode, sendRegistrationConfirmation, sendApprovalPending } from "./mailer.js";
-import { capacityMaxOf } from "./capacity.js";
+import { capacityMaxOf, startIsPast } from "./capacity.js";
 import { getPaymentProvider, paymentsEnabled, PAYMENT_STATUS, REG_PAYMENT, PaymentError, computeOrder } from "./payments/index.js";
 import {
   createOrder, getOrder, getOrderByRef, approveOrder, cancelOrder, markWebhookSeen,
@@ -939,6 +939,11 @@ app.post("/api/events", requireDb, authMiddleware, requireRole("host", "super_ad
     if (!payload.title || !String(payload.title).trim()) {
       return res.status(400).json({ error: "El evento debe tener un título." });
     }
+    // El selector ya no ofrece horas pasadas, pero el cliente se puede saltar
+    // (borrador guardado de ayer, petición manual, reloj desajustado).
+    if (startIsPast(payload)) {
+      return res.status(400).json({ error: "start_in_past", message: "La fecha y hora de inicio ya pasaron. Elige un momento futuro." });
+    }
 
     const id = payload.id || "E" + uid();
     // El cliente manda un slug derivado del título, así que dos eventos con el
@@ -986,6 +991,13 @@ app.put("/api/events/:id", requireDb, authMiddleware, async (req, res) => {
     const payload = await normalizeCover(req.body);
     if (!payload || typeof payload !== "object") {
       return res.status(400).json({ error: "Datos inválidos." });
+    }
+
+    const anterior = JSON.parse(row.payload || "{}");
+    const cambiaInicio = (payload.startDate && payload.startDate !== anterior.startDate)
+      || (payload.startTime && payload.startTime !== anterior.startTime);
+    if (cambiaInicio && startIsPast({ ...anterior, ...payload })) {
+      return res.status(400).json({ error: "start_in_past", message: "La fecha y hora de inicio ya pasaron. Elige un momento futuro." });
     }
 
     // Mismo motivo que en el POST: si el slug pedido ya lo usa OTRO evento, se

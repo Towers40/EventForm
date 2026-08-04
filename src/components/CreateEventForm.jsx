@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { uploadImage } from "../lib/upload.js";
+import { resolveLimit, hoursFor, minutesFor, clampToLimit, MINUTE_VALUES } from "../lib/datetime.js";
 
 // ── Tokens ──────────────────────────────────────────────────────────────────
 const CARD   = "rgba(255,255,255,0.08)";
@@ -132,8 +133,6 @@ function addOneHour(t) {
   return `${pad2(h + 1)}:${pad2(m || 0)}`;
 }
 
-const HOURS   = Array.from({ length: 24 }, (_, i) => ({ value: i, label: String(i).padStart(2, "0") }));
-const MINUTES = [0, 15, 30, 45].map(m => ({ value: m, label: String(m).padStart(2, "0") }));
 
 function WheelCol({ items, selectedKey, getKey, getLabel, onChange, flex }) {
   const ref   = useRef(null);
@@ -175,24 +174,31 @@ function WheelCol({ items, selectedKey, getKey, getLabel, onChange, flex }) {
   );
 }
 
-function WheelPanel({ date, time, minDate, onChange, onClose }) {
-  const min = minDate ? minDate.split("-").map(Number) : null; // [y, m, d]
+function WheelPanel({ date, time, minDate, minTime, onChange, onClose }) {
+  // La cota no es solo el día: si el día elegido es hoy, la hora tampoco puede
+  // ser anterior a la actual. Antes solo se acotaba la fecha y se podía crear
+  // un evento hoy a una hora ya pasada.
+  const limit = resolveLimit({ minDate, minTime });
+  const min = limit.date.split("-").map(Number); // [y, m, d]
   const now = new Date();
 
-  // Selected date parts: from `date`, else minDate, else today.
-  const sel = date
-    ? date.split("-").map(Number)
-    : (min || [now.getFullYear(), now.getMonth() + 1, now.getDate()]);
-  const [sy, sm, sd] = sel;
+  // Selección normalizada a la cota, de una sola vez.
+  const bruto = { date: date || limit.date, time: time || (limit.date === date || !date ? limit.time : "08:00") };
+  const cur = clampToLimit(bruto, limit);
+  const curDate = cur.date;
+  const [sy, sm, sd] = curDate.split("-").map(Number);
 
-  const hour   = time ? parseInt(time.split(":")[0], 10) : 8;
-  const minRaw = time ? parseInt(time.split(":")[1], 10) : 0;
-  const minute = [0, 15, 30, 45].reduce((a, b) => Math.abs(b - minRaw) < Math.abs(a - minRaw) ? b : a);
-  const curTime = time || `${pad2(hour)}:${pad2(minute)}`;
-  const curDate = date || `${sy}-${pad2(sm)}-${pad2(sd)}`;
+  const hour   = parseInt(cur.time.split(":")[0], 10);
+  const minRaw = parseInt(cur.time.split(":")[1], 10);
+  const minute = MINUTE_VALUES.reduce((a, b) => Math.abs(b - minRaw) < Math.abs(a - minRaw) ? b : a);
+  const curTime = `${pad2(hour)}:${pad2(minute)}`;
+
+  // Horas y minutos que siguen siendo elegibles para el día seleccionado.
+  const HOURS = hoursFor(curDate, limit);
+  const MINUTES = minutesFor(curDate, hour, limit);
 
   // Build column ranges, respecting minDate as a lower bound.
-  const minY = min ? min[0] : now.getFullYear();
+  const minY = min[0];
   const years = [];
   for (let y = minY; y <= MAX_YEAR; y++) years.push({ value: y, label: String(y) });
 
@@ -206,11 +212,13 @@ function WheelPanel({ date, time, minDate, onChange, onClose }) {
 
   // Normalize a (y, m, d) selection back into a valid, in-range date string.
   const emit = (y, m, d) => {
-    const mStart = (min && y === min[0]) ? min[1] : 1;
+    const mStart = (y === min[0]) ? min[1] : 1;
     const mm = Math.max(m, mStart);
-    const dStart = (min && y === min[0] && mm === min[1]) ? min[2] : 1;
+    const dStart = (y === min[0] && mm === min[1]) ? min[2] : 1;
     const dd = Math.min(Math.max(d, dStart), daysInMonth(y, mm));
-    onChange({ date: `${y}-${pad2(mm)}-${pad2(dd)}`, time: curTime });
+    // Al pasar a hoy con una hora de la mañana elegida, la hora también se
+    // corrige: si no, quedaría en el pasado sin que el usuario lo tocara.
+    onChange(clampToLimit({ date: `${y}-${pad2(mm)}-${pad2(dd)}`, time: curTime }, limit));
   };
 
   // Auto-select the default date (today / min) on open so "hoy" needs no scrolling.
@@ -235,9 +243,9 @@ function WheelPanel({ date, time, minDate, onChange, onClose }) {
           onChange={y => emit(y, sm, sd)} />
         <div style={{ width: 1, background: "rgba(255,255,255,0.07)", margin: "8px 0" }} />
         <WheelCol key="h" flex={0.8} items={HOURS} selectedKey={hour} getKey={i => i.value} getLabel={i => i.label}
-          onChange={h => onChange({ date: curDate, time: `${pad2(h)}:${pad2(minute)}` })} />
+          onChange={h => onChange(clampToLimit({ date: curDate, time: `${pad2(h)}:${pad2(minute)}` }, limit))} />
         <WheelCol key="mi" flex={0.8} items={MINUTES} selectedKey={minute} getKey={i => i.value} getLabel={i => i.label}
-          onChange={m => onChange({ date: curDate, time: `${pad2(hour)}:${pad2(m)}` })} />
+          onChange={m => onChange(clampToLimit({ date: curDate, time: `${pad2(hour)}:${pad2(m)}` }, limit))} />
       </div>
       <div style={{ padding: "10px 16px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
         <button type="button" onClick={onClose} style={{ width: "100%", padding: 11, background: "rgba(107,159,212,0.3)", border: "none", borderRadius: 12, color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
@@ -470,7 +478,8 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
                     onClose={() => setStartPicker(false)} />
                 )}
                 {endPicker && (
-                  <WheelPanel date={draft.endDate} time={draft.endTime} minDate={draft.startDate || today}
+                  // El fin tampoco puede ser anterior al inicio el mismo día.
+                  <WheelPanel date={draft.endDate} time={draft.endTime} minDate={draft.startDate || today} minTime={draft.startTime}
                     onChange={({ date, time }) => setDraft(p => {
                       // No permitir hora de fin igual o anterior a la de inicio el mismo día.
                       let endTime = time;

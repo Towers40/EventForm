@@ -30,7 +30,10 @@ async function request(path, options = {}, token) {
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const err = new Error(data.error || data.message || "Error de servidor");
+    // `message` primero: `error` es el código para el código (p. ej.
+    // "start_in_past") y enseñárselo al usuario tal cual queda fatal. El código
+    // sigue disponible en `err.data.error` para quien lo necesite.
+    const err = new Error(data.message || data.error || "Error de servidor");
     err.status = res.status;
     err.data = data;
     throw err;
