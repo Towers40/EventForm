@@ -29,14 +29,6 @@ const PinIcon = () => (
   </svg>
 );
 
-// Rango horario del evento (inicio – fin) en formato 12h.
-function eventTimeRange(ev) {
-  if (!ev.startTime) return "";
-  const start = formatTime12(ev.startTime);
-  const end = ev.endTime ? formatTime12(ev.endTime) : "";
-  return end ? `${start} – ${end}` : start;
-}
-
 // A partir de aquí un evento se considera que "está llenando". Es un número
 // bajo a propósito: en eventos de barrio, 8 personas ya es señal.
 const POPULAR_MIN = 8;
@@ -53,7 +45,7 @@ function EventCard({ ev, destacado = false }) {
   const price = ev.isPaid
     ? (ev.price ? `$${Number(ev.price).toLocaleString("es-CO")}` : "De pago")
     : "Gratis";
-  const timeRange = eventTimeRange(ev);
+  const horaInicio = formatTime12(ev.startTime);
   const lugar = (ev.location || ev.address || "").trim();
   const [, mesN, diaN] = (ev.startDate || "").split("-").map(Number);
   const fecha = mesN && diaN ? { m: mesN, d: diaN } : null;
@@ -81,7 +73,14 @@ function EventCard({ ev, destacado = false }) {
               <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#ef4444" }} />EN VIVO
             </span>
           )}
-          {timeRange && <span style={{ color: "rgba(232,234,240,0.5)" }}>{timeRange}</span>}
+          {horaInicio && <span style={{ color: "rgba(232,234,240,0.5)" }}>{horaInicio}</span>}
+          <span style={{
+            marginLeft: "auto", fontWeight: 700, borderRadius: 6, padding: "2px 7px", whiteSpace: "nowrap",
+            background: ev.isPaid ? "rgba(251,191,36,0.12)" : "rgba(34,197,94,0.12)",
+            color: ev.isPaid ? "#fbbf24" : "#22c55e",
+          }}>
+            {price}
+          </span>
         </div>
 
         {/* Nombre + categoría. Los tres iconos de la tarjeta (categoría,
@@ -134,35 +133,26 @@ function EventCard({ ev, destacado = false }) {
         </div>
       </div>
 
-      {/* Imagen y, justo debajo, si es gratis o de pago. */}
-      <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
-        <div style={{ position: "relative", width: 74, height: 74, borderRadius: 12, overflow: "hidden", background: "#111" }}>
-          {destacado && gente >= POPULAR_MIN && (
-            <span style={{ position: "absolute", top: 4, left: 4, zIndex: 1, color: "#fb923c", display: "inline-flex", filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.9))" }}>
-              <FlameIcon size={14} />
-            </span>
-          )}
-          {ev.headerImage ? (
-            <img src={ev.headerImage} alt={ev.title} loading="lazy" decoding="async" width={74} height={74} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-          ) : (
-            <div style={{
-              width: "100%", height: "100%",
-              background: cat ? `linear-gradient(135deg, ${cat.color}44, #111)` : "linear-gradient(135deg, #1e3a5f, #0d1b2a)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
-              {cat && CAT_ICONS[cat.slug]
-                ? <div style={{ opacity: 0.55 }}>{CAT_ICONS[cat.slug](cat.color, 28)}</div>
-                : <span style={{ fontSize: 24, opacity: 0.5 }}>🗓️</span>}
-            </div>
-          )}
-        </div>
-        <span style={{
-          fontSize: 10.5, fontWeight: 700, borderRadius: 6, padding: "2px 8px", whiteSpace: "nowrap",
-          background: ev.isPaid ? "rgba(251,191,36,0.12)" : "rgba(34,197,94,0.12)",
-          color: ev.isPaid ? "#fbbf24" : "#22c55e",
-        }}>
-          {price}
-        </span>
+      {/* Imagen */}
+      <div style={{ position: "relative", flexShrink: 0, width: 74, height: 74, borderRadius: 12, overflow: "hidden", background: "#111" }}>
+        {destacado && gente >= POPULAR_MIN && (
+          <span style={{ position: "absolute", top: 4, left: 4, zIndex: 1, color: "#fb923c", display: "inline-flex", filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.9))" }}>
+            <FlameIcon size={14} />
+          </span>
+        )}
+        {ev.headerImage ? (
+          <img src={ev.headerImage} alt={ev.title} loading="lazy" decoding="async" width={74} height={74} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        ) : (
+          <div style={{
+            width: "100%", height: "100%",
+            background: cat ? `linear-gradient(135deg, ${cat.color}44, #111)` : "linear-gradient(135deg, #1e3a5f, #0d1b2a)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            {cat && CAT_ICONS[cat.slug]
+              ? <div style={{ opacity: 0.55 }}>{CAT_ICONS[cat.slug](cat.color, 28)}</div>
+              : <span style={{ fontSize: 24, opacity: 0.5 }}>🗓️</span>}
+          </div>
+        )}
       </div>
     </a>
   );
