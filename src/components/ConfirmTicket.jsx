@@ -1,8 +1,8 @@
 import { useState } from "react";
-import NavigateButtons from "./NavigateButtons.jsx";
 import LocationMap from "./LocationMap.jsx";
 import SlideToCancel from "./SlideToCancel.jsx";
 import TicketCarousel from "./TicketCarousel.jsx";
+import { IconButton, IcoBack, EventCover, DirectionsButton } from "./ui.jsx";
 import "../styles/typeform.css";
 
 export default function ConfirmTicket({ ev, reg, regs, onDone, standalone, onCancel, cancelling, onBack }) {
@@ -16,23 +16,17 @@ export default function ConfirmTicket({ ev, reg, regs, onDone, standalone, onCan
   const inner = (
     <div style={{ maxWidth: 520, margin: "0 auto", padding: "24px 16px 80px" }}>
 
-      {/* Volver a la ventana anterior */}
+      {/* Volver: solo icono, como en el resto de la app. */}
       {onBack && (
-        <button type="button" onClick={onBack} style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(107,159,212,0.25)", borderRadius: 10, color: "#c8dff0", cursor: "pointer", fontSize: 13, fontWeight: 700, padding: "8px 14px", marginBottom: 18 }}>
-          <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
-          Volver
-        </button>
+        <div style={{ marginBottom: 16 }}>
+          <IconButton title="Volver" tone="soft" onClick={onBack}><IcoBack /></IconButton>
+        </div>
       )}
 
-      {/* Event cover */}
+      {/* Portada cuadrada con esquinas suavizadas: el mismo marco que en la
+          página del evento. Antes era 2:1 y cada pantalla se veía distinta. */}
       {ev.headerImage && (
-        <div style={{
-          width: "100%", aspectRatio: "2 / 1", borderRadius: 16,
-          overflow: "hidden", marginBottom: 20,
-          boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
-        }}>
-          <img src={ev.headerImage} alt={ev.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-        </div>
+        <EventCover src={ev.headerImage} alt={ev.title} pad={0} style={{ marginBottom: 20 }} />
       )}
 
       {/* Ticket header */}
@@ -59,7 +53,10 @@ export default function ConfirmTicket({ ev, reg, regs, onDone, standalone, onCan
           <div style={{ borderRadius: 16, overflow: "hidden", marginBottom: 12, border: "1px solid rgba(255,255,255,0.08)" }}>
             <LocationMap lat={ev.lat} lng={ev.lng} height={180} />
           </div>
-          <NavigateButtons lat={ev.lat} lng={ev.lng} label={ev.address || ev.location} />
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12 }}>
+            <DirectionsButton lat={ev.lat} lng={ev.lng} label={ev.address || ev.location} />
+            <span style={{ fontSize: 13, color: "#8fa3b1" }}>Cómo llegar</span>
+          </div>
         </>
       )}
 

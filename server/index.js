@@ -1247,6 +1247,11 @@ app.get("/api/public/events", requireDb, async (req, res) => {
       sql: `SELECT events.id, events.slug, events.category, events.is_paid, events.price,
                    json_extract(payload, '$.title')       AS title,
                    json_extract(payload, '$.city')        AS city,
+                   -- El sitio concreto, no solo la ciudad: en el listado es lo
+                   -- que de verdad ayuda a decidir si vas.
+                   json_extract(payload, '$.location')    AS location,
+                   json_extract(payload, '$.address')     AS address,
+                   json_extract(payload, '$.isVirtual')   AS is_virtual,
                    json_extract(payload, '$.startDate')   AS start_date,
                    json_extract(payload, '$.startTime')   AS start_time,
                    json_extract(payload, '$.endDate')     AS end_date,
@@ -1282,6 +1287,9 @@ app.get("/api/public/events", requireDb, async (req, res) => {
       slug: r.slug,
       title: r.title || "Evento",
       city: r.city || "",
+      location: r.location || "",
+      address: r.address || "",
+      isVirtual: Boolean(r.is_virtual),
       startDate: r.start_date || "",
       startTime: r.start_time || "",
       endDate: r.end_date || "",

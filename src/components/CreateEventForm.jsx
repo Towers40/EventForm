@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { uploadImage } from "../lib/upload.js";
 import { resolveLimit, hoursFor, minutesFor, clampToLimit, MINUTE_VALUES } from "../lib/datetime.js";
+import { IconButton, IcoBack } from "./ui.jsx";
 
 // ── Tokens ──────────────────────────────────────────────────────────────────
 const CARD   = "rgba(255,255,255,0.08)";
@@ -368,16 +369,12 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
         <div className="ce-scroll">
           {/* ── Volver (acción translúcida) — regresa a la pantalla anterior ── */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginTop: 16 }}>
-            <button type="button" className="ef-hover-fill" onClick={onCancel}
-              style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "9px 16px", background: "transparent", border: "none", borderRadius: 999, color: "#ffffff", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
-              <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
-              Volver
-            </button>
+            <IconButton title="Volver" tone="soft" onClick={onCancel}><IcoBack /></IconButton>
             <span style={{ fontWeight: 700, fontSize: 15, color: TEXT }}>{isEditing ? "Editar evento" : "Crear evento"}</span>
           </div>
           {/* ── Cover image ── */}
           <div
-            style={{ position: "relative", margin: "20px 0 12px", borderRadius: 20, overflow: "hidden", aspectRatio: "16/10", background: draft.headerImage ? "none" : "rgba(255,255,255,0.05)", border: BORDER, cursor: draft.headerImage ? (isDragging ? "grabbing" : "grab") : "default", touchAction: draft.headerImage ? "none" : "auto", userSelect: "none" }}
+            style={{ position: "relative", margin: "20px 0 12px", borderRadius: 20, overflow: "hidden", aspectRatio: "1 / 1", background: draft.headerImage ? "none" : "rgba(255,255,255,0.05)", border: BORDER, cursor: draft.headerImage ? (isDragging ? "grabbing" : "grab") : "default", touchAction: draft.headerImage ? "none" : "auto", userSelect: "none" }}
             onPointerDown={e => {
               if (!draft.headerImage || e.target.closest("button, label, input")) return;
               e.currentTarget.setPointerCapture(e.pointerId);

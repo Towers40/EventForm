@@ -98,6 +98,7 @@ function EventCard({ ev, destacado = false }) {
     ? (ev.price ? `COP ${Number(ev.price).toLocaleString("es-CO")}` : "De pago")
     : "Gratis";
   const timeRange = eventTimeRange(ev);
+  const lugar = (ev.location || ev.address || "").trim();
 
   return (
     <a
@@ -178,11 +179,17 @@ function EventCard({ ev, destacado = false }) {
           </h3>
         </div>
 
-        {/* 3) Ubicación con icono (liquid glass) */}
-        {ev.city && (
-          <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 5 }}>
-            <GlassIcon><PinIcon /></GlassIcon>
-            <span style={{ fontSize: 12.5, color: "rgba(232,234,240,0.5)" }}>{ev.city}</span>
+        {/* 3) Dónde: el sitio concreto manda sobre la ciudad — es lo que
+               decide si vas o no. La ciudad queda detrás como apoyo. */}
+        {(lugar || ev.city) && (
+          <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 5, minWidth: 0 }}>
+            <GlassIcon>{ev.isVirtual ? <VideoIcon /> : <PinIcon />}</GlassIcon>
+            <span style={{ fontSize: 12.5, color: "rgba(232,234,240,0.5)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {ev.isVirtual ? "Evento virtual" : lugar || ev.city}
+              {!ev.isVirtual && lugar && ev.city && (
+                <span style={{ color: "rgba(232,234,240,0.32)" }}> · {ev.city}</span>
+              )}
+            </span>
           </div>
         )}
 
@@ -287,6 +294,12 @@ const chipStyle = (activo) => ({
   border: activo ? "1px solid rgba(107,159,212,0.5)" : "1px solid rgba(255,255,255,0.1)",
   color: activo ? "#e8eaf0" : "rgba(232,234,240,0.65)",
 });
+
+const VideoIcon = () => (
+  <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+    <path d="m22 8-6 4 6 4V8z" /><rect x="2" y="6" width="14" height="12" rx="2" />
+  </svg>
+);
 
 const PAGE_SIZE = 24; // por request; se cargan más con el botón "Cargar más"
 

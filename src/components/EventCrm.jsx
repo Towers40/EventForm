@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { IconButton, IcoBack } from "./ui.jsx";
 import { buildParticipant, groupRegistrations } from "../lib/tickets.js";
 import { capacityLabel, isSoldOut } from "../lib/capacity.js";
 
@@ -55,14 +56,9 @@ export default function EventCrm({ event, onBack, onToggleSoldOut, onShare, onSe
 
   return (
     <div>
-      <button
-        type="button"
-        onClick={onBack}
-        className="soft-btn soft-btn-secondary"
-        style={{ marginBottom: 20 }}
-      >
-        ← Volver
-      </button>
+      <div style={{ marginBottom: 20 }}>
+        <IconButton title="Volver" tone="soft" onClick={onBack}><IcoBack /></IconButton>
+      </div>
 
       <div className="panel-card" style={{ marginBottom: 24 }}>
         <div className="panel-card-header">

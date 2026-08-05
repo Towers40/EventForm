@@ -18,7 +18,12 @@ export default function BuildBanner() {
   return (
     <>
       {/* La barra es fija: se empuja el contenido para no tapar encabezados. */}
-      <style>{`body { padding-top: 34px !important; }`}</style>
+      <style>{`
+        body { padding-top: 34px !important; }
+        /* Los elementos fijos (botones flotantes de volver/compartir) no se
+           enteran del padding del body: se les pasa la altura por variable. */
+        :root { --ef-top-offset: 34px; }
+      `}</style>
       <div style={{
         position: "fixed", top: 0, left: 0, right: 0, height: 34, zIndex: 9999,
         display: "flex", alignItems: "center", justifyContent: "center", gap: 10,

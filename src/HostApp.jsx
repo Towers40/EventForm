@@ -31,6 +31,7 @@ import {
 import { isSoldOut, capacityLabel, getCapacityMax } from "./lib/capacity.js";
 import { publicBaseUrl } from "./lib/platform.js";
 import SlideToCancel from "./components/SlideToCancel.jsx";
+import { IconButton } from "./components/ui.jsx";
 import {
   EVENT_TYPE_OTHER,
   EVENT_TYPE_PRESETS,
@@ -762,8 +763,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
           })}
         </div>
 
-        {/* Derecha: acciones. En escritorio, "Nuevo evento" con texto; en móvil,
-            solo iconos (casa · dashboard · +) para que todo quepa en el encabezado. */}
+        {/* Derecha: acciones, siempre solo iconos (casa · dashboard · +). */}
         <div style={{ justifySelf: "end", display: "flex", alignItems: "center", gap: 4, minWidth: 0 }}>
           <div className="ef-mobile-actions" style={{ alignItems: "center", gap: 5 }}>
             <HeaderPill icon={<IconHome size={19} />} label="Inicio" active={view === "inicio"} onClick={() => go("inicio")} />
@@ -771,9 +771,8 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
             <HeaderPill icon={<IconPlus size={19} />} label="Nuevo evento" short="Nuevo" active={view === "create_wizard" || view === "builder"} onClick={startNew} />
           </div>
           <div className="ef-header-nav">
-            <button type="button" className="ef-hover-fill" onClick={startNew} style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "rgba(107,159,212,0.18)", border: "1px solid rgba(107,159,212,0.35)", borderRadius: 10, padding: "9px 16px", color: "#c8dff0", fontWeight: 700, fontSize: 13.5, cursor: "pointer", whiteSpace: "nowrap" }}>
-              <IconPlus size={15} /> Nuevo evento
-            </button>
+            {/* Solo icono, como el resto de acciones de la app. */}
+            <IconButton title="Nuevo evento" tone="accent" onClick={startNew}><IconPlus size={19} /></IconButton>
           </div>
         </div>
       </nav>

@@ -6,6 +6,9 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { api, apiEnabled } from "../lib/api.js";
 import { loadEvents } from "../lib/storage.js";
 import { isSoldOut } from "../lib/capacity.js";
+import { IconButton, IcoBack, IcoShare, IcoMail, EventCover, DirectionsButton, CopiedToast } from "../components/ui.jsx";
+import { COVER_PAD } from "../lib/ui-tokens.js";
+import { useShare } from "../lib/useShare.js";
 import "../styles/typeform.css";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -25,59 +28,6 @@ function fmtTime(t) {
   const suffix = h >= 12 ? "PM" : "AM";
   const h12    = h % 12 || 12;
   return `${h12}:${String(mi).padStart(2, "0")} ${suffix}`;
-}
-
-// Un solo botón "Ir aquí" que despliega el menú de apps de navegación
-// (Waze · Google Maps · Apple Maps) para que el usuario elija.
-function DirectionsMenu({ lat, lng }) {
-  const [open, setOpen] = useState(false);
-  const ll = `${lat},${lng}`;
-  const apps = [
-    { label: "Waze",        href: `https://waze.com/ul?ll=${ll}&navigate=yes`, color: "#33ccff" },
-    { label: "Google Maps", href: `https://maps.google.com/?daddr=${ll}`,      color: "#34a853" },
-    { label: "Apple Maps",  href: `https://maps.apple.com/?daddr=${ll}`,       color: "#7d8590" },
-  ];
-  return (
-    <div style={{ position: "relative", marginTop: 14 }}>
-      <button
-        type="button"
-        onClick={() => setOpen(o => !o)}
-        style={{
-          width: "100%", boxSizing: "border-box",
-          display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-          padding: "14px 18px", borderRadius: 14, cursor: "pointer",
-          background: "rgba(107,159,212,0.2)", color: "#e8eaf0",
-          border: "1px solid rgba(107,159,212,0.4)", fontWeight: 800, fontSize: 15,
-        }}
-      >
-        <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-        Ir aquí
-        <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ transform: open ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}><path d="m6 9 6 6 6-6"/></svg>
-      </button>
-      {open && (
-        <div style={{
-          marginTop: 8, borderRadius: 14, overflow: "hidden",
-          background: "rgba(20,24,40,0.96)", border: "1px solid rgba(255,255,255,0.14)",
-          boxShadow: "0 8px 28px rgba(0,0,0,0.5)",
-        }}>
-          {apps.map((a, i) => (
-            <a key={a.label} href={a.href} target="_blank" rel="noopener noreferrer"
-              onClick={() => setOpen(false)}
-              style={{
-                display: "flex", alignItems: "center", gap: 12,
-                padding: "14px 18px", textDecoration: "none", color: "#e8eaf0",
-                fontSize: 15, fontWeight: 600,
-                borderTop: i ? "1px solid rgba(255,255,255,0.08)" : "none",
-              }}>
-              <span style={{ width: 10, height: 10, borderRadius: "50%", background: a.color, flexShrink: 0 }} />
-              {a.label}
-              <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="rgba(232,234,240,0.5)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: "auto" }}><path d="M7 17 17 7M7 7h10v10"/></svg>
-            </a>
-          ))}
-        </div>
-      )}
-    </div>
-  );
 }
 
 // ── Calendar date widget ──────────────────────────────────────────────────────
@@ -136,6 +86,7 @@ export default function PublicEventPage() {
   const [err, setErr]              = useState("");
   const [cancelling, setCancelling] = useState(false);
   const [refreshTick, setRefreshTick] = useState(0); // fuerza recarga del estado
+  const { compartir, copiado } = useShare();
 
   useEffect(() => {
     let cancelled = false;
@@ -319,24 +270,29 @@ export default function PublicEventPage() {
 
   return (
     <div style={{ minHeight: "100dvh", background: BG, paddingBottom: 60 }}>
-      {/* Volver: solo la flecha, en círculo (móvil y ordenador) */}
-      <button type="button" onClick={() => { if (window.history.length > 1) window.history.back(); else window.location.href = "/app"; }}
-        title="Volver" aria-label="Volver"
-        style={{ position: "fixed", top: 14, left: 14, zIndex: 20, display: "inline-flex", alignItems: "center", justifyContent: "center", width: 40, height: 40, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: "50%", color: "#fff", cursor: "pointer", padding: 0 }}>
-        <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
-      </button>
+      {/* Acciones flotantes: solo iconos, como el resto de la app. */}
+      <div style={{ position: "fixed", top: "calc(14px + var(--ef-top-offset, 0px))", left: 14, right: 14, zIndex: 20, display: "flex", justifyContent: "space-between", pointerEvents: "none" }}>
+        <span style={{ pointerEvents: "auto" }}>
+          <IconButton title="Volver" onClick={() => { if (window.history.length > 1) window.history.back(); else window.location.href = "/app"; }}>
+            <IcoBack />
+          </IconButton>
+        </span>
+        <span style={{ pointerEvents: "auto" }}>
+          <IconButton title="Compartir evento"
+            onClick={() => compartir({ url: `/e/${slug}`, title: event.title, text: `${event.title} — en TapIn` })}>
+            <IcoShare />
+          </IconButton>
+        </span>
+      </div>
       <div style={{ maxWidth: 520, margin: "0 auto" }}>
 
-        {/* ── Cover image ── */}
-        <div style={{ width: "100%", aspectRatio: "1/1", overflow: "hidden", background: "#1a1c1e" }}>
-          {event.headerImage
-            ? <img src={event.headerImage} alt={event.title} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: `${event.imagePos?.x ?? 50}% ${event.imagePos?.y ?? 50}%`, display: "block" }} />
-            : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg,#1a2540,#0d1520)", fontSize: 64 }}>🎉</div>
-          }
+        {/* ── Portada: cuadrada, con margen y esquinas suavizadas ── */}
+        <div style={{ paddingTop: 68 }}>
+          <EventCover src={event.headerImage} alt={event.title} />
         </div>
 
         {/* ── Content ── */}
-        <div style={{ padding: "24px 20px 0" }}>
+        <div style={{ padding: `24px ${COVER_PAD}px 0` }}>
 
           {/* Title */}
           <h1 style={{ fontSize: 32, fontWeight: 800, color: TEXT, margin: "0 0 10px", lineHeight: 1.15, letterSpacing: "-0.5px" }}>
@@ -419,28 +375,35 @@ export default function PublicEventPage() {
               <p style={{ margin: "0 0 10px", fontSize: 13, fontWeight: 600, color: SUB, textTransform: "uppercase", letterSpacing: "0.08em" }}>Ubicación</p>
               <p style={{ margin: 0, fontSize: 17, fontWeight: 700, color: TEXT }}>{locName}</p>
               {event.locationInstructions && <p style={{ margin: "6px 0 0", fontSize: 13, color: SUB, lineHeight: 1.5 }}>{event.locationInstructions}</p>}
-              {hasCoords && <DirectionsMenu lat={event.lat} lng={event.lng} />}
+              {hasCoords && (
+                <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 10 }}>
+                  <DirectionsButton lat={event.lat} lng={event.lng} label={locName} />
+                  <span style={{ fontSize: 13, color: SUB }}>Cómo llegar</span>
+                </div>
+              )}
             </div>
           )}
 
-          {/* Contacta al organizador (sin la ficha "Organizado por") */}
+          {/* Contactar: icono + una palabra, como Register/Contact/More */}
           {event.hostEmail && (
             <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 24, marginBottom: 24, textAlign: "center" }}>
               <a href={`mailto:${event.hostEmail}?subject=${encodeURIComponent("Consulta: " + event.title)}`}
+                className="ef-hover-fill"
                 style={{
-                  display: "inline-flex", alignItems: "center", gap: 9,
-                  fontSize: 15, fontWeight: 700, color: "#6b9fd4", textDecoration: "none",
-                  background: "rgba(107,159,212,0.12)", border: "1px solid rgba(107,159,212,0.28)",
-                  borderRadius: 12, padding: "11px 18px",
+                  display: "inline-flex", flexDirection: "column", alignItems: "center", gap: 6,
+                  textDecoration: "none", color: "#6b9fd4",
+                  background: "rgba(107,159,212,0.1)", border: "1px solid rgba(107,159,212,0.25)",
+                  borderRadius: 16, padding: "14px 26px", minWidth: 108,
                 }}>
-                <svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
-                Contacta al organizador
+                <IcoMail />
+                <span style={{ fontSize: 13, fontWeight: 700 }}>Contactar</span>
               </a>
             </div>
           )}
 
         </div>
       </div>
+      <CopiedToast visible={copiado} />
     </div>
   );
 }
