@@ -6,7 +6,8 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { api, apiEnabled } from "../lib/api.js";
 import { loadEvents } from "../lib/storage.js";
 import { isSoldOut } from "../lib/capacity.js";
-import { IconButton, IcoBack, IcoShare, IcoMail, IcoQr, EventCover, DirectionsButton, CopiedToast } from "../components/ui.jsx";
+import { IconButton, IcoBack, IcoShare, IcoMail, IcoQr, EventCover, CopiedToast } from "../components/ui.jsx";
+import LocationMap from "../components/LocationMap.jsx";
 import { COVER_PAD } from "../lib/ui-tokens.js";
 import { useShare } from "../lib/useShare.js";
 import "../styles/typeform.css";
@@ -372,17 +373,19 @@ export default function PublicEventPage() {
             </div>
           )}
 
-          {/* Ubicación — el nombre y un solo botón "Ir aquí" con menú de GPS */}
-          {locName && (
+          {/* Ubicación: nombre del sitio, ciudad debajo y el mapa. El mapa
+              ES el botón: al tocarlo se elige la app de navegación. */}
+          {(locName || hasCoords) && (
             <div style={{ marginBottom: 28, borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 24 }}>
               <p style={{ margin: "0 0 10px", fontSize: 13, fontWeight: 600, color: SUB, textTransform: "uppercase", letterSpacing: "0.08em" }}>Ubicación</p>
-              <p style={{ margin: 0, fontSize: 17, fontWeight: 700, color: TEXT }}>{locName}</p>
-              {event.locationInstructions && <p style={{ margin: "6px 0 0", fontSize: 13, color: SUB, lineHeight: 1.5 }}>{event.locationInstructions}</p>}
-              {hasCoords && (
-                <div style={{ marginTop: 14 }}>
-                  <DirectionsButton lat={event.lat} lng={event.lng} label={locName} variant="pill" />
-                </div>
-              )}
+              <div style={{ lineHeight: 1.32, marginBottom: hasCoords ? 14 : 0 }}>
+                {locName && <p style={{ margin: 0, fontSize: 17, fontWeight: 700, color: TEXT }}>{locName}</p>}
+                {event.city && <p style={{ margin: 0, fontSize: 13.5, color: SUB }}>{event.city}</p>}
+                {event.locationInstructions && (
+                  <p style={{ margin: "6px 0 0", fontSize: 13, color: SUB }}>{event.locationInstructions}</p>
+                )}
+              </div>
+              {hasCoords && <LocationMap lat={event.lat} lng={event.lng} label={locName} height={190} />}
             </div>
           )}
 

@@ -60,8 +60,8 @@ function EventCard({ ev, destacado = false }) {
       href={`/e/${ev.slug}`}
       className="ef-hover-fill"
       style={{
-        display: "flex", alignItems: "flex-start", gap: 12,
-        padding: 12, borderRadius: 18, textDecoration: "none",
+        display: "flex", alignItems: "flex-start", gap: 10,
+        padding: 10, borderRadius: 16, textDecoration: "none",
         background: "rgba(255,255,255,0.055)", border: "1px solid rgba(255,255,255,0.1)",
       }}
     >
@@ -70,7 +70,7 @@ function EventCard({ ev, destacado = false }) {
           comía ~52 px y en móvil partía todos los títulos en dos líneas. */}
       <div style={{ flex: 1, minWidth: 0 }}>
         {/* Fecha · hora · precio */}
-        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 5, fontSize: 11.5 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 3, fontSize: 11 }}>
           {fecha && (
             <span style={{ fontWeight: 800, color: "#c8dff0", background: "rgba(107,159,212,0.16)", borderRadius: 6, padding: "2px 7px", letterSpacing: "0.02em" }}>
               {fecha.d} {MONTHS[fecha.m - 1].toUpperCase()}
@@ -92,7 +92,7 @@ function EventCard({ ev, destacado = false }) {
         </div>
 
         {/* Nombre + categoría */}
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 7, marginBottom: 5 }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 6, marginBottom: 3 }}>
           {cat && CAT_ICONS[cat.slug] && (
             <span title={cat.label} style={{
               flexShrink: 0, display: "inline-flex", alignItems: "center", justifyContent: "center",
@@ -103,7 +103,7 @@ function EventCard({ ev, destacado = false }) {
             </span>
           )}
           <h3 style={{
-            margin: 0, fontSize: 15.5, fontWeight: 700, color: "#e8eaf0", lineHeight: 1.28,
+            margin: 0, fontSize: 15, fontWeight: 700, color: "#e8eaf0", lineHeight: 1.25,
             minWidth: 0, overflow: "hidden", display: "-webkit-box",
             WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
           }}>
@@ -113,11 +113,11 @@ function EventCard({ ev, destacado = false }) {
 
         {/* Dónde: el sitio concreto manda sobre la ciudad. */}
         {(lugar || ev.city) && (
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 2, minWidth: 0 }}>
             <span style={{ color: "rgba(232,234,240,0.42)", display: "inline-flex", flexShrink: 0 }}>
               {ev.isVirtual ? <VideoIcon /> : <PinIcon />}
             </span>
-            <span style={{ fontSize: 12, color: "rgba(232,234,240,0.5)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            <span style={{ fontSize: 11.5, lineHeight: 1.3, color: "rgba(232,234,240,0.5)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {ev.isVirtual ? "Evento virtual" : lugar || ev.city}
               {!ev.isVirtual && lugar && ev.city && <span style={{ color: "rgba(232,234,240,0.3)" }}> · {ev.city}</span>}
             </span>
@@ -125,15 +125,15 @@ function EventCard({ ev, destacado = false }) {
         )}
 
         {/* Organizador e inscritos */}
-        <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 5, minWidth: 0 }}>
           {ev.hostAvatar ? (
-            <img src={ev.hostAvatar} alt="" loading="lazy" decoding="async" width={18} height={18} style={{ width: 18, height: 18, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+            <img src={ev.hostAvatar} alt="" loading="lazy" decoding="async" width={16} height={16} style={{ width: 16, height: 16, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
           ) : (
-            <span style={{ width: 18, height: 18, borderRadius: "50%", flexShrink: 0, background: "rgba(107,159,212,0.25)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: "#c8dff0" }}>
+            <span style={{ width: 16, height: 16, borderRadius: "50%", flexShrink: 0, background: "rgba(107,159,212,0.25)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: "#c8dff0" }}>
               {(ev.hostName || "?").slice(0, 1).toUpperCase()}
             </span>
           )}
-          <span style={{ fontSize: 12, color: "rgba(232,234,240,0.5)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <span style={{ fontSize: 11.5, lineHeight: 1.3, color: "rgba(232,234,240,0.5)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {ev.hostName || "Organizador"}
           </span>
           {gente > 0 && (
@@ -151,7 +151,7 @@ function EventCard({ ev, destacado = false }) {
       </div>
 
       {/* Miniatura cuadrada a la derecha, como en la referencia. */}
-      <div style={{ position: "relative", flexShrink: 0, width: 82, height: 82, borderRadius: 12, overflow: "hidden", background: "#111" }}>
+      <div style={{ position: "relative", flexShrink: 0, width: 74, height: 74, borderRadius: 12, overflow: "hidden", background: "#111" }}>
         {destacado && gente >= POPULAR_MIN && (
           <span style={{
             position: "absolute", top: 4, left: 4, zIndex: 1,
@@ -163,7 +163,7 @@ function EventCard({ ev, destacado = false }) {
           </span>
         )}
         {ev.headerImage ? (
-          <img src={ev.headerImage} alt={ev.title} loading="lazy" decoding="async" width={82} height={82} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <img src={ev.headerImage} alt={ev.title} loading="lazy" decoding="async" width={74} height={74} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         ) : (
           <div style={{
             width: "100%", height: "100%",
@@ -607,7 +607,7 @@ export default function DiscoverPage({ embedded = false }) {
         /* Listado: una columna en móvil, dos en tableta y tres en escritorio.
            La tarjeta es una fila compacta, así que en 3 columnas sigue
            cabiendo todo sin recortar información. */
-        .ef-ev-grid { display: grid; gap: 10px; grid-template-columns: 1fr; }
+        .ef-ev-grid { display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr); }
         @media (min-width: 760px)  { .ef-ev-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         @media (min-width: 1100px) { .ef-ev-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
         @media (min-width: 1400px) { .ef-ev-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
@@ -616,7 +616,7 @@ export default function DiscoverPage({ embedded = false }) {
            en escritorio se despliegan en rejilla. */
         .ef-pop {
           display: grid; gap: 10px;
-          grid-auto-flow: column; grid-auto-columns: 92%;
+          grid-auto-flow: column; grid-auto-columns: minmax(0, 92%);
           overflow-x: auto; scroll-snap-type: x mandatory;
           padding-bottom: 4px;
         }

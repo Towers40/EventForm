@@ -108,7 +108,7 @@ const GRID_CSS = `
 .ef-mis-eventos {
   display: grid;
   gap: 12px;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
   max-width: 760px;
   margin: 0 auto;

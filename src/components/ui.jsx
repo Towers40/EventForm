@@ -2,7 +2,7 @@
 // todas las pantallas. Antes cada página resolvía a su manera los botones de
 // acción y el marco de las imágenes, y el resultado era desigual.
 
-import { useState } from "react";
+
 import { COVER_RADIUS, COVER_PAD } from "../lib/ui-tokens.js";
 
 // ── Botón de solo icono ─────────────────────────────────────────────────────
@@ -96,13 +96,12 @@ export function CopiedToast({ visible, texto = "Enlace copiado" }) {
 
 // ── Cómo llegar ─────────────────────────────────────────────────────────────
 /**
- * Un solo botón de icono. Al pulsarlo pregunta qué app de navegación usar, en
- * vez de mostrar tres botones siempre visibles. Se ofrecen las que tienen
- * sentido en la plataforma: Waze y Google Maps en todas, Apple Maps solo en
- * dispositivos Apple, donde es la que está instalada de fábrica.
+ * Hoja para elegir app de navegación. Se ofrecen las que tienen sentido en la
+ * plataforma: Waze y Google Maps en todas, Apple Maps solo en dispositivos
+ * Apple, donde viene instalada de fábrica.
  */
-export function DirectionsButton({ lat, lng, label, size = 40, tone = "accent", variant = "icon" }) {
-  const [abierto, setAbierto] = useState(false);
+export function DirectionsSheet({ lat, lng, abierto, onCerrar }) {
+  if (!abierto) return null;
   const ll = `${lat},${lng}`;
   const esApple = typeof navigator !== "undefined" && /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent || "");
   const apps = [
@@ -110,51 +109,26 @@ export function DirectionsButton({ lat, lng, label, size = 40, tone = "accent", 
     { label: "Google Maps", href: `https://maps.google.com/?daddr=${ll}`, color: "#34a853" },
     ...(esApple ? [{ label: "Apple Maps", href: `https://maps.apple.com/?daddr=${ll}`, color: "#7d8590" }] : []),
   ];
-
   return (
-    <>
-      {variant === "pill" ? (
-        <button type="button" className="ef-hover-fill" onClick={() => setAbierto(true)}
-          title={label ? `Cómo llegar a ${label}` : "Cómo llegar"}
-          style={{
-            display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7,
-            background: "rgba(107,159,212,0.25)", border: "1px solid rgba(107,159,212,0.4)",
-            borderRadius: 12, padding: "10px 18px", color: "#e8eaf0",
-            fontSize: 14, fontWeight: 800, cursor: "pointer",
-          }}>
-          <IcoRoute />
-          Cómo llegar
+    <div onClick={onCerrar}
+      style={{ position: "fixed", inset: 0, zIndex: 350, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 16 }}>
+      <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 420, background: "rgba(20,23,40,0.98)", border: "1px solid rgba(255,255,255,0.13)", borderRadius: 22, overflow: "hidden", boxShadow: "0 24px 70px rgba(0,0,0,0.6)" }}>
+        <p style={{ margin: 0, padding: "18px 20px 12px", fontSize: 15, fontWeight: 700, color: "#e8eaf0" }}>
+          ¿Con qué app quieres ir?
+        </p>
+        {apps.map((a) => (
+          <a key={a.label} href={a.href} target="_blank" rel="noopener noreferrer" onClick={onCerrar}
+            style={{ display: "flex", alignItems: "center", gap: 12, padding: "15px 20px", textDecoration: "none", color: "#e8eaf0", fontSize: 15, fontWeight: 600, borderTop: "1px solid rgba(255,255,255,0.07)" }}>
+            <span style={{ width: 10, height: 10, borderRadius: "50%", background: a.color, flexShrink: 0 }} />
+            {a.label}
+            <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="rgba(232,234,240,0.5)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: "auto" }}><path d="M7 17 17 7M7 7h10v10" /></svg>
+          </a>
+        ))}
+        <button type="button" onClick={onCerrar}
+          style={{ width: "100%", padding: "15px 20px", background: "rgba(255,255,255,0.04)", border: "none", borderTop: "1px solid rgba(255,255,255,0.07)", color: "rgba(232,234,240,0.6)", fontSize: 14.5, fontWeight: 700, cursor: "pointer" }}>
+          Cancelar
         </button>
-      ) : (
-        <IconButton title={label ? `Cómo llegar a ${label}` : "Cómo llegar"} size={size} tone={tone}
-          onClick={() => setAbierto(true)}>
-          <IcoRoute />
-        </IconButton>
-      )}
-
-      {abierto && (
-        <div onClick={() => setAbierto(false)}
-          style={{ position: "fixed", inset: 0, zIndex: 350, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 16 }}>
-          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 420, background: "rgba(20,23,40,0.98)", border: "1px solid rgba(255,255,255,0.13)", borderRadius: 22, overflow: "hidden", boxShadow: "0 24px 70px rgba(0,0,0,0.6)" }}>
-            <p style={{ margin: 0, padding: "18px 20px 12px", fontSize: 15, fontWeight: 700, color: "#e8eaf0" }}>
-              ¿Con qué app quieres ir?
-            </p>
-            {apps.map((a, i) => (
-              <a key={a.label} href={a.href} target="_blank" rel="noopener noreferrer"
-                onClick={() => setAbierto(false)}
-                style={{ display: "flex", alignItems: "center", gap: 12, padding: "15px 20px", textDecoration: "none", color: "#e8eaf0", fontSize: 15, fontWeight: 600, borderTop: i ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(255,255,255,0.07)" }}>
-                <span style={{ width: 10, height: 10, borderRadius: "50%", background: a.color, flexShrink: 0 }} />
-                {a.label}
-                <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="rgba(232,234,240,0.5)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: "auto" }}><path d="M7 17 17 7M7 7h10v10" /></svg>
-              </a>
-            ))}
-            <button type="button" onClick={() => setAbierto(false)}
-              style={{ width: "100%", padding: "15px 20px", background: "rgba(255,255,255,0.04)", border: "none", borderTop: "1px solid rgba(255,255,255,0.07)", color: "rgba(232,234,240,0.6)", fontSize: 14.5, fontWeight: 700, cursor: "pointer" }}>
-              Cancelar
-            </button>
-          </div>
-        </div>
-      )}
-    </>
+      </div>
+    </div>
   );
 }

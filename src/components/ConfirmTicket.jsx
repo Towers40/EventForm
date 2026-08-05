@@ -2,7 +2,7 @@ import { useState } from "react";
 import LocationMap from "./LocationMap.jsx";
 import SlideToCancel from "./SlideToCancel.jsx";
 import TicketCarousel from "./TicketCarousel.jsx";
-import { IconButton, IcoBack, EventCover, DirectionsButton } from "./ui.jsx";
+import { IconButton, IcoBack, EventCover } from "./ui.jsx";
 import "../styles/typeform.css";
 
 export default function ConfirmTicket({ ev, reg, regs, onDone, standalone, onCancel, cancelling, onBack }) {
@@ -50,11 +50,8 @@ export default function ConfirmTicket({ ev, reg, regs, onDone, standalone, onCan
       {/* Map */}
       {ev.lat != null && ev.lng != null && (
         <>
-          <div style={{ borderRadius: 16, overflow: "hidden", marginBottom: 12, border: "1px solid rgba(255,255,255,0.08)" }}>
-            <LocationMap lat={ev.lat} lng={ev.lng} height={180} />
-          </div>
-          <div style={{ marginTop: 12, textAlign: "center" }}>
-            <DirectionsButton lat={ev.lat} lng={ev.lng} label={ev.address || ev.location} variant="pill" />
+          <div style={{ marginBottom: 12 }}>
+            <LocationMap lat={ev.lat} lng={ev.lng} height={180} label={ev.address || ev.location} />
           </div>
         </>
       )}
