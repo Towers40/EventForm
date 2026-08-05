@@ -179,13 +179,13 @@ function EventCard({ ev, onOpen, onEdit, onValidate, onDelete, onShare, onToggle
                 {isPast ? "Pasado" : sold ? "Sold out" : "Activo"}
               </span>
             </div>
-            <h3 style={{ fontSize: 17, fontWeight: 700, color: "#e8eaf0", margin: "0 0 4px", lineHeight: 1.3 }}>
+            <h3 style={{ fontSize: 17, fontWeight: 700, color: "#e8eaf0", margin: "0 0 2px", lineHeight: 1.3 }}>
               {ev.title}
             </h3>
             {dateLabel && (
-              <p style={{ fontSize: 12, color: "#6b9fd4", margin: "0 0 2px", fontWeight: 600 }}>📅 {dateLabel}</p>
+              <p style={{ fontSize: 12, color: "#6b9fd4", margin: 0, fontWeight: 600, lineHeight: 1.35 }}>📅 {dateLabel}</p>
             )}
-            {ev.city && <p style={{ fontSize: 12, color: "#8fa3b1", margin: 0 }}>📍 {ev.city}</p>}
+            {ev.city && <p style={{ fontSize: 12, color: "#8fa3b1", margin: 0, lineHeight: 1.35 }}>📍 {ev.city}</p>}
           </div>
           <div style={{ textAlign: "right", flexShrink: 0 }}>
             <div style={{ fontSize: 26, fontWeight: 800, color: "#6b9fd4" }}>{regs.length}</div>

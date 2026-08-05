@@ -49,6 +49,7 @@ export const IcoPlus   = () => svg(<><path d="M12 5v14" /><path d="M5 12h14" /><
 export const IcoShare  = () => svg(<><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7" /><path d="M12 15V3" /><path d="m8 7 4-4 4 4" /></>);
 export const IcoMail   = () => svg(<><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" /></>);
 export const IcoRoute  = () => svg(<><path d="m3 11 19-8-8 19-2-9-9-2z" /></>);
+export const IcoQr     = () => svg(<><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><path d="M14 14h3v3M21 21v.01M21 14v.01M14 21v.01" /></>);
 export const IcoPin    = ({ size = 13 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
@@ -100,7 +101,7 @@ export function CopiedToast({ visible, texto = "Enlace copiado" }) {
  * sentido en la plataforma: Waze y Google Maps en todas, Apple Maps solo en
  * dispositivos Apple, donde es la que está instalada de fábrica.
  */
-export function DirectionsButton({ lat, lng, label, size = 40, tone = "accent" }) {
+export function DirectionsButton({ lat, lng, label, size = 40, tone = "accent", variant = "icon" }) {
   const [abierto, setAbierto] = useState(false);
   const ll = `${lat},${lng}`;
   const esApple = typeof navigator !== "undefined" && /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent || "");
@@ -112,10 +113,24 @@ export function DirectionsButton({ lat, lng, label, size = 40, tone = "accent" }
 
   return (
     <>
-      <IconButton title={label ? `Cómo llegar a ${label}` : "Cómo llegar"} size={size} tone={tone}
-        onClick={() => setAbierto(true)}>
-        <IcoRoute />
-      </IconButton>
+      {variant === "pill" ? (
+        <button type="button" className="ef-hover-fill" onClick={() => setAbierto(true)}
+          title={label ? `Cómo llegar a ${label}` : "Cómo llegar"}
+          style={{
+            display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7,
+            background: "rgba(107,159,212,0.25)", border: "1px solid rgba(107,159,212,0.4)",
+            borderRadius: 12, padding: "10px 18px", color: "#e8eaf0",
+            fontSize: 14, fontWeight: 800, cursor: "pointer",
+          }}>
+          <IcoRoute />
+          Cómo llegar
+        </button>
+      ) : (
+        <IconButton title={label ? `Cómo llegar a ${label}` : "Cómo llegar"} size={size} tone={tone}
+          onClick={() => setAbierto(true)}>
+          <IcoRoute />
+        </IconButton>
+      )}
 
       {abierto && (
         <div onClick={() => setAbierto(false)}

@@ -23,22 +23,6 @@ function isLive(ev) {
   return now >= start && now <= new Date(start.getTime() + 4 * 3600000);
 }
 
-// Icono envuelto en una placa "liquid glass" (frosted, translúcida) — usado
-// para el pin de ubicación en la fila de cada evento.
-function GlassIcon({ children, size = 20 }) {
-  return (
-    <span style={{
-      display: "inline-flex", alignItems: "center", justifyContent: "center",
-      width: size, height: size, borderRadius: "50%", flexShrink: 0,
-      background: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.18)",
-      backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)",
-      color: "rgba(232,234,240,0.8)",
-    }}>
-      {children}
-    </span>
-  );
-}
-
 const PinIcon = () => (
   <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
@@ -53,37 +37,6 @@ function eventTimeRange(ev) {
   return end ? `${start} – ${end}` : start;
 }
 
-// Placa de calendario estilo iOS (mes arriba, día grande) en tono translúcido,
-// para el lado derecho de la tarjeta.
-function CalendarBadge({ dateStr }) {
-  if (!dateStr) return null;
-  const [, m, d] = dateStr.split("-").map(Number);
-  if (!m || !d) return null;
-  return (
-    <div style={{
-      width: 44, borderRadius: 10, overflow: "hidden", flexShrink: 0,
-      background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)",
-      textAlign: "center", lineHeight: 1,
-    }}>
-      <div style={{ background: "rgba(239,68,68,0.32)", color: "rgba(255,255,255,0.88)", fontSize: 9, fontWeight: 800, letterSpacing: "0.08em", padding: "3px 0", textTransform: "uppercase" }}>
-        {MONTHS[m - 1]}
-      </div>
-      <div style={{ fontSize: 18, fontWeight: 800, color: "rgba(232,234,240,0.82)", padding: "4px 0 5px" }}>
-        {d}
-      </div>
-    </div>
-  );
-}
-
-const ClockIcon = () => (
-  <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" />
-  </svg>
-);
-
-// Fila compacta por evento: miniatura pequeña a la izquierda; a su lado la hora
-// (con fin), el nombre con el icono de categoría, la ubicación y el promotor —
-// todo en tono atenuado salvo el nombre. A la derecha: precio y placa de fecha.
 // A partir de aquí un evento se considera que "está llenando". Es un número
 // bajo a propósito: en eventos de barrio, 8 personas ya es señal.
 const POPULAR_MIN = 8;
@@ -95,83 +48,62 @@ function EventCard({ ev, destacado = false }) {
   const cat   = DISCOVER_CATEGORIES.find(c => c.slug === ev.category)
     || DISCOVER_CATEGORIES.find(c => c.slug === "otro");
   const price = ev.isPaid
-    ? (ev.price ? `COP ${Number(ev.price).toLocaleString("es-CO")}` : "De pago")
+    ? (ev.price ? `$${Number(ev.price).toLocaleString("es-CO")}` : "De pago")
     : "Gratis";
   const timeRange = eventTimeRange(ev);
   const lugar = (ev.location || ev.address || "").trim();
+  const [, mesN, diaN] = (ev.startDate || '').split('-').map(Number);
+  const fecha = mesN && diaN ? { m: mesN, d: diaN } : null;
 
   return (
     <a
       href={`/e/${ev.slug}`}
       className="ef-hover-fill"
       style={{
-        display: "flex", alignItems: "flex-start", gap: 14,
-        padding: 14, borderRadius: 18, textDecoration: "none",
+        display: "flex", alignItems: "flex-start", gap: 12,
+        padding: 12, borderRadius: 18, textDecoration: "none",
         background: "rgba(255,255,255,0.055)", border: "1px solid rgba(255,255,255,0.1)",
       }}
     >
-      {/* Miniatura (la categoría ahora va junto al nombre, no en la imagen) */}
-      <div style={{ position: "relative", flexShrink: 0, width: 76, height: 76, borderRadius: 14, overflow: "hidden", background: "#111" }}>
-        {destacado && gente >= POPULAR_MIN && (
-          <span style={{
-            position: "absolute", top: 4, left: 4, zIndex: 1,
-            display: "inline-flex", alignItems: "center", gap: 3,
-            background: "rgba(251,146,60,0.92)", color: "#1a1200",
-            fontSize: 9.5, fontWeight: 800, padding: "2px 6px", borderRadius: 100,
-          }}>
-            <FlameIcon size={9} /> TOP
-          </span>
-        )}
-        {ev.headerImage ? (
-          <img src={ev.headerImage} alt={ev.title} loading="lazy" decoding="async" width={76} height={76} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-        ) : (
-          <div style={{
-            width: "100%", height: "100%",
-            background: cat ? `linear-gradient(135deg, ${cat.color}44, #111)` : "linear-gradient(135deg, #1e3a5f, #0d1b2a)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            {cat && CAT_ICONS[cat.slug]
-              ? <div style={{ opacity: 0.55 }}>{CAT_ICONS[cat.slug](cat.color, 30)}</div>
-              : <span style={{ fontSize: 26, opacity: 0.5 }}>🗓️</span>
-            }
-          </div>
-        )}
-      </div>
-
-      {/* Texto: hora · nombre (+categoría) · ubicación · promotor */}
+      {/* Texto primero: la fecha y el precio pasaron a esta columna como
+          pastillas. Antes vivían en una columna propia a la derecha que se
+          comía ~52 px y en móvil partía todos los títulos en dos líneas. */}
       <div style={{ flex: 1, minWidth: 0 }}>
-        {/* 1) Hora del evento (con hora de finalización) / EN VIVO */}
-        {(timeRange || live) && (
-          <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "rgba(232,234,240,0.5)", marginBottom: 3 }}>
-            {live && (
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 4, color: "#fca5a5", fontWeight: 700 }}>
-                <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#ef4444", display: "inline-block" }} />
-                EN VIVO
-              </span>
-            )}
-            {timeRange && (
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
-                <ClockIcon /> {timeRange}
-              </span>
-            )}
-          </div>
-        )}
+        {/* Fecha · hora · precio */}
+        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 5, fontSize: 11.5 }}>
+          {fecha && (
+            <span style={{ fontWeight: 800, color: "#c8dff0", background: "rgba(107,159,212,0.16)", borderRadius: 6, padding: "2px 7px", letterSpacing: "0.02em" }}>
+              {fecha.d} {MONTHS[fecha.m - 1].toUpperCase()}
+            </span>
+          )}
+          {live && (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, color: "#fca5a5", fontWeight: 800 }}>
+              <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#ef4444" }} />EN VIVO
+            </span>
+          )}
+          {timeRange && <span style={{ color: "rgba(232,234,240,0.5)" }}>{timeRange}</span>}
+          <span style={{
+            marginLeft: "auto", fontWeight: 700, borderRadius: 6, padding: "2px 7px",
+            background: ev.isPaid ? "rgba(251,191,36,0.12)" : "rgba(34,197,94,0.12)",
+            color: ev.isPaid ? "#fbbf24" : "#22c55e",
+          }}>
+            {price}
+          </span>
+        </div>
 
-        {/* 2) Nombre del evento + icono de categoría al lado */}
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 7, marginBottom: 6 }}>
+        {/* Nombre + categoría */}
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 7, marginBottom: 5 }}>
           {cat && CAT_ICONS[cat.slug] && (
             <span title={cat.label} style={{
               flexShrink: 0, display: "inline-flex", alignItems: "center", justifyContent: "center",
-              width: 22, height: 22, borderRadius: "50%", marginTop: 1,
+              width: 20, height: 20, borderRadius: "50%", marginTop: 1,
               background: `${cat.color}22`, border: `1px solid ${cat.color}55`,
             }}>
-              {CAT_ICONS[cat.slug](cat.color, 13)}
+              {CAT_ICONS[cat.slug](cat.color, 12)}
             </span>
           )}
-          {/* Dos líneas antes de recortar: en 3 columnas o en el carrusel de
-              móvil, una sola línea dejaba títulos como "Carrera 5K del pa…". */}
           <h3 style={{
-            margin: 0, fontSize: 15.5, fontWeight: 700, color: "#e8eaf0", lineHeight: 1.3,
+            margin: 0, fontSize: 15.5, fontWeight: 700, color: "#e8eaf0", lineHeight: 1.28,
             minWidth: 0, overflow: "hidden", display: "-webkit-box",
             WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
           }}>
@@ -179,36 +111,35 @@ function EventCard({ ev, destacado = false }) {
           </h3>
         </div>
 
-        {/* 3) Dónde: el sitio concreto manda sobre la ciudad — es lo que
-               decide si vas o no. La ciudad queda detrás como apoyo. */}
+        {/* Dónde: el sitio concreto manda sobre la ciudad. */}
         {(lugar || ev.city) && (
-          <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 5, minWidth: 0 }}>
-            <GlassIcon>{ev.isVirtual ? <VideoIcon /> : <PinIcon />}</GlassIcon>
-            <span style={{ fontSize: 12.5, color: "rgba(232,234,240,0.5)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4, minWidth: 0 }}>
+            <span style={{ color: "rgba(232,234,240,0.42)", display: "inline-flex", flexShrink: 0 }}>
+              {ev.isVirtual ? <VideoIcon /> : <PinIcon />}
+            </span>
+            <span style={{ fontSize: 12, color: "rgba(232,234,240,0.5)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {ev.isVirtual ? "Evento virtual" : lugar || ev.city}
-              {!ev.isVirtual && lugar && ev.city && (
-                <span style={{ color: "rgba(232,234,240,0.32)" }}> · {ev.city}</span>
-              )}
+              {!ev.isVirtual && lugar && ev.city && <span style={{ color: "rgba(232,234,240,0.3)" }}> · {ev.city}</span>}
             </span>
           </div>
         )}
 
-        {/* 4) Promotor (con su foto/avatar) */}
-        <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap", rowGap: 5 }}>
+        {/* Organizador e inscritos */}
+        <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
           {ev.hostAvatar ? (
-            <img src={ev.hostAvatar} alt="" loading="lazy" decoding="async" width={20} height={20} style={{ width: 20, height: 20, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+            <img src={ev.hostAvatar} alt="" loading="lazy" decoding="async" width={18} height={18} style={{ width: 18, height: 18, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
           ) : (
-            <span style={{ width: 20, height: 20, borderRadius: "50%", flexShrink: 0, background: "rgba(107,159,212,0.25)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9.5, fontWeight: 700, color: "#c8dff0" }}>
+            <span style={{ width: 18, height: 18, borderRadius: "50%", flexShrink: 0, background: "rgba(107,159,212,0.25)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: "#c8dff0" }}>
               {(ev.hostName || "?").slice(0, 1).toUpperCase()}
             </span>
           )}
-          <span style={{ fontSize: 12.5, color: "rgba(232,234,240,0.5)", minWidth: 0 }}>
-            {ev.hostName ? `Por ${ev.hostName}` : "Organizador"}
+          <span style={{ fontSize: 12, color: "rgba(232,234,240,0.5)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {ev.hostName || "Organizador"}
           </span>
           {gente > 0 && (
             <span style={{
-              flexShrink: 0, marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 4,
-              fontSize: 11.5, fontWeight: 700, padding: "2px 8px", borderRadius: 100,
+              flexShrink: 0, marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 3,
+              fontSize: 11, fontWeight: 700, padding: "2px 7px", borderRadius: 100,
               background: gente >= POPULAR_MIN ? "rgba(251,146,60,0.14)" : "rgba(255,255,255,0.06)",
               color: gente >= POPULAR_MIN ? "#fb923c" : "rgba(232,234,240,0.45)",
             }}>
@@ -219,19 +150,31 @@ function EventCard({ ev, destacado = false }) {
         </div>
       </div>
 
-      {/* Derecha: precio arriba, placa de calendario (día/mes) debajo — mismo ancho */}
-      <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
-        <span style={{
-          width: 44, boxSizing: "border-box", textAlign: "center",
-          display: "inline-block",
-          background: ev.isPaid ? "rgba(251,191,36,0.12)" : "rgba(34,197,94,0.12)",
-          color: ev.isPaid ? "#fbbf24" : "#22c55e",
-          borderRadius: 8, padding: "5px 4px",
-          fontSize: 11, fontWeight: 700, lineHeight: 1.25,
-        }}>
-          {price}
-        </span>
-        <CalendarBadge dateStr={ev.startDate} />
+      {/* Miniatura cuadrada a la derecha, como en la referencia. */}
+      <div style={{ position: "relative", flexShrink: 0, width: 82, height: 82, borderRadius: 12, overflow: "hidden", background: "#111" }}>
+        {destacado && gente >= POPULAR_MIN && (
+          <span style={{
+            position: "absolute", top: 4, left: 4, zIndex: 1,
+            display: "inline-flex", alignItems: "center", gap: 3,
+            background: "rgba(251,146,60,0.92)", color: "#1a1200",
+            fontSize: 9, fontWeight: 800, padding: "2px 5px", borderRadius: 100,
+          }}>
+            <FlameIcon size={8} /> TOP
+          </span>
+        )}
+        {ev.headerImage ? (
+          <img src={ev.headerImage} alt={ev.title} loading="lazy" decoding="async" width={82} height={82} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        ) : (
+          <div style={{
+            width: "100%", height: "100%",
+            background: cat ? `linear-gradient(135deg, ${cat.color}44, #111)` : "linear-gradient(135deg, #1e3a5f, #0d1b2a)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            {cat && CAT_ICONS[cat.slug]
+              ? <div style={{ opacity: 0.55 }}>{CAT_ICONS[cat.slug](cat.color, 30)}</div>
+              : <span style={{ fontSize: 26, opacity: 0.5 }}>🗓️</span>}
+          </div>
+        )}
       </div>
     </a>
   );

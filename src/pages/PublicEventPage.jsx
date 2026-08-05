@@ -6,7 +6,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { api, apiEnabled } from "../lib/api.js";
 import { loadEvents } from "../lib/storage.js";
 import { isSoldOut } from "../lib/capacity.js";
-import { IconButton, IcoBack, IcoShare, IcoMail, EventCover, DirectionsButton, CopiedToast } from "../components/ui.jsx";
+import { IconButton, IcoBack, IcoShare, IcoMail, IcoQr, EventCover, DirectionsButton, CopiedToast } from "../components/ui.jsx";
 import { COVER_PAD } from "../lib/ui-tokens.js";
 import { useShare } from "../lib/useShare.js";
 import "../styles/typeform.css";
@@ -309,13 +309,15 @@ export default function PublicEventPage() {
 
           {/* Date row */}
           {startP && dateDesc && (
-            <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 24 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
               <DateChip dateStr={event.startDate} />
-              <div>
+              {/* Las tres líneas van juntas: antes cada una traía su propio
+                  margen y el bloque se leía como tres datos sueltos. */}
+              <div style={{ lineHeight: 1.32 }}>
                 <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: TEXT }}>{dateDesc.dateStr}</p>
-                {dateDesc.timeStr && <p style={{ margin: "2px 0 0", fontSize: 13, color: SUB }}>{dateDesc.timeStr}</p>}
+                {dateDesc.timeStr && <p style={{ margin: 0, fontSize: 13, color: SUB }}>{dateDesc.timeStr}</p>}
                 {endP && endP.d !== startP.d && (
-                  <p style={{ margin: "1px 0 0", fontSize: 12, color: SUB }}>hasta {endP.d} de {MONTHS_FULL[endP.m - 1]}</p>
+                  <p style={{ margin: 0, fontSize: 12, color: SUB }}>hasta {endP.d} de {MONTHS_FULL[endP.m - 1]}</p>
                 )}
               </div>
             </div>
@@ -324,8 +326,9 @@ export default function PublicEventPage() {
           {/* Registro — solo la barra de acción (sin texto ni recuadro) */}
           <div style={{ marginBottom: 28 }}>
             {reg ? (
-              <button onClick={() => setPhase("ticket")} style={{ width: "100%", padding: "16px", background: "rgba(107,159,212,0.25)", color: "#e8eaf0", borderRadius: 14, fontWeight: 800, fontSize: 16, border: "1px solid rgba(107,159,212,0.4)", cursor: "pointer", letterSpacing: "0.01em" }}>
-                Ver mi entrada (QR)
+              <button onClick={() => setPhase("ticket")} style={{ width: "100%", padding: "15px", background: "rgba(107,159,212,0.25)", color: "#e8eaf0", borderRadius: 14, fontWeight: 800, fontSize: 16, border: "1px solid rgba(107,159,212,0.4)", cursor: "pointer", letterSpacing: "0.01em", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                <IcoQr />
+                {(regs?.length || 1) > 1 ? `Ver entradas (${regs.length})` : "Ver entrada"}
               </button>
             ) : regLoading ? (
               // Aún no se sabe si tiene entrada: placeholder neutro (mismo tamaño
@@ -376,27 +379,26 @@ export default function PublicEventPage() {
               <p style={{ margin: 0, fontSize: 17, fontWeight: 700, color: TEXT }}>{locName}</p>
               {event.locationInstructions && <p style={{ margin: "6px 0 0", fontSize: 13, color: SUB, lineHeight: 1.5 }}>{event.locationInstructions}</p>}
               {hasCoords && (
-                <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 10 }}>
-                  <DirectionsButton lat={event.lat} lng={event.lng} label={locName} />
-                  <span style={{ fontSize: 13, color: SUB }}>Cómo llegar</span>
+                <div style={{ marginTop: 14 }}>
+                  <DirectionsButton lat={event.lat} lng={event.lng} label={locName} variant="pill" />
                 </div>
               )}
             </div>
           )}
 
-          {/* Contactar: icono + una palabra, como Register/Contact/More */}
+          {/* Contactar: mismo relleno y forma que "Ver entrada", compacto. */}
           {event.hostEmail && (
-            <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 24, marginBottom: 24, textAlign: "center" }}>
+            <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 20, marginBottom: 24, display: "flex", justifyContent: "center" }}>
               <a href={`mailto:${event.hostEmail}?subject=${encodeURIComponent("Consulta: " + event.title)}`}
                 className="ef-hover-fill"
                 style={{
-                  display: "inline-flex", flexDirection: "column", alignItems: "center", gap: 6,
-                  textDecoration: "none", color: "#6b9fd4",
-                  background: "rgba(107,159,212,0.1)", border: "1px solid rgba(107,159,212,0.25)",
-                  borderRadius: 16, padding: "14px 26px", minWidth: 108,
+                  display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7,
+                  textDecoration: "none", color: "#e8eaf0",
+                  background: "rgba(107,159,212,0.25)", border: "1px solid rgba(107,159,212,0.4)",
+                  borderRadius: 12, padding: "10px 18px", fontSize: 14, fontWeight: 800,
                 }}>
                 <IcoMail />
-                <span style={{ fontSize: 13, fontWeight: 700 }}>Contactar</span>
+                Organizador
               </a>
             </div>
           )}

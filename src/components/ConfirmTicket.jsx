@@ -30,7 +30,7 @@ export default function ConfirmTicket({ ev, reg, regs, onDone, standalone, onCan
       )}
 
       {/* Ticket header */}
-      <div style={{ textAlign: "center", marginBottom: 24 }}>
+      <div style={{ textAlign: "center", marginBottom: 20, lineHeight: 1.32 }}>
         <div style={{ fontSize: 11, fontWeight: 800, color: approved ? "#4ade80" : "#fbbf24", letterSpacing: 2, marginBottom: 6 }}>
           {approved
             ? (varias ? `✓ ${tickets.length} ENTRADAS CONFIRMADAS` : "✓ INSCRIPCIÓN CONFIRMADA")
@@ -53,9 +53,8 @@ export default function ConfirmTicket({ ev, reg, regs, onDone, standalone, onCan
           <div style={{ borderRadius: 16, overflow: "hidden", marginBottom: 12, border: "1px solid rgba(255,255,255,0.08)" }}>
             <LocationMap lat={ev.lat} lng={ev.lng} height={180} />
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12 }}>
-            <DirectionsButton lat={ev.lat} lng={ev.lng} label={ev.address || ev.location} />
-            <span style={{ fontSize: 13, color: "#8fa3b1" }}>Cómo llegar</span>
+          <div style={{ marginTop: 12, textAlign: "center" }}>
+            <DirectionsButton lat={ev.lat} lng={ev.lng} label={ev.address || ev.location} variant="pill" />
           </div>
         </>
       )}
