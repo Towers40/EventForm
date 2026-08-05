@@ -37,7 +37,7 @@ const POPULAR_MIN = 8;
 const ICON_BOX = 16;
 const ICON_SIZE = 13;
 
-function EventCard({ ev, destacado = false }) {
+function EventCard({ ev, destacado = false, duplicado = false }) {
   const live  = isLive(ev);
   const gente = Number(ev.attendees || 0);
   const cat   = DISCOVER_CATEGORIES.find(c => c.slug === ev.category)
@@ -54,6 +54,7 @@ function EventCard({ ev, destacado = false }) {
     <a
       href={`/e/${ev.slug}`}
       className="ef-hover-fill"
+      {...(duplicado ? { "aria-hidden": "true", tabIndex: -1 } : null)}
       style={{
         display: "flex", alignItems: "flex-start", gap: 10,
         padding: 10, borderRadius: 16, textDecoration: "none",
@@ -224,49 +225,60 @@ const VideoIcon = () => (
 );
 
 /**
- * Carrusel que avanza solo.
+ * Carrusel continuo e infinito.
  *
- * Avanza de tarjeta en tarjeta (no en píxeles continuos) para que encaje con
- * el scroll-snap y nunca quede una tarjeta a medias. Se pausa en cuanto la
- * persona lo toca y se reanuda unos segundos después: pelearse con el dedo del
- * usuario es la forma más rápida de que un carrusel resulte molesto.
+ * Se mueve píxel a píxel con requestAnimationFrame, no de tarjeta en tarjeta:
+ * así no se nota el corte entre un evento y el siguiente. Para que no vuelva
+ * de golpe al llegar al final, la lista se pinta DOS veces y, al pasar de la
+ * primera copia, se resta su ancho. Como en ese punto el contenido es idéntico,
+ * el salto es invisible y la cinta parece infinita.
  *
- * No hace nada si el sistema pide reducir el movimiento, ni en escritorio,
- * donde la tira es una rejilla y no hay nada que desplazar.
+ * No se anima si el sistema pide reducir el movimiento.
  */
-function useAutoCarousel(ref, activo, { intervalo = 3200, esperaTrasTocar = 7000 } = {}) {
+function useMarquee(ref, activo, { velocidad = 32, esperaTrasTocar = 4000 } = {}) {
   useEffect(() => {
     const el = ref.current;
     if (!el || !activo) return;
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
 
+    let raf = 0;
+    let ultimo = 0;
     let pausadoHasta = 0;
+    // Los decimales se acumulan aparte: scrollLeft redondea y, a 32 px/s con
+    // fotogramas de 16 ms, se perderían ~0,5 px por fotograma y no avanzaría.
+    let resto = 0;
+
     const pausar = () => { pausadoHasta = Date.now() + esperaTrasTocar; };
 
-    const tick = () => {
-      // En rejilla (escritorio) no hay desbordamiento: no hay nada que mover.
-      if (el.scrollWidth <= el.clientWidth + 4) return;
-      if (Date.now() < pausadoHasta) return;
-      // Se avanza el ancho REAL de una tarjeta, no el del contenedor: las
-      // tarjetas miden el 92%, así que usar el contenedor saltaba de a dos.
-      const primera = el.children[0];
-      const gap = parseFloat(getComputedStyle(el).columnGap) || 0;
-      const paso = primera ? primera.getBoundingClientRect().width + gap : el.clientWidth;
-      const finalizado = el.scrollLeft + el.clientWidth >= el.scrollWidth - 8;
-      el.scrollTo({ left: finalizado ? 0 : el.scrollLeft + paso, behavior: "smooth" });
+    const paso = (t) => {
+      raf = requestAnimationFrame(paso);
+      const dt = ultimo ? (t - ultimo) / 1000 : 0;
+      ultimo = t;
+      if (Date.now() < pausadoHasta || dt <= 0 || dt > 0.5) return;
+
+      const mitad = el.scrollWidth / 2; // ancho de UNA copia de la lista
+      if (mitad <= 0) return;
+      resto += velocidad * dt;
+      const entero = Math.floor(resto);
+      if (entero >= 1) {
+        resto -= entero;
+        let x = el.scrollLeft + entero;
+        if (x >= mitad) x -= mitad; // vuelta invisible
+        el.scrollLeft = x;
+      }
     };
 
-    const id = setInterval(tick, intervalo);
+    raf = requestAnimationFrame(paso);
     for (const ev of ["pointerdown", "wheel", "touchstart", "mouseenter"]) {
       el.addEventListener(ev, pausar, { passive: true });
     }
     return () => {
-      clearInterval(id);
+      cancelAnimationFrame(raf);
       for (const ev of ["pointerdown", "wheel", "touchstart", "mouseenter"]) {
         el.removeEventListener(ev, pausar);
       }
     };
-  }, [ref, activo, intervalo, esperaTrasTocar]);
+  }, [ref, activo, velocidad, esperaTrasTocar]);
 }
 
 const PAGE_SIZE = 24; // por request; se cargan más con el botón "Cargar más"
@@ -290,7 +302,7 @@ export default function DiscoverPage({ embedded = false }) {
   // Con algún filtro puesto, la persona ya sabe lo que busca: las secciones
   // de descubrimiento estorban y se ocultan.
   const filtrando = Boolean(search || activeCategory || activeCity);
-  useAutoCarousel(popRef, !filtrando && populares.length > 1);
+  useMarquee(popRef, !filtrando && populares.length > 1);
 
   // Una sola función para primera página (append=false, reemplaza) y siguientes
   // (append=true, agrega). Así el listado escala a cientos de eventos sin traer
@@ -447,8 +459,13 @@ export default function DiscoverPage({ embedded = false }) {
             <div style={{ marginBottom: 12, color: "#fb923c", display: "flex" }} aria-label="Eventos que se están llenando">
               <FlameIcon size={22} />
             </div>
+            {/* Dos copias: la segunda es la que permite el bucle sin corte.
+                Se oculta a los lectores de pantalla para no leerlo dos veces. */}
             <div className="ef-pop ef-hscroll" ref={popRef}>
               {populares.map(ev => <EventCard key={"pop-" + ev.id} ev={ev} destacado />)}
+              {populares.length > 1 && populares.map(ev => (
+                <EventCard key={"dup-" + ev.id} ev={ev} destacado duplicado />
+              ))}
             </div>
           </section>
         )}
@@ -636,29 +653,17 @@ export default function DiscoverPage({ embedded = false }) {
         @media (min-width: 1100px) { .ef-ev-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
         @media (min-width: 1400px) { .ef-ev-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 
-        /* Destacados: en móvil se pasan deslizando (sin comerse la pantalla);
-           en escritorio se despliegan en rejilla. */
+        /* Destacados: cinta continua. Sin scroll-snap, que tiraría de la
+           posición y cortaría el movimiento; y con flex en vez de grid para
+           que las tarjetas mantengan su ancho y la fila pueda desbordar. */
         .ef-pop {
-          display: grid; gap: 10px;
-          grid-auto-flow: column; grid-auto-columns: 92%;
-          overflow-x: auto; scroll-snap-type: x mandatory;
-          padding-bottom: 4px;
+          display: flex; gap: 10px;
+          overflow-x: auto; padding-bottom: 4px;
+          scroll-behavior: auto;
         }
-        .ef-pop > * { scroll-snap-align: start; min-width: 0; }
-        @media (prefers-reduced-motion: reduce) { .ef-pop { scroll-behavior: auto; } }
-        @media (min-width: 760px) {
-          .ef-pop {
-            grid-auto-flow: row; grid-auto-columns: auto;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            overflow: visible;
-          }
-        }
-        @media (min-width: 1100px) {
-          .ef-pop { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-        }
-        @media (min-width: 1400px) {
-          .ef-pop { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-        }
+        .ef-pop > * { flex: 0 0 88%; min-width: 0; }
+        @media (min-width: 760px)  { .ef-pop > * { flex: 0 0 340px; } }
+        @media (min-width: 1100px) { .ef-pop > * { flex: 0 0 360px; } }
       `}</style>
     </div>
   );
