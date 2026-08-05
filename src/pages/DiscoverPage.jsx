@@ -24,7 +24,7 @@ function isLive(ev) {
 }
 
 const PinIcon = () => (
-  <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+  <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
   </svg>
 );
@@ -40,11 +40,14 @@ function eventTimeRange(ev) {
 // A partir de aquí un evento se considera que "está llenando". Es un número
 // bajo a propósito: en eventos de barrio, 8 personas ya es señal.
 const POPULAR_MIN = 8;
+// Caja común para categoría, ubicación y avatar del organizador: sin esto cada
+// uno traía su propio tamaño y la columna de texto quedaba desalineada.
+const ICON_BOX = 16;
+const ICON_SIZE = 13;
 
 function EventCard({ ev, destacado = false }) {
   const live  = isLive(ev);
   const gente = Number(ev.attendees || 0);
-  // Los eventos sin categoría definida se muestran como "Otro" por defecto.
   const cat   = DISCOVER_CATEGORIES.find(c => c.slug === ev.category)
     || DISCOVER_CATEGORIES.find(c => c.slug === "otro");
   const price = ev.isPaid
@@ -52,7 +55,7 @@ function EventCard({ ev, destacado = false }) {
     : "Gratis";
   const timeRange = eventTimeRange(ev);
   const lugar = (ev.location || ev.address || "").trim();
-  const [, mesN, diaN] = (ev.startDate || '').split('-').map(Number);
+  const [, mesN, diaN] = (ev.startDate || "").split("-").map(Number);
   const fecha = mesN && diaN ? { m: mesN, d: diaN } : null;
 
   return (
@@ -65,11 +68,8 @@ function EventCard({ ev, destacado = false }) {
         background: "rgba(255,255,255,0.055)", border: "1px solid rgba(255,255,255,0.1)",
       }}
     >
-      {/* Texto primero: la fecha y el precio pasaron a esta columna como
-          pastillas. Antes vivían en una columna propia a la derecha que se
-          comía ~52 px y en móvil partía todos los títulos en dos líneas. */}
       <div style={{ flex: 1, minWidth: 0 }}>
-        {/* Fecha · hora · precio */}
+        {/* Fecha · hora */}
         <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 3, fontSize: 11 }}>
           {fecha && (
             <span style={{ fontWeight: 800, color: "#c8dff0", background: "rgba(107,159,212,0.16)", borderRadius: 6, padding: "2px 7px", letterSpacing: "0.02em" }}>
@@ -82,24 +82,18 @@ function EventCard({ ev, destacado = false }) {
             </span>
           )}
           {timeRange && <span style={{ color: "rgba(232,234,240,0.5)" }}>{timeRange}</span>}
-          <span style={{
-            marginLeft: "auto", fontWeight: 700, borderRadius: 6, padding: "2px 7px",
-            background: ev.isPaid ? "rgba(251,191,36,0.12)" : "rgba(34,197,94,0.12)",
-            color: ev.isPaid ? "#fbbf24" : "#22c55e",
-          }}>
-            {price}
-          </span>
         </div>
 
-        {/* Nombre + categoría */}
+        {/* Nombre + categoría. Los tres iconos de la tarjeta (categoría,
+            ubicación y organizador) comparten caja de ICON_BOX px para que la
+            columna de texto quede alineada. */}
         <div style={{ display: "flex", alignItems: "flex-start", gap: 6, marginBottom: 3 }}>
           {cat && CAT_ICONS[cat.slug] && (
             <span title={cat.label} style={{
               flexShrink: 0, display: "inline-flex", alignItems: "center", justifyContent: "center",
-              width: 20, height: 20, borderRadius: "50%", marginTop: 1,
-              background: `${cat.color}22`, border: `1px solid ${cat.color}55`,
+              width: ICON_BOX, height: ICON_BOX, marginTop: 1, color: cat.color,
             }}>
-              {CAT_ICONS[cat.slug](cat.color, 12)}
+              {CAT_ICONS[cat.slug](cat.color, ICON_SIZE)}
             </span>
           )}
           <h3 style={{
@@ -111,10 +105,10 @@ function EventCard({ ev, destacado = false }) {
           </h3>
         </div>
 
-        {/* Dónde: el sitio concreto manda sobre la ciudad. */}
+        {/* Dónde */}
         {(lugar || ev.city) && (
-          <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 2, minWidth: 0 }}>
-            <span style={{ color: "rgba(232,234,240,0.42)", display: "inline-flex", flexShrink: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2, minWidth: 0 }}>
+            <span style={{ flexShrink: 0, width: ICON_BOX, height: ICON_BOX, display: "inline-flex", alignItems: "center", justifyContent: "center", color: "rgba(232,234,240,0.42)" }}>
               {ev.isVirtual ? <VideoIcon /> : <PinIcon />}
             </span>
             <span style={{ fontSize: 11.5, lineHeight: 1.3, color: "rgba(232,234,240,0.5)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -124,57 +118,51 @@ function EventCard({ ev, destacado = false }) {
           </div>
         )}
 
-        {/* Organizador e inscritos */}
-        <div style={{ display: "flex", alignItems: "center", gap: 5, minWidth: 0 }}>
+        {/* Organizador. El número de inscritos ya no se muestra. */}
+        <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
           {ev.hostAvatar ? (
-            <img src={ev.hostAvatar} alt="" loading="lazy" decoding="async" width={16} height={16} style={{ width: 16, height: 16, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+            <img src={ev.hostAvatar} alt="" loading="lazy" decoding="async" width={ICON_BOX} height={ICON_BOX}
+              style={{ width: ICON_BOX, height: ICON_BOX, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
           ) : (
-            <span style={{ width: 16, height: 16, borderRadius: "50%", flexShrink: 0, background: "rgba(107,159,212,0.25)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: "#c8dff0" }}>
+            <span style={{ width: ICON_BOX, height: ICON_BOX, borderRadius: "50%", flexShrink: 0, background: "rgba(107,159,212,0.25)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8.5, fontWeight: 700, color: "#c8dff0" }}>
               {(ev.hostName || "?").slice(0, 1).toUpperCase()}
             </span>
           )}
           <span style={{ fontSize: 11.5, lineHeight: 1.3, color: "rgba(232,234,240,0.5)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {ev.hostName || "Organizador"}
           </span>
-          {gente > 0 && (
-            <span style={{
-              flexShrink: 0, marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 3,
-              fontSize: 11, fontWeight: 700, padding: "2px 7px", borderRadius: 100,
-              background: gente >= POPULAR_MIN ? "rgba(251,146,60,0.14)" : "rgba(255,255,255,0.06)",
-              color: gente >= POPULAR_MIN ? "#fb923c" : "rgba(232,234,240,0.45)",
-            }}>
-              {gente >= POPULAR_MIN && <FlameIcon />}
-              {gente}
-            </span>
-          )}
         </div>
       </div>
 
-      {/* Miniatura cuadrada a la derecha, como en la referencia. */}
-      <div style={{ position: "relative", flexShrink: 0, width: 74, height: 74, borderRadius: 12, overflow: "hidden", background: "#111" }}>
-        {destacado && gente >= POPULAR_MIN && (
-          <span style={{
-            position: "absolute", top: 4, left: 4, zIndex: 1,
-            display: "inline-flex", alignItems: "center", gap: 3,
-            background: "rgba(251,146,60,0.92)", color: "#1a1200",
-            fontSize: 9, fontWeight: 800, padding: "2px 5px", borderRadius: 100,
-          }}>
-            <FlameIcon size={8} /> TOP
-          </span>
-        )}
-        {ev.headerImage ? (
-          <img src={ev.headerImage} alt={ev.title} loading="lazy" decoding="async" width={74} height={74} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-        ) : (
-          <div style={{
-            width: "100%", height: "100%",
-            background: cat ? `linear-gradient(135deg, ${cat.color}44, #111)` : "linear-gradient(135deg, #1e3a5f, #0d1b2a)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            {cat && CAT_ICONS[cat.slug]
-              ? <div style={{ opacity: 0.55 }}>{CAT_ICONS[cat.slug](cat.color, 30)}</div>
-              : <span style={{ fontSize: 26, opacity: 0.5 }}>🗓️</span>}
-          </div>
-        )}
+      {/* Imagen y, justo debajo, si es gratis o de pago. */}
+      <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
+        <div style={{ position: "relative", width: 74, height: 74, borderRadius: 12, overflow: "hidden", background: "#111" }}>
+          {destacado && gente >= POPULAR_MIN && (
+            <span style={{ position: "absolute", top: 4, left: 4, zIndex: 1, color: "#fb923c", display: "inline-flex", filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.9))" }}>
+              <FlameIcon size={14} />
+            </span>
+          )}
+          {ev.headerImage ? (
+            <img src={ev.headerImage} alt={ev.title} loading="lazy" decoding="async" width={74} height={74} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          ) : (
+            <div style={{
+              width: "100%", height: "100%",
+              background: cat ? `linear-gradient(135deg, ${cat.color}44, #111)` : "linear-gradient(135deg, #1e3a5f, #0d1b2a)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              {cat && CAT_ICONS[cat.slug]
+                ? <div style={{ opacity: 0.55 }}>{CAT_ICONS[cat.slug](cat.color, 28)}</div>
+                : <span style={{ fontSize: 24, opacity: 0.5 }}>🗓️</span>}
+            </div>
+          )}
+        </div>
+        <span style={{
+          fontSize: 10.5, fontWeight: 700, borderRadius: 6, padding: "2px 8px", whiteSpace: "nowrap",
+          background: ev.isPaid ? "rgba(251,191,36,0.12)" : "rgba(34,197,94,0.12)",
+          color: ev.isPaid ? "#fbbf24" : "#22c55e",
+        }}>
+          {price}
+        </span>
       </div>
     </a>
   );
@@ -223,9 +211,10 @@ function CategoryPill({ cat, count, active, onClick }) {
   );
 }
 
-const FlameIcon = ({ size = 11 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" style={{ flexShrink: 0 }}>
-    <path d="M12 2s1 3.5-1.5 6C8 10.5 6 12.4 6 15a6 6 0 0 0 12 0c0-2.2-1-3.6-2-5-.6 1-1.3 1.6-2 1.6 1-3.2-.6-7-2-9.6z"/>
+const FlameIcon = ({ size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+       strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+    <path d="M12 2s1 3.5-1.5 6C8 10.5 6 12.4 6 15a6 6 0 0 0 12 0c0-2.2-1-3.6-2-5-.6 1-1.3 1.6-2 1.6 1-3.2-.6-7-2-9.6z" />
   </svg>
 );
 
@@ -239,7 +228,7 @@ const chipStyle = (activo) => ({
 });
 
 const VideoIcon = () => (
-  <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+  <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
     <path d="m22 8-6 4 6 4V8z" /><rect x="2" y="6" width="14" height="12" rx="2" />
   </svg>
 );
@@ -413,6 +402,19 @@ export default function DiscoverPage({ embedded = false }) {
 
       <div style={{ maxWidth: 1560, margin: "0 auto", padding: "0 24px 80px" }}>
 
+        {/* ── Lo más popular ── */}
+        {!filtrando && populares.length > 0 && (
+          <section style={{ marginBottom: 48 }}>
+            {/* Solo la llama: la sección se explica sola por su posición. */}
+            <div style={{ marginBottom: 12, color: "#fb923c", display: "flex" }} aria-label="Eventos que se están llenando">
+              <FlameIcon size={22} />
+            </div>
+            <div className="ef-pop ef-hscroll">
+              {populares.map(ev => <EventCard key={"pop-" + ev.id} ev={ev} destacado />)}
+            </div>
+          </section>
+        )}
+
         {/* ── Categories ── */}
         <section style={{ marginBottom: 52 }}>
           <h2 style={{ fontSize: 18, fontWeight: 800, marginBottom: 16, color: "#e8eaf0" }}>
@@ -455,22 +457,6 @@ export default function DiscoverPage({ embedded = false }) {
                   <span style={{ opacity: 0.6, marginLeft: 6, fontWeight: 600 }}>{c.count}</span>
                 </button>
               ))}
-            </div>
-          </section>
-        )}
-
-        {/* ── Lo más popular ── */}
-        {!filtrando && populares.length > 0 && (
-          <section style={{ marginBottom: 48 }}>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
-              <h2 style={{ fontSize: 18, fontWeight: 800, color: "#e8eaf0", margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ color: "#fb923c", display: "inline-flex" }}><FlameIcon size={17} /></span>
-                Lo que se está llenando
-              </h2>
-              <span style={{ fontSize: 13, color: "#8fa3b1" }}>Los eventos con más gente apuntada</span>
-            </div>
-            <div className="ef-pop ef-hscroll">
-              {populares.map(ev => <EventCard key={"pop-" + ev.id} ev={ev} destacado />)}
             </div>
           </section>
         )}
@@ -616,11 +602,11 @@ export default function DiscoverPage({ embedded = false }) {
            en escritorio se despliegan en rejilla. */
         .ef-pop {
           display: grid; gap: 10px;
-          grid-auto-flow: column; grid-auto-columns: minmax(0, 92%);
+          grid-auto-flow: column; grid-auto-columns: 92%;
           overflow-x: auto; scroll-snap-type: x mandatory;
           padding-bottom: 4px;
         }
-        .ef-pop > * { scroll-snap-align: start; }
+        .ef-pop > * { scroll-snap-align: start; min-width: 0; }
         @media (min-width: 760px) {
           .ef-pop {
             grid-auto-flow: row; grid-auto-columns: auto;
