@@ -223,6 +223,52 @@ const VideoIcon = () => (
   </svg>
 );
 
+/**
+ * Carrusel que avanza solo.
+ *
+ * Avanza de tarjeta en tarjeta (no en píxeles continuos) para que encaje con
+ * el scroll-snap y nunca quede una tarjeta a medias. Se pausa en cuanto la
+ * persona lo toca y se reanuda unos segundos después: pelearse con el dedo del
+ * usuario es la forma más rápida de que un carrusel resulte molesto.
+ *
+ * No hace nada si el sistema pide reducir el movimiento, ni en escritorio,
+ * donde la tira es una rejilla y no hay nada que desplazar.
+ */
+function useAutoCarousel(ref, activo, { intervalo = 3200, esperaTrasTocar = 7000 } = {}) {
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || !activo) return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+
+    let pausadoHasta = 0;
+    const pausar = () => { pausadoHasta = Date.now() + esperaTrasTocar; };
+
+    const tick = () => {
+      // En rejilla (escritorio) no hay desbordamiento: no hay nada que mover.
+      if (el.scrollWidth <= el.clientWidth + 4) return;
+      if (Date.now() < pausadoHasta) return;
+      // Se avanza el ancho REAL de una tarjeta, no el del contenedor: las
+      // tarjetas miden el 92%, así que usar el contenedor saltaba de a dos.
+      const primera = el.children[0];
+      const gap = parseFloat(getComputedStyle(el).columnGap) || 0;
+      const paso = primera ? primera.getBoundingClientRect().width + gap : el.clientWidth;
+      const finalizado = el.scrollLeft + el.clientWidth >= el.scrollWidth - 8;
+      el.scrollTo({ left: finalizado ? 0 : el.scrollLeft + paso, behavior: "smooth" });
+    };
+
+    const id = setInterval(tick, intervalo);
+    for (const ev of ["pointerdown", "wheel", "touchstart", "mouseenter"]) {
+      el.addEventListener(ev, pausar, { passive: true });
+    }
+    return () => {
+      clearInterval(id);
+      for (const ev of ["pointerdown", "wheel", "touchstart", "mouseenter"]) {
+        el.removeEventListener(ev, pausar);
+      }
+    };
+  }, [ref, activo, intervalo, esperaTrasTocar]);
+}
+
 const PAGE_SIZE = 24; // por request; se cargan más con el botón "Cargar más"
 
 export default function DiscoverPage({ embedded = false }) {
@@ -239,10 +285,12 @@ export default function DiscoverPage({ embedded = false }) {
   const [cities,         setCities]         = useState([]);
   const [populares,      setPopulares]      = useState([]);
   const searchTimer = useRef(null);
+  const popRef = useRef(null);
 
   // Con algún filtro puesto, la persona ya sabe lo que busca: las secciones
   // de descubrimiento estorban y se ocultan.
   const filtrando = Boolean(search || activeCategory || activeCity);
+  useAutoCarousel(popRef, !filtrando && populares.length > 1);
 
   // Una sola función para primera página (append=false, reemplaza) y siguientes
   // (append=true, agrega). Así el listado escala a cientos de eventos sin traer
@@ -399,7 +447,7 @@ export default function DiscoverPage({ embedded = false }) {
             <div style={{ marginBottom: 12, color: "#fb923c", display: "flex" }} aria-label="Eventos que se están llenando">
               <FlameIcon size={22} />
             </div>
-            <div className="ef-pop ef-hscroll">
+            <div className="ef-pop ef-hscroll" ref={popRef}>
               {populares.map(ev => <EventCard key={"pop-" + ev.id} ev={ev} destacado />)}
             </div>
           </section>
@@ -597,6 +645,7 @@ export default function DiscoverPage({ embedded = false }) {
           padding-bottom: 4px;
         }
         .ef-pop > * { scroll-snap-align: start; min-width: 0; }
+        @media (prefers-reduced-motion: reduce) { .ef-pop { scroll-behavior: auto; } }
         @media (min-width: 760px) {
           .ef-pop {
             grid-auto-flow: row; grid-auto-columns: auto;
