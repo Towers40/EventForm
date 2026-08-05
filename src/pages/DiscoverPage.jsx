@@ -64,7 +64,7 @@ function EventCard({ ev, destacado = false }) {
         {/* Fecha · hora */}
         <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 3, fontSize: 11 }}>
           {fecha && (
-            <span style={{ fontWeight: 800, color: "#c8dff0", background: "rgba(107,159,212,0.16)", borderRadius: 6, padding: "2px 7px", letterSpacing: "0.02em" }}>
+            <span style={{ fontWeight: 800, color: "#c8dff0", background: "rgba(107,159,212,0.16)", borderRadius: 6, padding: "1px 7px", lineHeight: 1.35, letterSpacing: "0.02em" }}>
               {fecha.d} {MONTHS[fecha.m - 1].toUpperCase()}
             </span>
           )}
@@ -75,7 +75,7 @@ function EventCard({ ev, destacado = false }) {
           )}
           {horaInicio && <span style={{ color: "rgba(232,234,240,0.5)" }}>{horaInicio}</span>}
           <span style={{
-            marginLeft: "auto", fontWeight: 700, borderRadius: 6, padding: "2px 7px", whiteSpace: "nowrap",
+            marginLeft: "auto", fontWeight: 700, borderRadius: 6, padding: "1px 7px", lineHeight: 1.35, whiteSpace: "nowrap",
             background: ev.isPaid ? "rgba(251,191,36,0.12)" : "rgba(34,197,94,0.12)",
             color: ev.isPaid ? "#fbbf24" : "#22c55e",
           }}>
