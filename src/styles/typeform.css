@@ -5,13 +5,27 @@
 
 /* ─── Tema oscuro — base de todas las vistas públicas ─────────────────────── */
 :root {
-  --tf-bg:        #0d0f10;
-  --tf-card:      #1a1c1e;
-  --tf-border:    rgba(255,255,255,0.08);
-  --tf-text:      #e8eaf0;
-  --tf-muted:     #8fa3b1;
-  --tf-accent:    #0d3b66;
-  --tf-accent-lt: #6b9fd4;
+  /* Sistema TapIn: color de "Navy Refinado", forma de "Rumba", tipo de
+     "Nocturne". Mismos valores que src/lib/ds.jsx. */
+  --tf-bg:        #12152a;
+  --tf-card:      rgba(255,255,255,0.06);
+  --tf-border:    rgba(255,255,255,0.14);
+  --tf-text:      #eef1f7;
+  --tf-desc:      rgba(238,241,247,0.84);
+  --tf-muted:     rgba(238,241,247,0.64);
+  --tf-accent:    #7fb3e6;
+  --tf-accent-lt: #bfd9f2;
+  --tf-accent-a:  rgba(127,179,230,0.2);
+  --tf-accent-b:  rgba(127,179,230,0.45);
+  --tf-divider:   rgba(255,255,255,0.1);
+  /* Radios de "Rumba": generosos, y acciones en píldora. */
+  --r-lg: 22px;
+  --r-md: 18px;
+  --r-sm: 14px;
+  --r-cta: 999px;
+  /* Tipografía de "Nocturne": la jerarquía la marca el tamaño, no el peso. */
+  --h-weight: 500;
+  --h-letter: -0.4px;
   --scroll-tint:  0; /* 0–1, lo actualiza src/lib/scrollTint.js al desplazarse */
 }
 
@@ -20,7 +34,7 @@
    opacidad al hacer scroll (variable --scroll-tint). Se usan pseudo-elementos
    fijos porque background-attachment: fixed no funciona en iOS. */
 :root {
-  background: #131628; /* respaldo bajo las capas fijas (gana a --bg de index.css) */
+  background: #12152a; /* respaldo bajo las capas fijas */
 }
 body {
   /* body debe quedar transparente: un fondo opaco aquí taparía los
@@ -33,9 +47,8 @@ body::before {
   inset: 0;
   z-index: -2;
   background:
-    radial-gradient(115% 85% at 85% -10%, rgba(36, 116, 76, 0.75), transparent 62%),
-    radial-gradient(120% 90% at -10% 110%, rgba(24, 92, 58, 0.65), transparent 60%),
-    linear-gradient(170deg, #1d2340 0%, #131628 100%);
+    radial-gradient(120% 80% at 80% -10%, rgba(127, 179, 230, 0.16), transparent 60%),
+    linear-gradient(170deg, #1d2340 0%, #12152a 100%);
 }
 body::after {
   content: "";
@@ -43,7 +56,8 @@ body::after {
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background: linear-gradient(180deg, rgba(10, 46, 30, 0.55) 0%, rgba(4, 26, 16, 0.95) 100%);
+  /* Al bajar, el navy se profundiza. Antes viraba a verde. */
+  background: linear-gradient(180deg, rgba(13, 16, 32, 0.5) 0%, rgba(8, 10, 22, 0.92) 100%);
   opacity: calc(var(--scroll-tint) * 0.85);
   transition: opacity 0.25s ease-out;
 }
@@ -63,7 +77,7 @@ body::after {
 
 .tf-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #1a5f8a, #6b9fd4);
+  background: linear-gradient(90deg, #7fb3e6, #7fb3e6);
   transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -91,7 +105,7 @@ body::after {
   justify-content: center;
   width: 28px;
   height: 28px;
-  background: #1a5f8a;
+  background: #7fb3e6;
   color: #fff;
   font-weight: 800;
   font-size: 14px;
@@ -100,15 +114,23 @@ body::after {
 }
 
 .tf-question {
-  font-size: clamp(22px, 5vw, 28px);
-  font-weight: 400;
-  line-height: 1.35;
+  font-size: clamp(23px, 5vw, 30px);
+  font-weight: var(--h-weight);
+  letter-spacing: var(--h-letter);
+  line-height: 1.28;
   color: var(--tf-text);
   margin: 0 0 12px;
 }
 
 .tf-question strong {
   font-weight: 600;
+}
+
+/* Todos los titulares de la app comparten peso y espaciado. Se hace aquí, en
+   una sola regla, para que ninguna pantalla vuelva por su cuenta al 800. */
+h1, h2, h3, .ef-title {
+  font-weight: var(--h-weight);
+  letter-spacing: var(--h-letter);
 }
 
 .tf-hint {
@@ -173,7 +195,7 @@ body::after {
   height: 48px;
   border: none;
   border-radius: 6px;
-  background: #1a5f8a;
+  background: #7fb3e6;
   color: #fff;
   font-weight: 700;
   font-size: 15px;
@@ -205,7 +227,7 @@ body::after {
 .tf-choice:hover,
 .tf-choice.selected {
   border-color: var(--tf-accent-lt);
-  background: rgba(107,159,212,0.12);
+  background: rgba(127,179,230,0.12);
   color: var(--tf-text);
 }
 
@@ -249,7 +271,7 @@ body::after {
 }
 
 .tf-event-cover-placeholder {
-  color: #0d3b66;
+  color: #222b4c;
   font-size: 96px;
   font-weight: 900;
 }
@@ -309,7 +331,7 @@ body::after {
   width: 100%;
   border: none;
   border-radius: 8px;
-  background: #1a5f8a;
+  background: #7fb3e6;
   color: #fff;
   padding: 14px 20px;
   font-size: 16px;
@@ -327,7 +349,7 @@ body::after {
 .tf-upload-drop {
   width: 100%;
   min-height: 220px;
-  border: 2px dashed rgba(107,159,212,0.5);
+  border: 2px dashed rgba(127,179,230,0.5);
   border-radius: 12px;
   background: rgba(255,255,255,0.03);
   color: var(--tf-accent-lt);
@@ -385,7 +407,7 @@ body::after {
 .host-tf-body .tf-choice.selected,
 .host-tf-body .tf-choice:hover {
   border-color: var(--tf-accent-lt);
-  background: rgba(107,159,212,0.12);
+  background: rgba(127,179,230,0.12);
   color: var(--tf-text);
 }
 
@@ -446,9 +468,9 @@ body::after {
 
 /* Panel admin — glass dark */
 .panel-card {
-  border-radius: 20px;
-  border: 1px solid rgba(255,255,255,0.11);
-  background: rgba(255,255,255,0.08);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--tf-border);
+  background: var(--tf-card);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   overflow: hidden;
@@ -457,13 +479,13 @@ body::after {
 .panel-card-header {
   padding: 18px 24px;
   background: rgba(255,255,255,0.03);
-  border-bottom: 1px solid rgba(255,255,255,0.07);
+  border-bottom: 1px solid var(--tf-divider);
 }
 
 .soft-btn {
-  border-radius: 10px;
-  padding: 12px 20px;
-  font-weight: 700;
+  border-radius: var(--r-cta);
+  padding: 11px 22px;
+  font-weight: 600;
   font-size: 14px;
   cursor: pointer;
   border: none;
@@ -475,15 +497,15 @@ body::after {
 }
 
 .soft-btn-primary {
-  background: linear-gradient(135deg, #0d3b66, #1a5f8a);
-  color: #fff;
-  box-shadow: 0 4px 14px rgba(13,59,102,0.4);
+  background: var(--tf-accent-a);
+  color: var(--tf-text);
+  border: 1px solid var(--tf-accent-b);
 }
 
 .soft-btn-secondary {
-  background: rgba(255,255,255,0.07);
-  color: #c8dff0;
-  border: 1px solid rgba(107,159,212,0.25);
+  background: rgba(255,255,255,0.06);
+  color: var(--tf-accent-lt);
+  border: 1px solid var(--tf-border);
 }
 
 .soft-btn-secondary:hover {
@@ -558,7 +580,7 @@ body::after {
   display: inline-flex; align-items: center; justify-content: center;
   height: 36px; padding: 0 8px; flex-shrink: 0;
   border: none; border-radius: 999px; cursor: pointer; overflow: hidden;
-  background: rgba(255,255,255,0.08); color: rgba(232,234,240,0.78);
+  background: rgba(255,255,255,0.08); color: rgba(238,241,247,0.78);
   transition: background 0.25s ease, color 0.25s ease, padding 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .ef-pill:hover { background: rgba(255,255,255,0.14); }

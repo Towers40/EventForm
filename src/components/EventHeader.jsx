@@ -48,7 +48,7 @@ export default function EventHeader({ event, compact = false }) {
         <h1
           style={{
             fontSize: compact ? 20 : 26,
-            fontWeight: 900,
+            fontWeight: 500,
             margin: 0,
             color: NEGRO_PURO,
             lineHeight: 1.15,

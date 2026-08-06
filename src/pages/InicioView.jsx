@@ -26,11 +26,11 @@ export default function InicioView({ events, onNew, onGoTo }) {
         <p className="tf-hint" style={{ maxWidth: 400, margin: "0 auto 32px" }}>
           Gestiona inscripciones, controla el acceso con QR y analiza tus eventos — todo desde un solo lugar.
         </p>
-        <button type="button" className="soft-btn soft-btn-primary ef-hover-fill" onClick={onNew} style={{ fontSize: 16, padding: "16px 40px", borderRadius: 12 }}>
+        <button type="button" className="soft-btn soft-btn-primary ef-hover-fill" onClick={onNew} style={{ fontSize: 16, padding: "16px 40px", borderRadius: 14 }}>
           + Crear nuevo evento
         </button>
         <div style={{ marginTop: 16 }}>
-          <button type="button" className="ef-hover-fill" onClick={() => nav("/discover")} style={{ background: "none", border: "none", borderRadius: 8, padding: "6px 10px", color: "#6b9fd4", fontWeight: 700, cursor: "pointer", fontSize: 14, textDecoration: "underline", textUnderlineOffset: 3 }}>
+          <button type="button" className="ef-hover-fill" onClick={() => nav("/discover")} style={{ background: "none", border: "none", borderRadius: 8, padding: "6px 10px", color: "#7fb3e6", fontWeight: 700, cursor: "pointer", fontSize: 14, textDecoration: "underline", textUnderlineOffset: 3 }}>
             Descubrir eventos →
           </button>
         </div>
@@ -53,7 +53,7 @@ export default function InicioView({ events, onNew, onGoTo }) {
               onMouseEnter={e => e.currentTarget.style.opacity = "0.8"}
               onMouseLeave={e => e.currentTarget.style.opacity = "1"}
             >
-              <div style={{ fontSize: 28, fontWeight: 800, color: "#6b9fd4" }}>{s.value}</div>
+              <div style={{ fontSize: 28, fontWeight: 800, color: "#7fb3e6" }}>{s.value}</div>
               <div style={{ fontSize: 12, color: "#8fa3b1", fontWeight: 700, marginTop: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>{s.label}</div>
             </button>
           ))}
@@ -62,17 +62,17 @@ export default function InicioView({ events, onNew, onGoTo }) {
 
       {/* Cómo funciona */}
       <div style={{ padding: "0 8px 48px" }}>
-        <h2 style={{ fontSize: 16, fontWeight: 700, color: "#8fa3b1", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 20 }}>
+        <h2 style={{ fontSize: 16, fontWeight: 500, color: "#8fa3b1", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 20 }}>
           Cómo funciona
         </h2>
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {STEPS.map(s => (
             <div key={s.n} className="panel-card" style={{ padding: "18px 20px", display: "flex", gap: 16, alignItems: "flex-start" }}>
-              <div style={{ width: 32, height: 32, borderRadius: 8, background: "#1a5f8a", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14, flexShrink: 0 }}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: "#7fb3e6", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14, flexShrink: 0 }}>
                 {s.n}
               </div>
               <div>
-                <div style={{ fontWeight: 700, fontSize: 15, color: "#e8eaf0", marginBottom: 4 }}>{s.title}</div>
+                <div style={{ fontWeight: 700, fontSize: 15, color: "#eef1f7", marginBottom: 4 }}>{s.title}</div>
                 <div style={{ fontSize: 13, color: "#8fa3b1", lineHeight: 1.5 }}>{s.desc}</div>
               </div>
             </div>

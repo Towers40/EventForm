@@ -3,8 +3,8 @@ import { IconButton, IcoBack } from "./ui.jsx";
 import { buildParticipant, groupRegistrations } from "../lib/tickets.js";
 import { capacityLabel, isSoldOut } from "../lib/capacity.js";
 
-const SUB  = "rgba(232,234,240,0.5)";
-const TEXT = "#e8eaf0";
+const SUB  = "rgba(238,241,247,0.5)";
+const TEXT = "#eef1f7";
 const BORDER = "1px solid rgba(255,255,255,0.09)";
 
 function exportCsv(event, registrations) {
@@ -62,7 +62,7 @@ export default function EventCrm({ event, onBack, onToggleSoldOut, onShare, onSe
 
       <div className="panel-card" style={{ marginBottom: 24 }}>
         <div className="panel-card-header">
-          <h2 style={{ margin: 0, fontSize: 22, fontWeight: 900, color: TEXT }}>CRM — {event.title}</h2>
+          <h2 style={{ margin: 0, fontSize: 22, fontWeight: 500, color: TEXT }}>CRM — {event.title}</h2>
           <p style={{ margin: "8px 0 0", fontSize: 14, color: SUB }}>
             {capacityLabel(event)} · {checked} ingresaron ·{" "}
             {isSoldOut(event) ? "🔴 Venta cerrada" : "🟢 Venta abierta"}
@@ -112,9 +112,9 @@ export default function EventCrm({ event, onBack, onToggleSoldOut, onShare, onSe
               style={{
                 padding: "8px 16px", borderRadius: 999, cursor: "pointer", fontSize: 13,
                 fontWeight: filtro === f.key ? 700 : 600,
-                background: filtro === f.key ? "rgba(107,159,212,0.22)" : "rgba(255,255,255,0.05)",
-                border: filtro === f.key ? "1px solid rgba(107,159,212,0.45)" : BORDER,
-                color: filtro === f.key ? "#e8eaf0" : SUB,
+                background: filtro === f.key ? "rgba(127,179,230,0.22)" : "rgba(255,255,255,0.05)",
+                border: filtro === f.key ? "1px solid rgba(127,179,230,0.45)" : BORDER,
+                color: filtro === f.key ? "#eef1f7" : SUB,
               }}>
               {f.label}
             </button>
@@ -150,7 +150,7 @@ export default function EventCrm({ event, onBack, onToggleSoldOut, onShare, onSe
                         {g.email && <div style={{ fontSize: 11.5, color: SUB, marginTop: 2 }}>{g.email}</div>}
                       </td>
                       <td style={{ padding: 12, whiteSpace: "nowrap" }}>
-                        <span style={{ fontWeight: 800, color: g.total > 1 ? "#6b9fd4" : TEXT, fontSize: 14 }}>{g.total}</span>
+                        <span style={{ fontWeight: 800, color: g.total > 1 ? "#7fb3e6" : TEXT, fontSize: 14 }}>{g.total}</span>
                         <span style={{ color: SUB, fontSize: 11.5, marginLeft: 5 }}>{g.total === 1 ? "entrada" : "entradas"}</span>
                         {/* Los códigos solo cuando son pocos: con 5 la celda se vuelve ilegible. */}
                         {g.total <= 3 && (
@@ -162,8 +162,8 @@ export default function EventCrm({ event, onBack, onToggleSoldOut, onShare, onSe
                       <td style={{ padding: 12, color: SUB, whiteSpace: "nowrap" }}>{new Date(g.ts).toLocaleString("es-CO")}</td>
                       <td style={{ padding: 12, whiteSpace: "nowrap" }}>
                         <span style={{
-                          background: g.usadas ? "rgba(107,159,212,0.2)" : "rgba(52,199,89,0.15)",
-                          color: g.usadas ? "#6b9fd4" : "#86efac",
+                          background: g.usadas ? "rgba(127,179,230,0.2)" : "rgba(52,199,89,0.15)",
+                          color: g.usadas ? "#7fb3e6" : "#86efac",
                           padding: "4px 10px", borderRadius: 100, fontSize: 11, fontWeight: 700,
                         }}>
                           {g.usadas === 0 ? "PENDIENTE" : g.usadas === g.total ? "INGRESÓ" : `${g.usadas}/${g.total} INGRESARON`}

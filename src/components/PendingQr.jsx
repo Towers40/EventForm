@@ -15,7 +15,7 @@ export default function PendingQr({ id, size = 220, approved = true, style }) {
       src={qrUrlFor(id, Math.max(size, 240))}
       alt={approved ? "QR de acceso" : "QR pendiente de aprobación"}
       style={{
-        width: size, height: size, borderRadius: 12, display: "block",
+        width: size, height: size, borderRadius: 14, display: "block",
         margin: "0 auto", background: "#fff", padding: 10, boxSizing: "border-box",
         ...(approved ? null : { filter: "blur(6px)", opacity: 0.45 }),
         ...style,
@@ -53,7 +53,7 @@ export function PendingNotice({ style }) {
     <p style={{
       fontSize: 12.5, fontWeight: 700, color: "#fbbf24",
       background: "rgba(251,191,36,0.12)", border: "1px solid rgba(251,191,36,0.35)",
-      borderRadius: 10, padding: "9px 12px", margin: "14px 0 0", lineHeight: 1.45,
+      borderRadius: 14, padding: "9px 12px", margin: "14px 0 0", lineHeight: 1.45,
       ...style,
     }}>
       Tu entrada está pendiente de aprobación del organizador. El código QR se

@@ -29,7 +29,7 @@ export default function AdminPanel({
   return (
     <div>
       <div style={{ marginBottom: 28 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 900, margin: "0 0 8px" }}>Panel de administración</h1>
+        <h1 style={{ fontSize: 28, fontWeight: 500, margin: "0 0 8px" }}>Panel de administración</h1>
         <p style={{ fontSize: 14, color: NEGRO_MUTED_70, fontWeight: 600 }}>
           {events.length} eventos · {totalRegs} inscripciones totales · Colombia
         </p>
@@ -61,7 +61,7 @@ export default function AdminPanel({
           background: NEGRO_PURO,
           color: BLANCO_CONTRASTE,
           border: "none",
-          borderRadius: 12,
+          borderRadius: 14,
           padding: 16,
           fontSize: 15,
           fontWeight: 800,
@@ -83,7 +83,7 @@ export default function AdminPanel({
               key={e.id}
               style={{
                 border: `2px solid ${NEGRO_PURO}`,
-                borderRadius: 16,
+                borderRadius: 18,
                 overflow: "hidden",
                 background: BLANCO_CONTRASTE,
               }}
@@ -126,7 +126,7 @@ function StatCard({ label, value, highlight }) {
     <div
       style={{
         border: `2px solid ${NEGRO_PURO}`,
-        borderRadius: 12,
+        borderRadius: 14,
         padding: 14,
         background: highlight || VERDE_PASTEL_BG,
         textAlign: "center",

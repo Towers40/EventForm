@@ -50,7 +50,7 @@ export default function TicketCarousel({ tickets, eventTitle, qrSize = 200, onIn
           overflowX: varias ? "auto" : "visible",
           scrollSnapType: "x mandatory",
           WebkitOverflowScrolling: "touch",
-          borderRadius: 20,
+          borderRadius: 22,
         }}
       >
         {tickets.map((t, i) => {
@@ -66,17 +66,17 @@ export default function TicketCarousel({ tickets, eventTitle, qrSize = 200, onIn
               <div style={{
                 background: "#1a1c1e",
                 border: "1px solid rgba(255,255,255,0.1)",
-                borderRadius: 20, padding: "26px 20px",
+                borderRadius: 22, padding: "26px 20px",
                 textAlign: "center",
                 boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
               }}>
                 {varias && (
-                  <div style={{ fontSize: 11, fontWeight: 800, color: "#6b9fd4", letterSpacing: 1.5, marginBottom: 14, textTransform: "uppercase" }}>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: "#7fb3e6", letterSpacing: 1.5, marginBottom: 14, textTransform: "uppercase" }}>
                     Entrada {i + 1} de {tickets.length}
                   </div>
                 )}
                 <PendingQr id={t.id} size={qrSize} approved={aprobada} />
-                <p style={{ fontFamily: "monospace", fontWeight: 700, marginTop: 16, fontSize: 13, color: "#6b9fd4", letterSpacing: 1 }}>
+                <p style={{ fontFamily: "monospace", fontWeight: 700, marginTop: 16, fontSize: 13, color: "#7fb3e6", letterSpacing: 1 }}>
                   {t.id}
                 </p>
                 {aprobada ? (
@@ -96,8 +96,8 @@ export default function TicketCarousel({ tickets, eventTitle, qrSize = 200, onIn
                     }).catch(() => {})}
                     style={{
                       marginTop: 16, width: "100%", padding: "13px",
-                      background: "rgba(107,159,212,0.08)", color: "#6b9fd4",
-                      borderRadius: 12, border: "1px solid rgba(107,159,212,0.25)",
+                      background: "rgba(127,179,230,0.08)", color: "#7fb3e6",
+                      borderRadius: 14, border: "1px solid rgba(127,179,230,0.25)",
                       fontWeight: 700, fontSize: 14, cursor: "pointer",
                       display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                     }}
@@ -125,7 +125,7 @@ export default function TicketCarousel({ tickets, eventTitle, qrSize = 200, onIn
                 aria-current={i === idx}
                 style={{
                   width: i === idx ? 22 : 8, height: 8, borderRadius: 4, padding: 0, border: "none",
-                  background: i === idx ? "#6b9fd4" : "rgba(232,234,240,0.28)",
+                  background: i === idx ? "#7fb3e6" : "rgba(238,241,247,0.28)",
                   cursor: "pointer", transition: "width 0.2s, background 0.2s",
                 }}
               />
@@ -147,7 +147,7 @@ function Flecha({ dir, onClick, disabled }) {
         width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
         display: "inline-flex", alignItems: "center", justifyContent: "center",
         background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.14)",
-        color: disabled ? "rgba(232,234,240,0.22)" : "#c8dff0",
+        color: disabled ? "rgba(238,241,247,0.22)" : "#bfd9f2",
         cursor: disabled ? "default" : "pointer", padding: 0,
       }}
     >

@@ -6,7 +6,7 @@ export default function SuperAdminPanel({ data, onOpenEvent }) {
 
   return (
     <div>
-      <h1 style={{ fontSize: 28, fontWeight: 900, marginBottom: 8 }}>Super administración</h1>
+      <h1 style={{ fontSize: 28, fontWeight: 500, marginBottom: 8 }}>Super administración</h1>
       <p style={{ color: NEGRO_MUTED_70, marginBottom: 24 }}>
         Vista global de anfitriones y eventos en la plataforma.
       </p>
@@ -17,7 +17,7 @@ export default function SuperAdminPanel({ data, onOpenEvent }) {
         <Stat n={stats.regCount} label="Inscripciones" />
       </div>
 
-      <h2 style={{ fontSize: 18, fontWeight: 900, marginBottom: 12 }}>Anfitriones registrados</h2>
+      <h2 style={{ fontSize: 18, fontWeight: 500, marginBottom: 12 }}>Anfitriones registrados</h2>
       <div className="panel-card" style={{ marginBottom: 28, overflow: "hidden" }}>
         <table style={{ width: "100%", fontSize: 13, borderCollapse: "collapse" }}>
           <thead>
@@ -39,7 +39,7 @@ export default function SuperAdminPanel({ data, onOpenEvent }) {
         </table>
       </div>
 
-      <h2 style={{ fontSize: 18, fontWeight: 900, marginBottom: 12 }}>Todos los eventos</h2>
+      <h2 style={{ fontSize: 18, fontWeight: 500, marginBottom: 12 }}>Todos los eventos</h2>
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {events.map((e) => (
           <div key={e.id} className="panel-card" style={{ padding: 16 }}>

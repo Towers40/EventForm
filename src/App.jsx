@@ -526,7 +526,7 @@ export default function App() {
 // ─── DASHBOARD ────────────────────────────────────────────────────────────────
 function SoldOutView({ ev, onBack }) {
   return (
-    <div style={{ border: `2px solid ${NEGRO_PURO}`, borderRadius: 16, padding: 24, textAlign: "center" }}>
+    <div style={{ border: `2px solid ${NEGRO_PURO}`, borderRadius: 18, padding: 24, textAlign: "center" }}>
       <EventHeader event={ev} compact />
       <span className="sold-out-badge" style={{ fontSize: 14, padding: "8px 16px", display: "inline-block", marginBottom: 16 }}>
         Sold out — cupos agotados
@@ -558,7 +558,7 @@ function Dashboard({ events, onNew, onOpen, onRegister, onValidate, onAdmin }) {
           <h1
             style={{
               fontSize: 32,
-              fontWeight: 900,
+              fontWeight: 500,
               margin: 0,
               color: NEGRO_PURO,
               letterSpacing: "-0.02em",
@@ -572,7 +572,7 @@ function Dashboard({ events, onNew, onOpen, onRegister, onValidate, onAdmin }) {
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         {events.length > 0 && (
-          <button type="button" onClick={onAdmin} style={{ background: VERDE_CORPORATIVO, color: BLANCO_CONTRASTE, border: `2px solid ${NEGRO_PURO}`, borderRadius: 12, padding: "14px 18px", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
+          <button type="button" onClick={onAdmin} style={{ background: VERDE_CORPORATIVO, color: BLANCO_CONTRASTE, border: `2px solid ${NEGRO_PURO}`, borderRadius: 14, padding: "14px 18px", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
             Administración
           </button>
         )}
@@ -583,7 +583,7 @@ function Dashboard({ events, onNew, onOpen, onRegister, onValidate, onAdmin }) {
             background: NEGRO_PURO,
             color: BLANCO_CONTRASTE,
             border: "none",
-            borderRadius: 12,
+            borderRadius: 14,
             padding: "14px 24px",
             fontSize: 14,
             fontWeight: 700,
@@ -601,7 +601,7 @@ function Dashboard({ events, onNew, onOpen, onRegister, onValidate, onAdmin }) {
             border: `2px solid ${NEGRO_PURO}`,
             padding: "64px 24px",
             textAlign: "center",
-            borderRadius: 20,
+            borderRadius: 22,
             background: VERDE_PASTEL_BG,
           }}
         >
@@ -622,7 +622,7 @@ function Dashboard({ events, onNew, onOpen, onRegister, onValidate, onAdmin }) {
               background: NEGRO_PURO,
               color: BLANCO_CONTRASTE,
               border: "none",
-              borderRadius: 10,
+              borderRadius: 14,
               padding: "12px 24px",
               fontWeight: 700,
               cursor: "pointer",
@@ -640,7 +640,7 @@ function Dashboard({ events, onNew, onOpen, onRegister, onValidate, onAdmin }) {
             onClick={() => onOpen(e.id)}
             style={{
               border: `2px solid ${NEGRO_PURO}`,
-              borderRadius: 16,
+              borderRadius: 18,
               overflow: "hidden",
               cursor: "pointer",
               background: BLANCO_CONTRASTE,
@@ -664,7 +664,7 @@ function Dashboard({ events, onNew, onOpen, onRegister, onValidate, onAdmin }) {
               >
                 {e.date || "Fecha pendiente"}
               </div>
-              <h2 style={{ fontSize: 22, fontWeight: 900, margin: 0 }}>{e.title}</h2>
+              <h2 style={{ fontSize: 22, fontWeight: 500, margin: 0 }}>{e.title}</h2>
               {formatEventType(e) && (
                 <p style={{ fontSize: 13, margin: "8px 0 0", opacity: 0.85 }}>
                   {formatEventType(e)}
@@ -787,10 +787,10 @@ function CreateEventWizard({ draft, setDraft, step, setStep, onDone, onCancel })
   return (
     <div style={{ minHeight: "60vh", display: "flex", flexDirection: "column", justifyContent: "center" }}>
       
-      <div style={{ background: BLANCO_CONTRASTE, border: `2px solid ${NEGRO_PURO}`, borderRadius: 16, padding: "32px", width: "100%", boxSizing: "border-box" }}>
+      <div style={{ background: BLANCO_CONTRASTE, border: `2px solid ${NEGRO_PURO}`, borderRadius: 18, padding: "32px", width: "100%", boxSizing: "border-box" }}>
         
         {/* Barra de progreso contenida dentro del marco */}
-        <div style={{ width: "100%", height: "6px", background: VERDE_PASTEL_BG, borderRadius: 10, marginBottom: 32, overflow: "hidden" }}>
+        <div style={{ width: "100%", height: "6px", background: VERDE_PASTEL_BG, borderRadius: 14, marginBottom: 32, overflow: "hidden" }}>
           <div style={{ width: `${progressPercentage}%`, height: "100%", background: VERDE_CORPORATIVO, transition: "width 0.3s ease-out" }} />
         </div>
 
@@ -844,7 +844,7 @@ function CreateEventWizard({ draft, setDraft, step, setStep, onDone, onCancel })
                         }
                       }}
                       style={{
-                        width: "100%", textAlign: "left", padding: "16px", borderRadius: 10, fontSize: 15, fontWeight: 700,
+                        width: "100%", textAlign: "left", padding: "16px", borderRadius: 14, fontSize: 15, fontWeight: 700,
                         border: `2px solid ${NEGRO_PURO}`,
                         background: isSelected ? NEGRO_PURO : BLANCO_CONTRASTE,
                         color: isSelected ? BLANCO_CONTRASTE : NEGRO_PURO,
@@ -914,7 +914,7 @@ function CreateEventWizard({ draft, setDraft, step, setStep, onDone, onCancel })
                       key={opt.value}
                       onClick={() => updateDraft("capacity", opt.value)}
                       style={{
-                        width: "100%", textAlign: "left", padding: "16px", borderRadius: 10, fontSize: 15, fontWeight: 700,
+                        width: "100%", textAlign: "left", padding: "16px", borderRadius: 14, fontSize: 15, fontWeight: 700,
                         border: `2px solid ${NEGRO_PURO}`,
                         background: isSelected ? NEGRO_PURO : BLANCO_CONTRASTE,
                         color: isSelected ? BLANCO_CONTRASTE : NEGRO_PURO,
@@ -1011,7 +1011,7 @@ function CreateEventWizard({ draft, setDraft, step, setStep, onDone, onCancel })
                   onClick={handleNextStep}
                   disabled={!dDay || !dMonth || !draft.city || !draft.address?.trim() || draft.lat == null}
                   style={{
-                    background: VERDE_CORPORATIVO, color: BLANCO_CONTRASTE, border: `2px solid ${NEGRO_PURO}`, padding: "14px 28px", borderRadius: 10, fontWeight: 800, fontSize: 14,
+                    background: VERDE_CORPORATIVO, color: BLANCO_CONTRASTE, border: `2px solid ${NEGRO_PURO}`, padding: "14px 28px", borderRadius: 14, fontWeight: 800, fontSize: 14,
                     cursor: "pointer", opacity: (!dDay || !dMonth || !draft.city || !draft.address?.trim() || draft.lat == null) ? 0.35 : 1
                   }}
                 >
@@ -1045,7 +1045,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
         onChange={(headerImage) => setDraft({ ...draft, headerImage })}
       />
 
-      <div style={{ border: `2px solid ${NEGRO_PURO}`, borderRadius: 16, padding: 20, background: BLANCO_CONTRASTE, marginBottom: 20 }}>
+      <div style={{ border: `2px solid ${NEGRO_PURO}`, borderRadius: 18, padding: 20, background: BLANCO_CONTRASTE, marginBottom: 20 }}>
         <Lbl top>Ubicación (Colombia)</Lbl>
         <ColombiaAddressPicker
           value={{ city: draft.city, address: draft.address, lat: draft.lat, lng: draft.lng }}
@@ -1062,7 +1062,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
         />
       </div>
 
-      <div style={{ border: `2px solid ${NEGRO_PURO}`, borderRadius: 16, padding: "24px", background: VERDE_PASTEL_BG, marginBottom: 28 }}>
+      <div style={{ border: `2px solid ${NEGRO_PURO}`, borderRadius: 18, padding: "24px", background: VERDE_PASTEL_BG, marginBottom: 28 }}>
         <Lbl>Descripción general del evento</Lbl>
         <textarea
           style={{ ...inputStyle, minHeight: 70, resize: "none" }}
@@ -1074,17 +1074,17 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
         <div>
-          <h2 style={{ fontSize: 24, fontWeight: 900, margin: 0, color: NEGRO_PURO }}>Estructura Preliminar Creada</h2>
+          <h2 style={{ fontSize: 24, fontWeight: 500, margin: 0, color: NEGRO_PURO }}>Estructura Preliminar Creada</h2>
           <p style={{ fontSize: 14, color: NEGRO_MUTED_70, marginTop: 4 }}>Modifica, reordena o añade secciones personalizadas a tu gusto.</p>
         </div>
-        <button onClick={onPublish} style={{ background: VERDE_CORPORATIVO, color: BLANCO_CONTRASTE, border: `2px solid ${NEGRO_PURO}`, borderRadius: 10, padding: "12px 20px", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>
+        <button onClick={onPublish} style={{ background: VERDE_CORPORATIVO, color: BLANCO_CONTRASTE, border: `2px solid ${NEGRO_PURO}`, borderRadius: 14, padding: "12px 20px", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>
           Publicar Formulario ✓
         </button>
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {draft.fields.map((f, i) => (
-          <div key={f.id} style={{ border: `2px solid ${NEGRO_PURO}`, borderRadius: 12, background: BLANCO_CONTRASTE, overflow: "hidden" }}>
+          <div key={f.id} style={{ border: `2px solid ${NEGRO_PURO}`, borderRadius: 14, background: BLANCO_CONTRASTE, overflow: "hidden" }}>
             
             <div style={{ padding: "16px", display: "flex", alignItems: "center", justifyContent: "space-between", background: editFid === f.id ? VERDE_PASTEL_BG : BLANCO_CONTRASTE }}>
               <div onClick={() => setEditFid(editFid === f.id ? null : f.id)} style={{ flex: 1, cursor: "pointer" }}>
@@ -1185,7 +1185,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
       </div>
 
       <div style={{ marginTop: 24, textAlign: "center" }}>
-        <button onClick={() => setShowTools(!showTools)} style={{ background: NEGRO_PURO, color: BLANCO_CONTRASTE, border: "none", padding: "12px 24px", borderRadius: 10, fontWeight: 700, cursor: "pointer" }}>
+        <button onClick={() => setShowTools(!showTools)} style={{ background: NEGRO_PURO, color: BLANCO_CONTRASTE, border: "none", padding: "12px 24px", borderRadius: 14, fontWeight: 700, cursor: "pointer" }}>
           {showTools ? "Ocultar catálogo" : "+ Proponer Nueva Sección"}
         </button>
       </div>
@@ -1211,7 +1211,7 @@ function Detail({ ev, onEdit, onValidate }) {
   return (
     <div>
       <EventHeader event={ev} />
-      <div style={{ border: `2px solid ${NEGRO_PURO}`, borderRadius: 16, padding: 20, background: VERDE_PASTEL_BG, marginBottom: 24 }}>
+      <div style={{ border: `2px solid ${NEGRO_PURO}`, borderRadius: 18, padding: 20, background: VERDE_PASTEL_BG, marginBottom: 24 }}>
         {ev.eventDescription && (
           <p style={{ fontSize: 14, color: NEGRO_MUTED_70, background: BLANCO_CONTRASTE, padding: 12, borderRadius: 8, border: `1px solid ${NEGRO_PURO}`, marginBottom: 12 }}>{ev.eventDescription}</p>
         )}
@@ -1227,7 +1227,7 @@ function Detail({ ev, onEdit, onValidate }) {
         </div>
       </div>
 
-      <h3 style={{ fontSize: 18, fontWeight: 900, marginBottom: 12 }}>Asistentes ({ev.registrations.length})</h3>
+      <h3 style={{ fontSize: 18, fontWeight: 500, marginBottom: 12 }}>Asistentes ({ev.registrations.length})</h3>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {ev.registrations.length === 0 ? (
           <p style={{ fontSize: 14, color: NEGRO_MUTED_50 }}>Aún no hay inscripciones.</p>
@@ -1235,7 +1235,7 @@ function Detail({ ev, onEdit, onValidate }) {
           ev.registrations.map((r) => {
             const p = buildParticipant(ev, r);
             return (
-              <div key={r.id} style={{ border: `2px solid ${NEGRO_PURO}`, padding: 14, borderRadius: 10, display: "flex", justifyContent: "space-between", alignItems: "center", background: BLANCO_CONTRASTE, gap: 12 }}>
+              <div key={r.id} style={{ border: `2px solid ${NEGRO_PURO}`, padding: 14, borderRadius: 14, display: "flex", justifyContent: "space-between", alignItems: "center", background: BLANCO_CONTRASTE, gap: 12 }}>
                 <div>
                   <div style={{ fontWeight: 800, fontSize: 14 }}>{p.name}</div>
                   <div style={{ fontSize: 12, color: NEGRO_MUTED_50, fontFamily: "monospace" }}>{r.id}</div>
@@ -1260,7 +1260,7 @@ function Detail({ ev, onEdit, onValidate }) {
 // ─── FORMULARIO PÚBLICO ──────────────────────────────────────────────────────
 function Register({ ev, form, setFormField, errors, onSubmit, onBack }) {
   return (
-    <div style={{ border: `2px solid ${NEGRO_PURO}`, borderRadius: 16, padding: 24, background: BLANCO_CONTRASTE }}>
+    <div style={{ border: `2px solid ${NEGRO_PURO}`, borderRadius: 18, padding: 24, background: BLANCO_CONTRASTE }}>
       <button type="button" onClick={onBack} style={{ background: "none", border: "none", fontWeight: 800, cursor: "pointer", marginBottom: 16, color: NEGRO_MUTED_70 }}>← VOLVER</button>
       <EventHeader event={ev} compact />
       {ev.lat != null && <LocationMap lat={ev.lat} lng={ev.lng} height={180} />}
@@ -1290,7 +1290,7 @@ function Register({ ev, form, setFormField, errors, onSubmit, onBack }) {
         );
       })}
 
-      <button type="button" onClick={onSubmit} style={{ width: "100%", background: NEGRO_PURO, color: BLANCO_CONTRASTE, border: "none", padding: 14, borderRadius: 10, fontSize: 16, fontWeight: 800, cursor: "pointer", marginTop: 12 }}>
+      <button type="button" onClick={onSubmit} style={{ width: "100%", background: NEGRO_PURO, color: BLANCO_CONTRASTE, border: "none", padding: 14, borderRadius: 14, fontSize: 16, fontWeight: 800, cursor: "pointer", marginTop: 12 }}>
         Obtener mi entrada oficial →
       </button>
     </div>
@@ -1302,13 +1302,13 @@ function Confirm({ ev, reg, onDone }) {
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(reg.id)}&margin=10`;
 
   return (
-    <div style={{ border: `2px solid ${NEGRO_PURO}`, borderRadius: 20, overflow: "hidden", background: BLANCO_CONTRASTE, textAlign: "center" }}>
+    <div style={{ border: `2px solid ${NEGRO_PURO}`, borderRadius: 22, overflow: "hidden", background: BLANCO_CONTRASTE, textAlign: "center" }}>
       {ev.headerImage && (
         <img src={ev.headerImage} alt="" style={{ width: "100%", height: 120, objectFit: "cover", display: "block" }} />
       )}
       <div style={{ background: NEGRO_PURO, color: BLANCO_CONTRASTE, padding: "20px" }}>
         <div style={{ fontSize: 11, fontWeight: 800, color: VERDE_CORPORATIVO }}>PASE DIGITAL DE ACCESO</div>
-        <h2 style={{ fontSize: 22, fontWeight: 900, margin: "4px 0 0" }}>{ev.title}</h2>
+        <h2 style={{ fontSize: 22, fontWeight: 500, margin: "4px 0 0" }}>{ev.title}</h2>
         {ev.city && (
           <p style={{ fontSize: 13, margin: "8px 0 0", opacity: 0.9 }}>{ev.city} · {ev.location || ev.address}</p>
         )}
@@ -1317,7 +1317,7 @@ function Confirm({ ev, reg, onDone }) {
       <div style={{ padding: "32px 24px", background: VERDE_PASTEL_BG }}>
         {ev.lat != null && <LocationMap lat={ev.lat} lng={ev.lng} height={160} />}
         <NavigateButtons lat={ev.lat} lng={ev.lng} label={ev.address || ev.location} />
-        <div style={{ display: "inline-block", background: BLANCO_CONTRASTE, padding: "16px", borderRadius: 16, border: `2px solid ${NEGRO_PURO}`, marginBottom: 16 }}>
+        <div style={{ display: "inline-block", background: BLANCO_CONTRASTE, padding: "16px", borderRadius: 18, border: `2px solid ${NEGRO_PURO}`, marginBottom: 16 }}>
           <img src={qrUrl} alt="Código QR de Validación" style={{ display: "block", width: 160, height: 160 }} />
         </div>
 
@@ -1342,8 +1342,8 @@ function Validate({ event, scopeLabel, code, setCode, result, onCheck, onScan, o
   const cameraActive = mode === "camera" && !result;
 
   return (
-    <div style={{ border: `2px solid ${NEGRO_PURO}`, borderRadius: 16, padding: 24, background: BLANCO_CONTRASTE }}>
-      <h2 style={{ fontSize: 22, fontWeight: 900, marginBottom: 8, color: NEGRO_PURO }}>Check-in con QR</h2>
+    <div style={{ border: `2px solid ${NEGRO_PURO}`, borderRadius: 18, padding: 24, background: BLANCO_CONTRASTE }}>
+      <h2 style={{ fontSize: 22, fontWeight: 500, marginBottom: 8, color: NEGRO_PURO }}>Check-in con QR</h2>
       <p style={{ fontSize: 13, color: NEGRO_MUTED_70, marginBottom: 20, fontWeight: 600 }}>{scopeLabel}</p>
 
       {!result && (
@@ -1411,7 +1411,7 @@ function Validate({ event, scopeLabel, code, setCode, result, onCheck, onScan, o
               padding: 20,
               background: result.s === "ok" ? VERDE_PASTEL_BG : result.s === "used" ? "#FEF3C7" : ROJO_SUAVE,
               border: `2px solid ${NEGRO_PURO}`,
-              borderRadius: 10,
+              borderRadius: 14,
               fontWeight: 900,
               fontSize: 16,
               marginBottom: 16,
@@ -1423,7 +1423,7 @@ function Validate({ event, scopeLabel, code, setCode, result, onCheck, onScan, o
           </div>
 
           {result.participant && result.s !== "nf" && (
-            <div style={{ textAlign: "left", border: `2px solid ${NEGRO_PURO}`, borderRadius: 12, padding: 16, marginBottom: 16, background: BLANCO_CONTRASTE }}>
+            <div style={{ textAlign: "left", border: `2px solid ${NEGRO_PURO}`, borderRadius: 14, padding: 16, marginBottom: 16, background: BLANCO_CONTRASTE }}>
               <div style={{ fontWeight: 900, fontSize: 18, marginBottom: 8 }}>{result.participant.name}</div>
               {result.event && (
                 <p style={{ fontSize: 13, color: NEGRO_MUTED_70, margin: "0 0 12px" }}>

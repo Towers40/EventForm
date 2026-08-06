@@ -697,7 +697,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
         fontFamily: "system-ui, -apple-system, sans-serif",
         minHeight: "100vh",
         background: "transparent",
-        color: "#e8eaf0",
+        color: "#eef1f7",
         textAlign: "left",
       }}
     >
@@ -715,12 +715,12 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
             style={{
               width: 42, height: 42, borderRadius: "50%",
               boxSizing: "border-box",
-              backgroundColor: "#0d3b66",
-              backgroundImage: avatarUrl ? `url("${avatarUrl}")` : "linear-gradient(135deg, #0d3b66, #1a5f8a)",
+              backgroundColor: "#222b4c",
+              backgroundImage: avatarUrl ? `url("${avatarUrl}")` : "linear-gradient(135deg, #222b4c, #7fb3e6)",
               backgroundSize: "cover",
               backgroundPosition: "center",
               backgroundRepeat: "no-repeat",
-              border: "2px solid rgba(107,159,212,0.35)",
+              border: "2px solid rgba(127,179,230,0.35)",
               cursor: "pointer", overflow: "hidden",
               display: "flex", alignItems: "center", justifyContent: "center",
               fontSize: 15, fontWeight: 800, color: "#fff",
@@ -732,7 +732,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
           >
             {!avatarUrl && initials}
           </button>
-          <button type="button" className="ef-hover-fill ef-logo-text" onClick={() => go("inicio")} style={{ background: "none", border: "none", borderRadius: 10, padding: "6px 10px", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontWeight: 800, fontSize: 17, color: "#e8eaf0", whiteSpace: "nowrap" }}>
+          <button type="button" className="ef-hover-fill ef-logo-text" onClick={() => go("inicio")} style={{ background: "none", border: "none", borderRadius: 14, padding: "6px 10px", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontWeight: 800, fontSize: 17, color: "#eef1f7", whiteSpace: "nowrap" }}>
             <TapInMark size={22} color={VERDE_CORPORATIVO} />
             <span className="ef-logo-word">{BRAND_NAME}</span>
           </button>
@@ -749,11 +749,11 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
                 className="ef-hover-fill"
                 onClick={() => go(item.key)}
                 style={{
-                  background: active ? "rgba(107,159,212,0.18)" : "transparent",
-                  border: active ? "1px solid rgba(107,159,212,0.35)" : "1px solid transparent",
-                  borderRadius: 10, padding: "8px 14px", whiteSpace: "nowrap",
+                  background: active ? "rgba(127,179,230,0.18)" : "transparent",
+                  border: active ? "1px solid rgba(127,179,230,0.35)" : "1px solid transparent",
+                  borderRadius: 14, padding: "8px 14px", whiteSpace: "nowrap",
                   fontSize: 13.5, fontWeight: active ? 700 : 600,
-                  color: active ? "#c8dff0" : "rgba(232,234,240,0.65)",
+                  color: active ? "#bfd9f2" : "rgba(238,241,247,0.65)",
                   cursor: "pointer",
                 }}
               >
@@ -872,11 +872,11 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
       </main>
 
       {view !== "create_wizard" && (
-        <footer style={{ background: "transparent", borderTop: "1px solid rgba(255,255,255,0.07)", padding: 20, textAlign: "center", fontSize: 12, color: "rgba(232,234,240,0.3)", marginTop: 48, paddingBottom: 110 }}>
+        <footer style={{ background: "transparent", borderTop: "1px solid rgba(255,255,255,0.07)", padding: 20, textAlign: "center", fontSize: 12, color: "rgba(238,241,247,0.3)", marginTop: 48, paddingBottom: 110 }}>
           {BRAND_NAME} Colombia © 2026
           {/* Versión del build. Si aquí pone "preview", estás en una URL
               congelada en un commit viejo y no verás los últimos cambios. */}
-          <span style={{ display: "block", marginTop: 6, fontSize: 10.5, letterSpacing: "0.04em", color: __BUILD_ENV__ === "production" ? "rgba(232,234,240,0.22)" : "#fbbf24" }}>
+          <span style={{ display: "block", marginTop: 6, fontSize: 10.5, letterSpacing: "0.04em", color: __BUILD_ENV__ === "production" ? "rgba(238,241,247,0.22)" : "#fbbf24" }}>
             {__BUILD_ENV__ === "production" ? `v ${__BUILD_ID__}` : `${__BUILD_ENV__} · ${__BUILD_ID__} — no es producción`}
           </span>
         </footer>
@@ -901,10 +901,10 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
                 <button key={key} type="button" className="ef-hover-fill" onClick={() => go(key)}
                   style={{
                     flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3,
-                    background: active ? "rgba(107,159,212,0.22)" : "transparent",
-                    border: active ? "1px solid rgba(107,159,212,0.35)" : "1px solid transparent",
-                    borderRadius: 16, padding: "9px 4px", cursor: "pointer",
-                    color: active ? "#c8dff0" : "rgba(232,234,240,0.6)",
+                    background: active ? "rgba(127,179,230,0.22)" : "transparent",
+                    border: active ? "1px solid rgba(127,179,230,0.35)" : "1px solid transparent",
+                    borderRadius: 18, padding: "9px 4px", cursor: "pointer",
+                    color: active ? "#bfd9f2" : "rgba(238,241,247,0.6)",
                   }}>
                   <span style={{ display: "flex" }}>{icon}</span>
                   <span className="ef-dock-label" style={{ fontSize: 10.5, fontWeight: active ? 700 : 600, letterSpacing: "0.01em" }}>{label}</span>
@@ -916,8 +916,8 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
             <button type="button" className="ef-hover-fill ef-dock-search" onClick={() => { setSearchOpen(true); setSearchQuery(""); }} title="Buscar eventos"
               style={{
                 flex: "0 0 auto", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3,
-                background: "transparent", border: "1px solid transparent", borderRadius: 16, padding: "9px 4px", cursor: "pointer",
-                color: "rgba(232,234,240,0.6)",
+                background: "transparent", border: "1px solid transparent", borderRadius: 18, padding: "9px 4px", cursor: "pointer",
+                color: "rgba(238,241,247,0.6)",
               }}>
               <span style={{ display: "flex" }}><IconSearch /></span>
               <span className="ef-dock-label" style={{ fontSize: 10.5, fontWeight: 600 }}>Buscar</span>
@@ -930,27 +930,27 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
       {searchOpen && (
         <div onClick={() => setSearchOpen(false)}
           style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "10vh 16px 16px" }}>
-          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 460, maxHeight: "78vh", display: "flex", flexDirection: "column", background: "rgba(20,23,40,0.98)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 20, overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 460, maxHeight: "78vh", display: "flex", flexDirection: "column", background: "rgba(20,23,40,0.98)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 22, overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-              <span style={{ display: "flex", color: "#6b9fd4" }}><IconSearch /></span>
+              <span style={{ display: "flex", color: "#7fb3e6" }}><IconSearch /></span>
               <input autoFocus type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Buscar mis eventos…"
-                style={{ flex: 1, background: "none", border: "none", outline: "none", color: "#e8eaf0", fontSize: 16, fontFamily: "inherit" }} />
+                style={{ flex: 1, background: "none", border: "none", outline: "none", color: "#eef1f7", fontSize: 16, fontFamily: "inherit" }} />
               <button type="button" className="ef-hover-fill" onClick={() => setSearchOpen(false)} style={{ background: "none", border: "none", borderRadius: "50%", color: "#8fa3b1", cursor: "pointer", fontSize: 20, lineHeight: 1, padding: 4 }}>×</button>
             </div>
             <div style={{ overflowY: "auto", padding: 8 }}>
               {searchResults.length === 0 ? (
-                <p style={{ textAlign: "center", color: "rgba(232,234,240,0.5)", fontSize: 14, padding: "28px 12px" }}>Sin resultados.</p>
+                <p style={{ textAlign: "center", color: "rgba(238,241,247,0.5)", fontSize: 14, padding: "28px 12px" }}>Sin resultados.</p>
               ) : (
                 searchResults.map((e) => (
                   <button key={e.id} type="button" className="ef-hover-fill"
                     onClick={() => { setSearchOpen(false); if (e.isDraft) editEvent(e); else go("crm", e.id); }}
-                    style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 12, padding: "11px 12px", borderRadius: 12, background: "transparent", border: "none", cursor: "pointer", color: "#e8eaf0" }}>
-                    <span style={{ width: 38, height: 38, borderRadius: 9, flexShrink: 0, overflow: "hidden", background: "rgba(107,159,212,0.18)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 12, padding: "11px 12px", borderRadius: 14, background: "transparent", border: "none", cursor: "pointer", color: "#eef1f7" }}>
+                    <span style={{ width: 38, height: 38, borderRadius: 9, flexShrink: 0, overflow: "hidden", background: "rgba(127,179,230,0.18)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                       {e.headerImage ? <img src={e.headerImage} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <IconCalendar />}
                     </span>
                     <span style={{ flex: 1, minWidth: 0 }}>
                       <span style={{ display: "block", fontWeight: 700, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{e.title || "Sin título"}</span>
-                      <span style={{ display: "block", fontSize: 12, color: "rgba(232,234,240,0.5)" }}>{e.isDraft ? "Borrador" : (e.city || e.location || "Evento")}</span>
+                      <span style={{ display: "block", fontSize: 12, color: "rgba(238,241,247,0.5)" }}>{e.isDraft ? "Borrador" : (e.city || e.location || "Evento")}</span>
                     </span>
                   </button>
                 ))
@@ -966,7 +966,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
 // ─── DASHBOARD ────────────────────────────────────────────────────────────────
 function SoldOutView({ ev, onBack }) {
   return (
-    <div style={{ border: `2px solid ${NEGRO_PURO}`, borderRadius: 16, padding: 24, textAlign: "center" }}>
+    <div style={{ border: `2px solid ${NEGRO_PURO}`, borderRadius: 18, padding: 24, textAlign: "center" }}>
       <EventHeader event={ev} compact />
       <span className="sold-out-badge" style={{ fontSize: 14, padding: "8px 16px", display: "inline-block", marginBottom: 16 }}>
         Sold out — cupos agotados
@@ -998,7 +998,7 @@ function Dashboard({ events, onNew, onOpen, onRegister, onValidate, onAdmin }) {
           <h1
             style={{
               fontSize: 32,
-              fontWeight: 900,
+              fontWeight: 500,
               margin: 0,
               color: NEGRO_PURO,
               letterSpacing: "-0.02em",
@@ -1012,7 +1012,7 @@ function Dashboard({ events, onNew, onOpen, onRegister, onValidate, onAdmin }) {
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         {events.length > 0 && (
-          <button type="button" onClick={onAdmin} style={{ background: VERDE_CORPORATIVO, color: BLANCO_CONTRASTE, border: `2px solid ${NEGRO_PURO}`, borderRadius: 12, padding: "14px 18px", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
+          <button type="button" onClick={onAdmin} style={{ background: VERDE_CORPORATIVO, color: BLANCO_CONTRASTE, border: `2px solid ${NEGRO_PURO}`, borderRadius: 14, padding: "14px 18px", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
             Administración
           </button>
         )}
@@ -1023,7 +1023,7 @@ function Dashboard({ events, onNew, onOpen, onRegister, onValidate, onAdmin }) {
             background: NEGRO_PURO,
             color: BLANCO_CONTRASTE,
             border: "none",
-            borderRadius: 12,
+            borderRadius: 14,
             padding: "14px 24px",
             fontSize: 14,
             fontWeight: 700,
@@ -1040,7 +1040,7 @@ function Dashboard({ events, onNew, onOpen, onRegister, onValidate, onAdmin }) {
           style={{
             padding: "72px 24px",
             textAlign: "center",
-            borderRadius: 20,
+            borderRadius: 22,
             background: VERDE_PASTEL_BG,
             border: `2px solid ${NEGRO_PURO}`,
           }}
@@ -1080,7 +1080,7 @@ function Dashboard({ events, onNew, onOpen, onRegister, onValidate, onAdmin }) {
               background: NEGRO_PURO,
               color: BLANCO_CONTRASTE,
               border: "none",
-              borderRadius: 12,
+              borderRadius: 14,
               padding: "14px 32px",
               fontWeight: 700,
               fontSize: 15,
@@ -1099,7 +1099,7 @@ function Dashboard({ events, onNew, onOpen, onRegister, onValidate, onAdmin }) {
             onClick={() => onOpen(e.id)}
             style={{
               border: `2px solid ${NEGRO_PURO}`,
-              borderRadius: 16,
+              borderRadius: 18,
               overflow: "hidden",
               cursor: "pointer",
               background: BLANCO_CONTRASTE,
@@ -1123,7 +1123,7 @@ function Dashboard({ events, onNew, onOpen, onRegister, onValidate, onAdmin }) {
               >
                 {e.date || "Fecha pendiente"}
               </div>
-              <h2 style={{ fontSize: 22, fontWeight: 900, margin: 0 }}>{e.title}</h2>
+              <h2 style={{ fontSize: 22, fontWeight: 500, margin: 0 }}>{e.title}</h2>
               {formatEventType(e) && (
                 <p style={{ fontSize: 13, margin: "8px 0 0", opacity: 0.85 }}>
                   {formatEventType(e)}
@@ -1626,7 +1626,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
             placeholder="Título del evento"
             style={{
               width: "100%", border: "none", outline: "none",
-              fontSize: 24, fontWeight: 700, color: "#e8eaf0",
+              fontSize: 24, fontWeight: 700, color: "#eef1f7",
               background: "transparent", boxSizing: "border-box",
               fontFamily: "system-ui, -apple-system, sans-serif",
               textAlign: "center",
@@ -1641,7 +1641,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
             rows={3}
             style={{
               width: "100%", border: "none", outline: "none", resize: "none",
-              fontSize: 14, color: "rgba(232,234,240,0.5)", lineHeight: 1.7,
+              fontSize: 14, color: "rgba(238,241,247,0.5)", lineHeight: 1.7,
               background: "transparent", boxSizing: "border-box",
               fontFamily: "system-ui, -apple-system, sans-serif",
             }}
@@ -1715,7 +1715,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
 
       {/* ── Encabezado de campos ── */}
       <div style={{ marginBottom: 16 }}>
-        <h2 style={{ fontSize: 17, fontWeight: 700, margin: 0, color: "#e8eaf0" }}>
+        <h2 style={{ fontSize: 17, fontWeight: 500, margin: 0, color: "#eef1f7" }}>
           Campos del formulario
         </h2>
         <p style={{ fontSize: 13, color: "#8fa3b1", margin: "3px 0 0" }}>
@@ -1739,7 +1739,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
               // imperativa (ver useLayoutEffect). No ponerlos aquí: React los
               // sobrescribiría en cada repintado y cortaría la animación.
               ...(dragId === f.id
-                ? { outline: "2px solid rgba(107,159,212,0.55)", boxShadow: "0 14px 34px rgba(0,0,0,0.5)", zIndex: 3, position: "relative" }
+                ? { outline: "2px solid rgba(127,179,230,0.55)", boxShadow: "0 14px 34px rgba(0,0,0,0.5)", zIndex: 3, position: "relative" }
                 : null),
             }}
           >
@@ -1751,7 +1751,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
               style={{
                 position: "absolute", top: 8, right: 8,
                 width: 24, height: 24, borderRadius: "50%",
-                border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.07)", color: "rgba(232,234,240,0.6)",
+                border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.07)", color: "rgba(238,241,247,0.6)",
                 cursor: "pointer", fontSize: 14, fontWeight: 700,
                 display: "flex", alignItems: "center", justifyContent: "center",
                 lineHeight: 1, zIndex: 1,
@@ -1765,7 +1765,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
               style={{
                 padding: "14px 44px 14px 20px",
                 cursor: "pointer",
-                background: editFid === f.id ? "rgba(107,159,212,0.1)" : "transparent",
+                background: editFid === f.id ? "rgba(127,179,230,0.1)" : "transparent",
               }}
               onClick={() => setEditFid(editFid === f.id ? null : f.id)}
             >
@@ -1786,8 +1786,8 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
                   style={{
                     display: "inline-flex", alignItems: "center", justifyContent: "center",
                     width: 30, height: 30, marginLeft: -6, flexShrink: 0, borderRadius: 8,
-                    color: dragId === f.id ? "#6b9fd4" : "#b8c5d4", fontSize: 14,
-                    background: dragId === f.id ? "rgba(107,159,212,0.16)" : "transparent",
+                    color: dragId === f.id ? "#7fb3e6" : "#b8c5d4", fontSize: 14,
+                    background: dragId === f.id ? "rgba(127,179,230,0.16)" : "transparent",
                     cursor: dragId === f.id ? "grabbing" : "grab",
                     touchAction: "none", // sin esto el móvil hace scroll en vez de arrastrar
                     userSelect: "none",
@@ -1795,7 +1795,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
                 >
                   ⣿
                 </span>
-                <span style={{ fontWeight: 700, fontSize: 15, color: "#e8eaf0" }}>
+                <span style={{ fontWeight: 700, fontSize: 15, color: "#eef1f7" }}>
                   {f.label}
                 </span>
               </div>
@@ -1859,7 +1859,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
                     </button>
                   </div>
                 )}
-                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "rgba(232,234,240,0.5)", cursor: "pointer" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "rgba(238,241,247,0.5)", cursor: "pointer" }}>
                   <input type="checkbox" checked={f.required}
                     onChange={(e) => onUpdate(f.id, { required: e.target.checked })}
                     style={{ width: 16, height: 16 }} />
@@ -1890,7 +1890,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
                 onClick={() => { onAdd(ft.type); setShowTools(false); }}
                 className="soft-btn soft-btn-secondary"
                 style={{ textAlign: "left", fontSize: 13, padding: "10px 14px", display: "inline-flex", alignItems: "center", gap: 8 }}>
-                <span style={{ display: "inline-flex", color: "#6b9fd4" }}>{ft.icon}</span> {ft.label}
+                <span style={{ display: "inline-flex", color: "#7fb3e6" }}>{ft.icon}</span> {ft.label}
               </button>
             ))}
           </div>
@@ -1899,7 +1899,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
 
       {/* ── Publicación ── */}
       <div className="panel-card" style={{ marginTop: 20, padding: "20px 24px" }}>
-        <h3 style={{ fontSize: 13, fontWeight: 800, color: "rgba(232,234,240,0.5)", marginBottom: 20, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+        <h3 style={{ fontSize: 13, fontWeight: 500, color: "rgba(238,241,247,0.5)", marginBottom: 20, textTransform: "uppercase", letterSpacing: "0.08em" }}>
           Publicación
         </h3>
 
@@ -1919,7 +1919,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
                   type="button"
                   title={opt.title}
                   onClick={() => setDraft(p => ({ ...p, visibility: opt.value }))}
-                  style={{ fontSize: 11, flex: 1, padding: "10px 6px", cursor: "pointer", fontWeight: 700, borderRadius: 10, background: active ? "rgba(107,159,212,0.22)" : "rgba(255,255,255,0.06)", border: `1px solid ${active ? "rgba(107,159,212,0.4)" : "rgba(255,255,255,0.1)"}`, color: active ? "#e8eaf0" : "rgba(232,234,240,0.5)" }}
+                  style={{ fontSize: 11, flex: 1, padding: "10px 6px", cursor: "pointer", fontWeight: 700, borderRadius: 14, background: active ? "rgba(127,179,230,0.22)" : "rgba(255,255,255,0.06)", border: `1px solid ${active ? "rgba(127,179,230,0.4)" : "rgba(255,255,255,0.1)"}`, color: active ? "#eef1f7" : "rgba(238,241,247,0.5)" }}
                 >
                   {opt.label}
                 </button>
@@ -1941,13 +1941,13 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
                   onClick={() => setDraft(p => ({ ...p, category: active ? null : c.slug }))}
                   style={{
                     display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6,
-                    padding: "12px 6px", borderRadius: 12, cursor: "pointer",
+                    padding: "12px 6px", borderRadius: 14, cursor: "pointer",
                     background: active ? `${c.color}22` : "rgba(255,255,255,0.06)",
                     border: `1px solid ${active ? c.color : "rgba(255,255,255,0.1)"}`,
-                    color: active ? "#e8eaf0" : "rgba(232,234,240,0.7)",
+                    color: active ? "#eef1f7" : "rgba(238,241,247,0.7)",
                   }}
                 >
-                  <span style={{ display: "flex" }}>{CAT_ICONS[c.slug]?.(active ? c.color : "rgba(232,234,240,0.7)", 24)}</span>
+                  <span style={{ display: "flex" }}>{CAT_ICONS[c.slug]?.(active ? c.color : "rgba(238,241,247,0.7)", 24)}</span>
                   <span style={{ fontSize: 11.5, fontWeight: active ? 700 : 600 }}>{c.label}</span>
                 </button>
               );
@@ -1967,7 +1967,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
               return (
                 <button key={String(opt.key)} type="button"
                   onClick={() => opt.key ? setDraft(p => ({ ...p, isPaid: true })) : setDraft(p => ({ ...p, isPaid: false, price: null }))}
-                  style={{ fontSize: 13, flex: 1, padding: "11px 8px", cursor: "pointer", fontWeight: 700, borderRadius: 10, background: active ? "rgba(107,159,212,0.22)" : "rgba(255,255,255,0.06)", border: `1px solid ${active ? "rgba(107,159,212,0.4)" : "rgba(255,255,255,0.1)"}`, color: active ? "#e8eaf0" : "rgba(232,234,240,0.5)" }}
+                  style={{ fontSize: 13, flex: 1, padding: "11px 8px", cursor: "pointer", fontWeight: 700, borderRadius: 14, background: active ? "rgba(127,179,230,0.22)" : "rgba(255,255,255,0.06)", border: `1px solid ${active ? "rgba(127,179,230,0.4)" : "rgba(255,255,255,0.1)"}`, color: active ? "#eef1f7" : "rgba(238,241,247,0.5)" }}
                 >
                   {opt.label}
                 </button>
@@ -1976,7 +1976,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
           </div>
           {draft.isPaid && (
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <span style={{ fontSize: 14, fontWeight: 700, color: "rgba(232,234,240,0.5)", whiteSpace: "nowrap" }}>COP</span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: "rgba(238,241,247,0.5)", whiteSpace: "nowrap" }}>COP</span>
               <input
                 type="number"
                 min="0"
@@ -1985,8 +1985,8 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
                 value={draft.price || ""}
                 onChange={e => setDraft(p => ({ ...p, price: e.target.value ? Number(e.target.value) : null }))}
                 style={{
-                  flex: 1, border: "1px solid rgba(255,255,255,0.11)", borderRadius: 10,
-                  padding: "11px 14px", fontSize: 14, color: "#e8eaf0",
+                  flex: 1, border: "1px solid rgba(255,255,255,0.11)", borderRadius: 14,
+                  padding: "11px 14px", fontSize: 14, color: "#eef1f7",
                   background: "rgba(255,255,255,0.06)", outline: "none", fontFamily: "inherit",
                 }}
               />
@@ -2016,7 +2016,7 @@ function iconBtn() {
     borderRadius: "50%",
     border: "1px solid rgba(255,255,255,0.1)",
     background: "rgba(255,255,255,0.07)",
-    color: "rgba(232,234,240,0.6)",
+    color: "rgba(238,241,247,0.6)",
     cursor: "pointer",
     fontSize: 14,
     fontWeight: 900,
@@ -2072,7 +2072,7 @@ function Detail({ ev, onEdit, onValidate, onCrm, onShare, onSetApproval, publicU
         </div>
       </div>
 
-      <h3 style={{ fontSize: 18, fontWeight: 900, marginBottom: 12 }}>
+      <h3 style={{ fontSize: 18, fontWeight: 500, marginBottom: 12 }}>
         Resumen ({grupos.length} {grupos.length === 1 ? "persona" : "personas"} · {(ev.registrations || []).length} {(ev.registrations || []).length === 1 ? "entrada" : "entradas"})
       </h3>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -2080,7 +2080,7 @@ function Detail({ ev, onEdit, onValidate, onCrm, onShare, onSetApproval, publicU
           <p style={{ fontSize: 14, color: NEGRO_MUTED_50 }}>Aún no hay inscripciones.</p>
         ) : (
           grupos.map((g) => (
-            <div key={g.key} style={{ border: `2px solid ${NEGRO_PURO}`, padding: 14, borderRadius: 10, display: "flex", justifyContent: "space-between", alignItems: "center", background: BLANCO_CONTRASTE, gap: 12 }}>
+            <div key={g.key} style={{ border: `2px solid ${NEGRO_PURO}`, padding: 14, borderRadius: 14, display: "flex", justifyContent: "space-between", alignItems: "center", background: BLANCO_CONTRASTE, gap: 12 }}>
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontWeight: 800, fontSize: 14 }}>
                   {g.name}
@@ -2119,7 +2119,7 @@ function Detail({ ev, onEdit, onValidate, onCrm, onShare, onSetApproval, publicU
 // ─── FORMULARIO PÚBLICO ──────────────────────────────────────────────────────
 function Register({ ev, form, setFormField, errors, onSubmit, onBack }) {
   return (
-    <div style={{ border: `2px solid ${NEGRO_PURO}`, borderRadius: 16, padding: 24, background: BLANCO_CONTRASTE }}>
+    <div style={{ border: `2px solid ${NEGRO_PURO}`, borderRadius: 18, padding: 24, background: BLANCO_CONTRASTE }}>
       <button type="button" onClick={onBack} style={{ background: "none", border: "none", fontWeight: 800, cursor: "pointer", marginBottom: 16, color: NEGRO_MUTED_70 }}>← VOLVER</button>
       <EventHeader event={ev} compact />
       {ev.lat != null && <LocationMap lat={ev.lat} lng={ev.lng} height={180} />}
@@ -2149,7 +2149,7 @@ function Register({ ev, form, setFormField, errors, onSubmit, onBack }) {
         );
       })}
 
-      <button type="button" onClick={onSubmit} style={{ width: "100%", background: NEGRO_PURO, color: BLANCO_CONTRASTE, border: "none", padding: 14, borderRadius: 10, fontSize: 16, fontWeight: 800, cursor: "pointer", marginTop: 12 }}>
+      <button type="button" onClick={onSubmit} style={{ width: "100%", background: NEGRO_PURO, color: BLANCO_CONTRASTE, border: "none", padding: 14, borderRadius: 14, fontSize: 16, fontWeight: 800, cursor: "pointer", marginTop: 12 }}>
         Obtener mi entrada oficial →
       </button>
     </div>
@@ -2161,13 +2161,13 @@ function Confirm({ ev, reg, onDone }) {
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(reg.id)}&margin=10`;
 
   return (
-    <div style={{ border: `2px solid ${NEGRO_PURO}`, borderRadius: 20, overflow: "hidden", background: BLANCO_CONTRASTE, textAlign: "center" }}>
+    <div style={{ border: `2px solid ${NEGRO_PURO}`, borderRadius: 22, overflow: "hidden", background: BLANCO_CONTRASTE, textAlign: "center" }}>
       {ev.headerImage && (
         <img src={ev.headerImage} alt="" style={{ width: "100%", height: 120, objectFit: "cover", display: "block" }} />
       )}
       <div style={{ background: NEGRO_PURO, color: BLANCO_CONTRASTE, padding: "20px" }}>
         <div style={{ fontSize: 11, fontWeight: 800, color: VERDE_CORPORATIVO }}>PASE DIGITAL DE ACCESO</div>
-        <h2 style={{ fontSize: 22, fontWeight: 900, margin: "4px 0 0" }}>{ev.title}</h2>
+        <h2 style={{ fontSize: 22, fontWeight: 500, margin: "4px 0 0" }}>{ev.title}</h2>
         {ev.city && (
           <p style={{ fontSize: 13, margin: "8px 0 0", opacity: 0.9 }}>{ev.city} · {ev.location || ev.address}</p>
         )}
@@ -2176,7 +2176,7 @@ function Confirm({ ev, reg, onDone }) {
       <div style={{ padding: "32px 24px", background: VERDE_PASTEL_BG }}>
         {ev.lat != null && <LocationMap lat={ev.lat} lng={ev.lng} height={160} />}
         <NavigateButtons lat={ev.lat} lng={ev.lng} label={ev.address || ev.location} />
-        <div style={{ display: "inline-block", background: BLANCO_CONTRASTE, padding: "16px", borderRadius: 16, border: `2px solid ${NEGRO_PURO}`, marginBottom: 16 }}>
+        <div style={{ display: "inline-block", background: BLANCO_CONTRASTE, padding: "16px", borderRadius: 18, border: `2px solid ${NEGRO_PURO}`, marginBottom: 16 }}>
           <img src={qrUrl} alt="Código QR de Validación" style={{ display: "block", width: 160, height: 160 }} />
         </div>
 
@@ -2200,11 +2200,11 @@ function Validate({ event, scopeLabel, code, setCode, result, onCheck, onScan, o
   const [mode, setMode] = useState("camera");
   const cameraActive = mode === "camera" && !result;
 
-  const AZUL_TXT = "#c8dff0";
+  const AZUL_TXT = "#bfd9f2";
   const tabStyle = (active) => ({
     flex: 1, padding: 11, fontWeight: 800, fontSize: 13,
-    border: `1px solid rgba(107,159,212,${active ? 0.5 : 0.3})`, borderRadius: 8,
-    background: active ? "rgba(107,159,212,0.22)" : "rgba(255,255,255,0.05)",
+    border: `1px solid rgba(127,179,230,${active ? 0.5 : 0.3})`, borderRadius: 8,
+    background: active ? "rgba(127,179,230,0.22)" : "rgba(255,255,255,0.05)",
     color: AZUL_TXT, cursor: "pointer",
     display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
   });
@@ -2219,18 +2219,18 @@ function Validate({ event, scopeLabel, code, setCode, result, onCheck, onScan, o
   const scanPct = fillBase > 0 ? Math.min(100, Math.round((scanned / fillBase) * 100)) : 0;
 
   return (
-    <div style={{ position: "relative", border: "1px solid rgba(107,159,212,0.3)", borderRadius: 16, padding: 24, background: "rgba(107,159,212,0.10)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}>
+    <div style={{ position: "relative", border: "1px solid rgba(127,179,230,0.3)", borderRadius: 18, padding: 24, background: "rgba(127,179,230,0.10)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}>
       {onClose && (
         <button
           type="button"
           onClick={onClose}
           aria-label="Cerrar escáner"
-          style={{ position: "absolute", top: 14, right: 14, width: 34, height: 34, borderRadius: "50%", border: "1px solid rgba(107,159,212,0.3)", background: "rgba(255,255,255,0.06)", color: AZUL_TXT, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", padding: 0 }}
+          style={{ position: "absolute", top: 14, right: 14, width: 34, height: 34, borderRadius: "50%", border: "1px solid rgba(127,179,230,0.3)", background: "rgba(255,255,255,0.06)", color: AZUL_TXT, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", padding: 0 }}
         >
           <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
         </button>
       )}
-      <h2 style={{ fontSize: 22, fontWeight: 900, marginBottom: 8, color: AZUL_TXT, textAlign: "center" }}>Check-in con QR</h2>
+      <h2 style={{ fontSize: 22, fontWeight: 500, marginBottom: 8, color: AZUL_TXT, textAlign: "center" }}>Check-in con QR</h2>
       <p style={{ fontSize: 13, color: "rgba(200,223,240,0.6)", marginBottom: 20, fontWeight: 600, textAlign: "center" }}>{scopeLabel}</p>
 
       {!result && (
@@ -2255,7 +2255,7 @@ function Validate({ event, scopeLabel, code, setCode, result, onCheck, onScan, o
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
               />
-              <button type="button" onClick={onCheck} style={{ background: "linear-gradient(135deg, #0d3b66, #1a5f8a)", color: "#fff", border: "none", padding: 14, borderRadius: 8, fontWeight: 800, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+              <button type="button" onClick={onCheck} style={{ background: "linear-gradient(135deg, #222b4c, #7fb3e6)", color: "#fff", border: "none", padding: 14, borderRadius: 8, fontWeight: 800, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
                 Verificar boleto <IconScan size={16} />
               </button>
             </div>
@@ -2279,7 +2279,7 @@ function Validate({ event, scopeLabel, code, setCode, result, onCheck, onScan, o
               background: cardBg,
               border: `2px solid ${cardBorder}`,
               color: accent,
-              borderRadius: 10,
+              borderRadius: 14,
               fontWeight: 900,
               fontSize: 16,
               marginBottom: 16,
@@ -2291,28 +2291,28 @@ function Validate({ event, scopeLabel, code, setCode, result, onCheck, onScan, o
             {result.s === "nf" && "✕ BOLETO NO ENCONTRADO"}
           </div>
           {pending && (
-            <p style={{ fontSize: 13, color: "rgba(232,234,240,0.7)", margin: "-6px 0 16px", lineHeight: 1.5 }}>
+            <p style={{ fontSize: 13, color: "rgba(238,241,247,0.7)", margin: "-6px 0 16px", lineHeight: 1.5 }}>
               Esta inscripción está pendiente de aprobación. Apruébala en
               <strong style={{ color: "#fbbf24" }}> Inscritos</strong> y el QR queda activo al instante.
             </p>
           )}
 
           {result.participant && result.s !== "nf" && (
-            <div style={{ textAlign: "left", border: `1.5px solid ${cardBorder}`, borderRadius: 12, padding: 16, marginBottom: 16, background: cardBg, color: "#e8eaf0" }}>
+            <div style={{ textAlign: "left", border: `1.5px solid ${cardBorder}`, borderRadius: 14, padding: 16, marginBottom: 16, background: cardBg, color: "#eef1f7" }}>
               <div style={{ fontWeight: 900, fontSize: 18, marginBottom: 8, color: "#fff" }}>{result.participant.name}</div>
               {result.event && (
-                <p style={{ fontSize: 13, color: "rgba(232,234,240,0.85)", margin: "0 0 12px" }}>
+                <p style={{ fontSize: 13, color: "rgba(238,241,247,0.85)", margin: "0 0 12px" }}>
                   Evento: <strong style={{ color: "#fff" }}>{result.event.title}</strong>
                 </p>
               )}
               {result.participant.rows.map((row) => (
-                <div key={row.label} style={{ fontSize: 13, marginBottom: 6, borderBottom: "1px solid rgba(255,255,255,0.15)", paddingBottom: 4, color: "rgba(232,234,240,0.9)" }}>
+                <div key={row.label} style={{ fontSize: 13, marginBottom: 6, borderBottom: "1px solid rgba(255,255,255,0.15)", paddingBottom: 4, color: "rgba(238,241,247,0.9)" }}>
                   <span style={{ fontWeight: 800, color: "#fff" }}>{row.label}:</span> {row.value}
                 </div>
               ))}
-              <div style={{ fontSize: 12, fontFamily: "monospace", marginTop: 12, color: "rgba(232,234,240,0.6)" }}>{result.ticketId}</div>
+              <div style={{ fontSize: 12, fontFamily: "monospace", marginTop: 12, color: "rgba(238,241,247,0.6)" }}>{result.ticketId}</div>
               {result.s === "used" && result.reg?.checkedInAt && (
-                <p style={{ fontSize: 12, marginTop: 8, color: "rgba(232,234,240,0.7)" }}>
+                <p style={{ fontSize: 12, marginTop: 8, color: "rgba(238,241,247,0.7)" }}>
                   Primer ingreso: {new Date(result.reg.checkedInAt).toLocaleString("es-MX")}
                 </p>
               )}
@@ -2325,12 +2325,12 @@ function Validate({ event, scopeLabel, code, setCode, result, onCheck, onScan, o
           )}
 
           {result.s === "nf" && (
-            <p style={{ fontSize: 13, color: "rgba(232,234,240,0.6)", marginBottom: 16 }}>
+            <p style={{ fontSize: 13, color: "rgba(238,241,247,0.6)", marginBottom: 16 }}>
               Verifica que el código sea del evento correcto{event ? ` (${event.title})` : ""} y que la inscripción exista.
             </p>
           )}
 
-          <button type="button" onClick={onReset} style={{ background: "rgba(52,199,89,0.16)", color: "#5ee07f", padding: "16px 24px", border: "1px solid rgba(52,199,89,0.45)", borderRadius: 12, cursor: "pointer", fontWeight: 800, fontSize: 15, width: "auto", maxWidth: 240, margin: "0 auto", display: "block" }}>
+          <button type="button" onClick={onReset} style={{ background: "rgba(52,199,89,0.16)", color: "#5ee07f", padding: "16px 24px", border: "1px solid rgba(52,199,89,0.45)", borderRadius: 14, cursor: "pointer", fontWeight: 800, fontSize: 15, width: "auto", maxWidth: 240, margin: "0 auto", display: "block" }}>
             Escanear
           </button>
         </div>
@@ -2339,14 +2339,14 @@ function Validate({ event, scopeLabel, code, setCode, result, onCheck, onScan, o
 
       {/* ── Conteo de escaneados y aforo ── */}
       {event && (
-        <div style={{ marginTop: 22, paddingTop: 18, borderTop: "1px solid rgba(107,159,212,0.2)" }}>
+        <div style={{ marginTop: 22, paddingTop: 18, borderTop: "1px solid rgba(127,179,230,0.2)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
             <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(200,223,240,0.7)" }}>Escaneados</span>
-            <span style={{ fontSize: 16, fontWeight: 900, color: "#c8dff0" }}>{scanned} / {total}</span>
+            <span style={{ fontSize: 16, fontWeight: 900, color: "#bfd9f2" }}>{scanned} / {total}</span>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 12, marginBottom: 7 }}>
             <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(200,223,240,0.7)" }}>Aforo</span>
-            <span style={{ fontSize: 14, fontWeight: 800, color: "#c8dff0" }}>{capMax != null ? `${total} / ${capMax}` : `${total} inscritos`}</span>
+            <span style={{ fontSize: 14, fontWeight: 800, color: "#bfd9f2" }}>{capMax != null ? `${total} / ${capMax}` : `${total} inscritos`}</span>
           </div>
           <div style={{ height: 10, borderRadius: 6, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
             <div style={{ height: "100%", width: `${scanPct}%`, background: "linear-gradient(90deg, #16a34a, #4ade80)", borderRadius: 6, transition: "width 0.4s" }} />

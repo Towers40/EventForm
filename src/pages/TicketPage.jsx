@@ -48,32 +48,32 @@ export default function TicketPage() {
       <div style={{ maxWidth: 460, margin: "0 auto", padding: "32px 16px 60px" }}>
         <div style={{ textAlign: "center", marginBottom: 22 }}>
           <TapInMark size={20} color="#4ade80" />
-          <span style={{ color: "#e8eaf0", fontWeight: 800, fontSize: 17, marginLeft: 8 }}>{BRAND_NAME}</span>
+          <span style={{ color: "#eef1f7", fontWeight: 800, fontSize: 17, marginLeft: 8 }}>{BRAND_NAME}</span>
         </div>
 
         {ev && (
           <div style={{ textAlign: "center", marginBottom: 18 }}>
-            <h1 style={{ fontSize: 22, fontWeight: 800, color: "#e8eaf0", margin: "0 0 6px" }}>{ev.title}</h1>
-            <p style={{ fontSize: 13.5, color: "#c8dff0", margin: 0 }}>{fmt(ev.startDate || ev.date, ev.startTime)}</p>
+            <h1 style={{ fontSize: 22, fontWeight: 500, color: "#eef1f7", margin: "0 0 6px" }}>{ev.title}</h1>
+            <p style={{ fontSize: 13.5, color: "#bfd9f2", margin: 0 }}>{fmt(ev.startDate || ev.date, ev.startTime)}</p>
             {(ev.city || ev.location) && (
-              <p style={{ fontSize: 13, color: "rgba(232,234,240,0.55)", margin: "4px 0 0" }}>{[ev.location, ev.city].filter(Boolean).join(" — ")}</p>
+              <p style={{ fontSize: 13, color: "rgba(238,241,247,0.55)", margin: "4px 0 0" }}>{[ev.location, ev.city].filter(Boolean).join(" — ")}</p>
             )}
           </div>
         )}
 
         {/* Tarjeta del QR */}
-        <div style={{ background: "#1a1c1e", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 20, padding: "26px 20px", textAlign: "center", boxShadow: "0 8px 32px rgba(0,0,0,0.4)" }}>
+        <div style={{ background: "#1a1c1e", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 22, padding: "26px 20px", textAlign: "center", boxShadow: "0 8px 32px rgba(0,0,0,0.4)" }}>
           {ticket?.cancelled ? (
             <p style={{ color: "#fca5a5", fontWeight: 800, fontSize: 15, margin: "20px 0" }}>Esta entrada fue cancelada.</p>
           ) : (
             <>
               <PendingQr id={id} size={220} approved={approved} />
-              <p style={{ fontFamily: "monospace", fontWeight: 800, fontSize: 13, color: "#6b9fd4", margin: "14px 0 4px", letterSpacing: 1 }}>{id}</p>
+              <p style={{ fontFamily: "monospace", fontWeight: 800, fontSize: 13, color: "#7fb3e6", margin: "14px 0 4px", letterSpacing: 1 }}>{id}</p>
               {approved
                 ? <p style={{ fontSize: 12, color: "#8fa3b1", margin: 0 }}>Presenta este QR en la entrada. Solo permite un ingreso.</p>
                 : <PendingNotice style={{ margin: "10px 0 0" }} />}
               {approved && ticket?.used && (
-                <p style={{ marginTop: 14, fontSize: 12.5, fontWeight: 700, color: "#fca5a5", background: "rgba(220,38,38,0.15)", border: "1px solid rgba(220,38,38,0.35)", borderRadius: 10, padding: "8px 12px" }}>
+                <p style={{ marginTop: 14, fontSize: 12.5, fontWeight: 700, color: "#fca5a5", background: "rgba(220,38,38,0.15)", border: "1px solid rgba(220,38,38,0.35)", borderRadius: 14, padding: "8px 12px" }}>
                   Esta entrada ya fue utilizada para ingresar.
                 </p>
               )}

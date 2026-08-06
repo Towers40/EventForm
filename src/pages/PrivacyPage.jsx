@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 export default function PrivacyPage() {
   return (
     <article style={{ maxWidth: 720, margin: "0 auto", padding: "32px 20px", lineHeight: 1.65, color: "#1a1a1a" }}>
-      <Link to="/" style={{ fontWeight: 700, color: "#0d3b66" }}>← Volver</Link>
+      <Link to="/" style={{ fontWeight: 700, color: "#222b4c" }}>← Volver</Link>
       <h1 style={{ fontSize: 28, marginTop: 24 }}>Política de privacidad y tratamiento de datos</h1>
       <p style={{ color: "#5c6b7a" }}>Última actualización: mayo 2026 · Colombia (Ley 1581 de 2012)</p>
 

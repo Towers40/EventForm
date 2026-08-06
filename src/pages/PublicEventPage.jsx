@@ -37,14 +37,14 @@ function DateChip({ dateStr }) {
   if (!p) return null;
   return (
     <div style={{
-      width: 52, height: 52, borderRadius: 12, flexShrink: 0,
+      width: 52, height: 52, borderRadius: 14, flexShrink: 0,
       background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)",
       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
     }}>
-      <span style={{ fontSize: 10, fontWeight: 700, color: "#6b9fd4", letterSpacing: "0.06em", lineHeight: 1 }}>
+      <span style={{ fontSize: 10, fontWeight: 700, color: "#7fb3e6", letterSpacing: "0.06em", lineHeight: 1 }}>
         {MONTHS_ES[p.m - 1].toUpperCase()}
       </span>
-      <span style={{ fontSize: 22, fontWeight: 800, color: "#e8eaf0", lineHeight: 1.1 }}>{p.d}</span>
+      <span style={{ fontSize: 22, fontWeight: 800, color: "#eef1f7", lineHeight: 1.1 }}>{p.d}</span>
     </div>
   );
 }
@@ -54,16 +54,16 @@ function Avatar({ name, src, size = 24 }) {
   if (src) {
     return (
       <img src={src} alt={name || ""} width={size} height={size} loading="lazy" decoding="async"
-        style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", flexShrink: 0, border: "1.5px solid rgba(107,159,212,0.5)" }} />
+        style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", flexShrink: 0, border: "1.5px solid rgba(127,179,230,0.5)" }} />
     );
   }
   const initials = (name || "?").split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
   return (
     <div style={{
       width: size, height: size, borderRadius: "50%", flexShrink: 0,
-      background: "rgba(107,159,212,0.35)", border: "1.5px solid rgba(107,159,212,0.5)",
+      background: "rgba(127,179,230,0.35)", border: "1.5px solid rgba(127,179,230,0.5)",
       display: "flex", alignItems: "center", justifyContent: "center",
-      fontSize: size * 0.38, fontWeight: 700, color: "#6b9fd4",
+      fontSize: size * 0.38, fontWeight: 700, color: "#7fb3e6",
     }}>
       {initials}
     </div>
@@ -227,8 +227,8 @@ export default function PublicEventPage() {
   };
 
   const BG   = "transparent"; // fondo global en body (typeform.css)
-  const TEXT = "#e8eaf0";
-  const SUB  = "rgba(232,234,240,0.5)";
+  const TEXT = "#eef1f7";
+  const SUB  = "rgba(238,241,247,0.5)";
 
   if (err) return (
     <div style={{ minHeight: "100dvh", background: BG, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -296,7 +296,7 @@ export default function PublicEventPage() {
         <div style={{ padding: `24px ${COVER_PAD}px 0` }}>
 
           {/* Title */}
-          <h1 style={{ fontSize: 32, fontWeight: 800, color: TEXT, margin: "0 0 10px", lineHeight: 1.15, letterSpacing: "-0.5px" }}>
+          <h1 style={{ fontSize: 32, fontWeight: 500, color: TEXT, margin: "0 0 10px", lineHeight: 1.15, letterSpacing: "-0.5px" }}>
             {event.title}
           </h1>
 
@@ -327,7 +327,7 @@ export default function PublicEventPage() {
           {/* Registro — solo la barra de acción (sin texto ni recuadro) */}
           <div style={{ marginBottom: 28 }}>
             {reg ? (
-              <button onClick={() => setPhase("ticket")} style={{ width: "100%", padding: "15px", background: "rgba(107,159,212,0.25)", color: "#e8eaf0", borderRadius: 14, fontWeight: 800, fontSize: 16, border: "1px solid rgba(107,159,212,0.4)", cursor: "pointer", letterSpacing: "0.01em", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+              <button onClick={() => setPhase("ticket")} style={{ width: "100%", padding: "15px", background: "rgba(127,179,230,0.25)", color: "#eef1f7", borderRadius: 999, fontWeight: 600, fontSize: 16, border: "1px solid rgba(127,179,230,0.4)", cursor: "pointer", letterSpacing: "0.01em", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
                 <IcoQr />
                 {(regs?.length || 1) > 1 ? `Ver entradas (${regs.length})` : "Ver entrada"}
               </button>
@@ -341,7 +341,7 @@ export default function PublicEventPage() {
               <div style={{ padding: "16px", background: "rgba(255,255,255,0.05)", borderRadius: 14, textAlign: "center", color: SUB, fontWeight: 700, fontSize: 15 }}>Entradas agotadas</div>
             ) : needsAccount ? (
               <>
-                <button onClick={goToLogin} style={{ width: "100%", padding: "16px", background: "#fff", color: "#0d1520", borderRadius: 14, fontWeight: 800, fontSize: 16, border: "none", cursor: "pointer", letterSpacing: "0.01em" }}>
+                <button onClick={goToLogin} style={{ width: "100%", padding: "16px", background: "#fff", color: "#12182b", borderRadius: 999, fontWeight: 600, fontSize: 16, border: "none", cursor: "pointer", letterSpacing: "0.01em" }}>
                   Inicia sesión para solicitar tu lugar
                 </button>
                 <p style={{ margin: "10px 0 0", fontSize: 12.5, color: SUB, textAlign: "center", lineHeight: 1.5 }}>
@@ -351,7 +351,7 @@ export default function PublicEventPage() {
               </>
             ) : (
               <>
-                <button onClick={() => setPhase("register")} style={{ width: "100%", padding: "16px", background: "#fff", color: "#0d1520", borderRadius: 14, fontWeight: 800, fontSize: 16, border: "none", cursor: "pointer", letterSpacing: "0.01em" }}>
+                <button onClick={() => setPhase("register")} style={{ width: "100%", padding: "16px", background: "#fff", color: "#12182b", borderRadius: 999, fontWeight: 600, fontSize: 16, border: "none", cursor: "pointer", letterSpacing: "0.01em" }}>
                   {event.requireApproval ? "Solicitar mi lugar" : "Registrarse"}
                 </button>
                 {event.requireApproval && (
@@ -367,7 +367,7 @@ export default function PublicEventPage() {
           {event.eventDescription && (
             <div style={{ marginBottom: 28 }}>
               <p style={{ margin: "0 0 10px", fontSize: 13, fontWeight: 600, color: SUB, textTransform: "uppercase", letterSpacing: "0.08em" }}>Acerca del evento</p>
-              <p style={{ margin: 0, color: "rgba(232,234,240,0.8)", fontSize: 15, lineHeight: 1.75, whiteSpace: "pre-wrap" }}>
+              <p style={{ margin: 0, color: "rgba(238,241,247,0.8)", fontSize: 15, lineHeight: 1.75, whiteSpace: "pre-wrap" }}>
                 {event.eventDescription}
               </p>
             </div>
@@ -396,9 +396,9 @@ export default function PublicEventPage() {
                 className="ef-hover-fill"
                 style={{
                   display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7,
-                  textDecoration: "none", color: "#e8eaf0",
-                  background: "rgba(107,159,212,0.25)", border: "1px solid rgba(107,159,212,0.4)",
-                  borderRadius: 12, padding: "10px 18px", fontSize: 14, fontWeight: 800,
+                  textDecoration: "none", color: "#eef1f7",
+                  background: "rgba(127,179,230,0.25)", border: "1px solid rgba(127,179,230,0.4)",
+                  borderRadius: 14, padding: "10px 18px", fontSize: 14, fontWeight: 800,
                 }}>
                 <IcoMail />
                 Organizador

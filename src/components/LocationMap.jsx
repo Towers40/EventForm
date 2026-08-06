@@ -44,10 +44,10 @@ export default function LocationMap({ lat, lng, height = 200, label, radius = 16
         <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "flex-end", justifyContent: "flex-end", padding: 10 }}>
           <span style={{
             display: "inline-flex", alignItems: "center", gap: 6,
-            background: "rgba(13,18,32,0.86)", color: "#e8eaf0",
+            background: "rgba(13,18,32,0.86)", color: "#eef1f7",
             backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
             border: "1px solid rgba(255,255,255,0.16)", borderRadius: 100,
-            padding: "7px 13px", fontSize: 12.5, fontWeight: 700,
+            padding: "7px 13px", fontSize: 12.5, fontWeight: 600,
           }}>
             <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
               <path d="m3 11 19-8-8 19-2-9-9-2z" />

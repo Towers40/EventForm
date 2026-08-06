@@ -7,9 +7,9 @@ import { IconButton, IcoBack } from "./ui.jsx";
 const CARD   = "rgba(255,255,255,0.08)";
 const BORDER = "1px solid rgba(255,255,255,0.11)";
 const RADIUS = 20;
-const TEXT   = "#e8eaf0";
-const SUB    = "rgba(232,234,240,0.5)";
-const ACCENT = "#6b9fd4";
+const TEXT   = "#eef1f7";
+const SUB    = "rgba(238,241,247,0.5)";
+const ACCENT = "#7fb3e6";
 
 // ── Spanish date formatting ──────────────────────────────────────────────────
 const DAYS_ES   = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
@@ -78,7 +78,7 @@ function LocationModal({ onSelect, onClose }) {
     >
       <div
         onClick={e => e.stopPropagation()}
-        style={{ width: "100%", maxWidth: 420, maxHeight: "76vh", display: "flex", flexDirection: "column", background: "rgba(20,23,40,0.98)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 20, overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}
+        style={{ width: "100%", maxWidth: 420, maxHeight: "76vh", display: "flex", flexDirection: "column", background: "rgba(20,23,40,0.98)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 22, overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}
       >
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", flexShrink: 0 }}>
@@ -87,20 +87,20 @@ function LocationModal({ onSelect, onClose }) {
               ref={inputRef}
               type="text" value={query} onChange={handleChange}
               placeholder="Buscar dirección o lugar…"
-              style={{ width: "100%", boxSizing: "border-box", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 12, padding: "11px 40px 11px 14px", fontSize: 15, color: "#e8eaf0", outline: "none", caretColor: "#6b9fd4", fontFamily: "inherit" }}
+              style={{ width: "100%", boxSizing: "border-box", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 14, padding: "11px 40px 11px 14px", fontSize: 15, color: "#eef1f7", outline: "none", caretColor: "#7fb3e6", fontFamily: "inherit" }}
             />
-            {loading && <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", fontSize: 13, color: "rgba(232,234,240,0.4)" }}>…</span>}
+            {loading && <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", fontSize: 13, color: "rgba(238,241,247,0.4)" }}>…</span>}
           </div>
-          <button type="button" onClick={onClose} className="ef-hover-fill" style={{ background: "rgba(107,159,212,0.16)", border: "1px solid rgba(107,159,212,0.32)", borderRadius: 999, color: "#c8dff0", fontSize: 20, lineHeight: 1, width: 36, height: 36, flexShrink: 0, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+          <button type="button" onClick={onClose} className="ef-hover-fill" style={{ background: "rgba(127,179,230,0.16)", border: "1px solid rgba(127,179,230,0.32)", borderRadius: 999, color: "#bfd9f2", fontSize: 20, lineHeight: 1, width: 36, height: 36, flexShrink: 0, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
         </div>
 
         {/* Suggestions */}
         <div style={{ flex: 1, overflowY: "auto" }}>
           {!loading && query.trim().length >= 2 && results.length === 0 && (
-            <p style={{ padding: "20px 20px", color: "rgba(232,234,240,0.4)", fontSize: 14, margin: 0 }}>Sin resultados. Intenta con otro término.</p>
+            <p style={{ padding: "20px 20px", color: "rgba(238,241,247,0.4)", fontSize: 14, margin: 0 }}>Sin resultados. Intenta con otro término.</p>
           )}
           {query.trim().length < 2 && results.length === 0 && (
-            <p style={{ padding: "20px 20px", color: "rgba(232,234,240,0.4)", fontSize: 14, margin: 0 }}>Escribe al menos 2 letras para buscar una dirección o lugar.</p>
+            <p style={{ padding: "20px 20px", color: "rgba(238,241,247,0.4)", fontSize: 14, margin: 0 }}>Escribe al menos 2 letras para buscar una dirección o lugar.</p>
           )}
           {results.map((item) => (
             <button
@@ -110,8 +110,8 @@ function LocationModal({ onSelect, onClose }) {
               className="ef-hover-fill"
               style={{ width: "100%", background: "none", border: "none", borderBottom: "1px solid rgba(255,255,255,0.06)", padding: "14px 18px", textAlign: "left", cursor: "pointer", display: "flex", alignItems: "flex-start", gap: 12 }}
             >
-              <svg style={{ flexShrink: 0, marginTop: 1 }} width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="rgba(107,159,212,0.7)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-              <span style={{ fontSize: 14, color: "#e8eaf0", lineHeight: 1.4 }}>{item.label}</span>
+              <svg style={{ flexShrink: 0, marginTop: 1 }} width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="rgba(127,179,230,0.7)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              <span style={{ fontSize: 14, color: "#eef1f7", lineHeight: 1.4 }}>{item.label}</span>
             </button>
           ))}
         </div>
@@ -158,7 +158,7 @@ function WheelCol({ items, selectedKey, getKey, getLabel, onChange, flex }) {
     <div style={{ flex: flex || 1, position: "relative", height: ITEM_H * VISIBLE, overflow: "hidden" }}>
       <div style={{ position: "absolute", inset: 0, zIndex: 2, pointerEvents: "none",
         background: `linear-gradient(to bottom,rgba(18,20,34,0.92) 0%,rgba(18,20,34,0.4) 22%,transparent 38%,transparent 62%,rgba(18,20,34,0.4) 78%,rgba(18,20,34,0.92) 100%)` }} />
-      <div style={{ position: "absolute", left: 6, right: 6, top: ITEM_H * 2, height: ITEM_H, background: "rgba(255,255,255,0.07)", borderRadius: 10, pointerEvents: "none", zIndex: 1 }} />
+      <div style={{ position: "absolute", left: 6, right: 6, top: ITEM_H * 2, height: ITEM_H, background: "rgba(255,255,255,0.07)", borderRadius: 14, pointerEvents: "none", zIndex: 1 }} />
       <div ref={ref} onScroll={onScroll} className="ce-wheel"
         style={{ height: "100%", overflowY: "scroll", scrollSnapType: "y mandatory", scrollbarWidth: "none", msOverflowStyle: "none" }}>
         <div style={{ height: ITEM_H * 2 }} />
@@ -249,7 +249,7 @@ function WheelPanel({ date, time, minDate, minTime, onChange, onClose }) {
           onChange={m => onChange(clampToLimit({ date: curDate, time: `${pad2(hour)}:${pad2(m)}` }, limit))} />
       </div>
       <div style={{ padding: "10px 16px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-        <button type="button" onClick={onClose} style={{ width: "100%", padding: 11, background: "rgba(107,159,212,0.3)", border: "none", borderRadius: 12, color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+        <button type="button" onClick={onClose} style={{ width: "100%", padding: 11, background: "rgba(127,179,230,0.3)", border: "none", borderRadius: 14, color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
           Listo
         </button>
       </div>
@@ -261,7 +261,7 @@ function WheelPanel({ date, time, minDate, minTime, onChange, onClose }) {
 function Toggle({ value, onChange }) {
   return (
     <div onClick={() => onChange(!value)} style={{ width: 51, height: 30, borderRadius: 15, flexShrink: 0, background: value ? "#34c759" : "rgba(255,255,255,0.18)", position: "relative", cursor: "pointer", transition: "background 0.22s" }}>
-      <div style={{ position: "absolute", top: 3, left: value ? 24 : 3, width: 24, height: 24, borderRadius: 12, background: "#fff", transition: "left 0.22s", boxShadow: "0 2px 6px rgba(0,0,0,0.35)" }} />
+      <div style={{ position: "absolute", top: 3, left: value ? 24 : 3, width: 24, height: 24, borderRadius: 14, background: "#fff", transition: "left 0.22s", boxShadow: "0 2px 6px rgba(0,0,0,0.35)" }} />
     </div>
   );
 }
@@ -374,7 +374,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
           </div>
           {/* ── Cover image ── */}
           <div
-            style={{ position: "relative", margin: "20px 0 12px", borderRadius: 20, overflow: "hidden", aspectRatio: "1 / 1", background: draft.headerImage ? "none" : "rgba(255,255,255,0.05)", border: BORDER, cursor: draft.headerImage ? (isDragging ? "grabbing" : "grab") : "default", touchAction: draft.headerImage ? "none" : "auto", userSelect: "none" }}
+            style={{ position: "relative", margin: "20px 0 12px", borderRadius: 22, overflow: "hidden", aspectRatio: "1 / 1", background: draft.headerImage ? "none" : "rgba(255,255,255,0.05)", border: BORDER, cursor: draft.headerImage ? (isDragging ? "grabbing" : "grab") : "default", touchAction: draft.headerImage ? "none" : "auto", userSelect: "none" }}
             onPointerDown={e => {
               if (!draft.headerImage || e.target.closest("button, label, input")) return;
               e.currentTarget.setPointerCapture(e.pointerId);
@@ -400,7 +400,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
                     style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: `${draft.imagePos?.x ?? 50}% ${draft.imagePos?.y ?? 50}%`, display: "block", pointerEvents: "none" }}
                   />
                   {!isDragging && (
-                    <div style={{ position: "absolute", bottom: 58, left: "50%", transform: "translateX(-50%)", background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)", borderRadius: 20, padding: "5px 13px", fontSize: 11, color: "rgba(255,255,255,0.75)", pointerEvents: "none", whiteSpace: "nowrap" }}>
+                    <div style={{ position: "absolute", bottom: 58, left: "50%", transform: "translateX(-50%)", background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)", borderRadius: 22, padding: "5px 13px", fontSize: 11, color: "rgba(255,255,255,0.75)", pointerEvents: "none", whiteSpace: "nowrap" }}>
                       ✥ Arrastra para reencuadrar
                     </div>
                   )}
@@ -415,7 +415,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
               <input type="file" accept="image/*" hidden onChange={handleImage} ref={imgRef} />
             </label>
             {draft.headerImage && (
-              <button type="button" className="ef-hover-fill" onClick={() => { up("headerImage", ""); up("imagePos", { x: 50, y: 50 }); }} style={{ position: "absolute", top: 10, right: 10, background: "rgba(0,0,0,0.55)", border: "none", borderRadius: 20, padding: "4px 10px", color: "#fff", fontSize: 11, cursor: "pointer" }}>Quitar</button>
+              <button type="button" className="ef-hover-fill" onClick={() => { up("headerImage", ""); up("imagePos", { x: 50, y: 50 }); }} style={{ position: "absolute", top: 10, right: 10, background: "rgba(0,0,0,0.55)", border: "none", borderRadius: 22, padding: "4px 10px", color: "#fff", fontSize: 11, cursor: "pointer" }}>Quitar</button>
             )}
           </div>
 
@@ -637,7 +637,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
                 {[{ v: "public", l: "Público" }, { v: "private", l: "Privado" }].map(opt => (
                   <button key={opt.v} type="button" className="ef-hover-fill"
                     onClick={() => { up("visibility", opt.v); setVisSheet(false); }}
-                    style={{ width: "100%", padding: "12px 14px", marginBottom: 6, background: (draft.visibility || "public") === opt.v ? "rgba(107,159,212,0.2)" : "rgba(255,255,255,0.04)", border: (draft.visibility || "public") === opt.v ? "1px solid rgba(107,159,212,0.4)" : BORDER, borderRadius: 12, color: TEXT, fontSize: 15, cursor: "pointer", textAlign: "left" }}>
+                    style={{ width: "100%", padding: "12px 14px", marginBottom: 6, background: (draft.visibility || "public") === opt.v ? "rgba(127,179,230,0.2)" : "rgba(255,255,255,0.04)", border: (draft.visibility || "public") === opt.v ? "1px solid rgba(127,179,230,0.4)" : BORDER, borderRadius: 14, color: TEXT, fontSize: 15, cursor: "pointer", textAlign: "left" }}>
                     {opt.l}
                   </button>
                 ))}
@@ -685,17 +685,17 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
               type="number" inputMode="numeric" placeholder="Ej. 50000"
               value={draft.price || ""}
               onChange={e => up("price", e.target.value)}
-              style={{ width: "100%", boxSizing: "border-box", background: "rgba(255,255,255,0.07)", border: BORDER, borderRadius: 16, padding: "16px 18px", fontSize: 22, color: TEXT, outline: "none", caretColor: ACCENT, fontFamily: "inherit", marginBottom: 16 }}
+              style={{ width: "100%", boxSizing: "border-box", background: "rgba(255,255,255,0.07)", border: BORDER, borderRadius: 18, padding: "16px 18px", fontSize: 22, color: TEXT, outline: "none", caretColor: ACCENT, fontFamily: "inherit", marginBottom: 16 }}
             />
             <div style={{ display: "flex", gap: 10 }}>
               <button type="button" className="ef-hover-fill"
                 onClick={() => { up("priceType", "free"); up("price", ""); setShowPrice(false); }}
-                style={{ flex: 1, padding: "14px 0", background: "rgba(255,255,255,0.07)", border: BORDER, borderRadius: 16, color: SUB, fontSize: 14, cursor: "pointer", fontWeight: 600 }}>
+                style={{ flex: 1, padding: "14px 0", background: "rgba(255,255,255,0.07)", border: BORDER, borderRadius: 18, color: SUB, fontSize: 14, cursor: "pointer", fontWeight: 600 }}>
                 Gratis
               </button>
               <button type="button" className="ef-hover-fill"
                 onClick={() => setShowPrice(false)}
-                style={{ flex: 2, padding: "14px 0", background: "rgba(107,159,212,0.25)", border: "1px solid rgba(107,159,212,0.4)", borderRadius: 16, color: TEXT, fontSize: 14, cursor: "pointer", fontWeight: 700 }}>
+                style={{ flex: 2, padding: "14px 0", background: "rgba(127,179,230,0.25)", border: "1px solid rgba(127,179,230,0.4)", borderRadius: 18, color: TEXT, fontSize: 14, cursor: "pointer", fontWeight: 700 }}>
                 Confirmar
               </button>
             </div>
@@ -720,17 +720,17 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
                 const v = e.target.value;
                 if (v === "" || (Number(v) >= 0 && Number(v) <= 1000)) up("capacityNum", v);
               }}
-              style={{ width: "100%", boxSizing: "border-box", background: "rgba(255,255,255,0.07)", border: BORDER, borderRadius: 16, padding: "16px 18px", fontSize: 22, color: TEXT, outline: "none", caretColor: ACCENT, fontFamily: "inherit", marginBottom: 16 }}
+              style={{ width: "100%", boxSizing: "border-box", background: "rgba(255,255,255,0.07)", border: BORDER, borderRadius: 18, padding: "16px 18px", fontSize: 22, color: TEXT, outline: "none", caretColor: ACCENT, fontFamily: "inherit", marginBottom: 16 }}
             />
             <div style={{ display: "flex", gap: 10 }}>
               <button type="button" className="ef-hover-fill"
                 onClick={() => { up("capacityNum", ""); setShowCap(false); }}
-                style={{ flex: 1, padding: "14px 0", background: "rgba(255,255,255,0.07)", border: BORDER, borderRadius: 16, color: SUB, fontSize: 14, cursor: "pointer", fontWeight: 600 }}>
+                style={{ flex: 1, padding: "14px 0", background: "rgba(255,255,255,0.07)", border: BORDER, borderRadius: 18, color: SUB, fontSize: 14, cursor: "pointer", fontWeight: 600 }}>
                 Ilimitada
               </button>
               <button type="button" className="ef-hover-fill"
                 onClick={() => setShowCap(false)}
-                style={{ flex: 2, padding: "14px 0", background: "rgba(107,159,212,0.25)", border: "1px solid rgba(107,159,212,0.4)", borderRadius: 16, color: TEXT, fontSize: 14, cursor: "pointer", fontWeight: 700 }}>
+                style={{ flex: 2, padding: "14px 0", background: "rgba(127,179,230,0.25)", border: "1px solid rgba(127,179,230,0.4)", borderRadius: 18, color: TEXT, fontSize: 14, cursor: "pointer", fontWeight: 700 }}>
                 Confirmar
               </button>
             </div>

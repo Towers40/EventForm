@@ -84,7 +84,7 @@ function WheelCol({ items, selectedKey, getKey, getLabel, onChange, flex }) {
         position: "absolute", left: 6, right: 6,
         top: ITEM_H * 2, height: ITEM_H,
         background: "rgba(255,255,255,0.07)",
-        borderRadius: 10, pointerEvents: "none", zIndex: 1,
+        borderRadius: 14, pointerEvents: "none", zIndex: 1,
       }} />
       {/* Scrollable list */}
       <div
@@ -174,7 +174,7 @@ export default function DateTimePicker({ date, time, onChange, minDate, minTime,
 
   const triggerStyle = (filled) => ({
     minHeight: 58, flexShrink: 0,
-    border: `1.5px solid ${filled ? "#1a5f8a" : "rgba(255,255,255,0.13)"}`,
+    border: `1.5px solid ${filled ? "#7fb3e6" : "rgba(255,255,255,0.13)"}`,
     borderRadius: 14,
     background: filled ? "rgba(26,95,138,0.18)" : "rgba(255,255,255,0.04)",
     cursor: "pointer", padding: "0 16px",
@@ -201,7 +201,7 @@ export default function DateTimePicker({ date, time, onChange, minDate, minTime,
           onClick={(e) => openPicker(e.currentTarget)}
           style={{ ...triggerStyle(!!date), flex: 1 }}
         >
-          <span style={{ fontSize: 15, fontWeight: date ? 700 : 400, color: date ? "#e8eaf0" : "#6b9fd4", whiteSpace: "nowrap" }}>
+          <span style={{ fontSize: 15, fontWeight: date ? 700 : 400, color: date ? "#eef1f7" : "#7fb3e6", whiteSpace: "nowrap" }}>
             {dateFmt || "Fecha"}
           </span>
           <span style={{ fontSize: 11, color: "#8fa3b1" }}>▾</span>
@@ -212,7 +212,7 @@ export default function DateTimePicker({ date, time, onChange, minDate, minTime,
           onClick={(e) => openPicker(e.currentTarget)}
           style={{ ...triggerStyle(!!time), width: 110 }}
         >
-          <span style={{ fontSize: 15, fontWeight: time ? 700 : 400, color: time ? "#e8eaf0" : "#6b9fd4", whiteSpace: "nowrap" }}>
+          <span style={{ fontSize: 15, fontWeight: time ? 700 : 400, color: time ? "#eef1f7" : "#7fb3e6", whiteSpace: "nowrap" }}>
             {timeFmt || "Hora"}
           </span>
           <span style={{ fontSize: 11, color: "#8fa3b1" }}>▾</span>
@@ -228,7 +228,7 @@ export default function DateTimePicker({ date, time, onChange, minDate, minTime,
           backdropFilter: "blur(24px)",
           WebkitBackdropFilter: "blur(24px)",
           border: "1px solid rgba(255,255,255,0.1)",
-          borderRadius: 20,
+          borderRadius: 22,
           overflow: "hidden",
           boxShadow: "0 24px 64px rgba(0,0,0,0.7)",
         }}>
@@ -288,7 +288,7 @@ export default function DateTimePicker({ date, time, onChange, minDate, minTime,
               style={{
                 width: "100%", padding: "11px",
                 background: "rgba(26,95,138,0.5)",
-                border: "none", borderRadius: 12,
+                border: "none", borderRadius: 14,
                 color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer",
               }}
             >

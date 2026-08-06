@@ -15,8 +15,8 @@ export function IconButton({
 }) {
   const tonos = {
     glass:  { background: "rgba(0,0,0,0.5)",            border: "1px solid rgba(255,255,255,0.2)",  color: "#fff" },
-    soft:   { background: "rgba(255,255,255,0.07)",     border: "1px solid rgba(255,255,255,0.14)", color: "#c8dff0" },
-    accent: { background: "rgba(107,159,212,0.22)",     border: "1px solid rgba(107,159,212,0.45)", color: "#e8eaf0" },
+    soft:   { background: "rgba(255,255,255,0.07)",     border: "1px solid rgba(255,255,255,0.14)", color: "#bfd9f2" },
+    accent: { background: "rgba(127,179,230,0.22)",     border: "1px solid rgba(127,179,230,0.45)", color: "#eef1f7" },
     green:  { background: "rgba(52,199,89,0.16)",       border: "1px solid rgba(52,199,89,0.4)",    color: "#5ee07f" },
   };
   const base = {
@@ -66,7 +66,7 @@ export function EventCover({ src, alt, ratio = "1 / 1", radius = COVER_RADIUS, p
       <div style={{
         position: "relative", width: "100%", aspectRatio: ratio,
         borderRadius: radius, overflow: "hidden",
-        background: "linear-gradient(135deg,#1a2540,#0d1520)",
+        background: "linear-gradient(135deg,#222b4c,#12182b)",
         boxShadow: "0 8px 28px rgba(0,0,0,0.35)",
       }}>
         {src
@@ -113,19 +113,19 @@ export function DirectionsSheet({ lat, lng, abierto, onCerrar }) {
     <div onClick={onCerrar}
       style={{ position: "fixed", inset: 0, zIndex: 350, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 16 }}>
       <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 420, background: "rgba(20,23,40,0.98)", border: "1px solid rgba(255,255,255,0.13)", borderRadius: 22, overflow: "hidden", boxShadow: "0 24px 70px rgba(0,0,0,0.6)" }}>
-        <p style={{ margin: 0, padding: "18px 20px 12px", fontSize: 15, fontWeight: 700, color: "#e8eaf0" }}>
+        <p style={{ margin: 0, padding: "18px 20px 12px", fontSize: 15, fontWeight: 700, color: "#eef1f7" }}>
           ¿Con qué app quieres ir?
         </p>
         {apps.map((a) => (
           <a key={a.label} href={a.href} target="_blank" rel="noopener noreferrer" onClick={onCerrar}
-            style={{ display: "flex", alignItems: "center", gap: 12, padding: "15px 20px", textDecoration: "none", color: "#e8eaf0", fontSize: 15, fontWeight: 600, borderTop: "1px solid rgba(255,255,255,0.07)" }}>
+            style={{ display: "flex", alignItems: "center", gap: 12, padding: "15px 20px", textDecoration: "none", color: "#eef1f7", fontSize: 15, fontWeight: 600, borderTop: "1px solid rgba(255,255,255,0.07)" }}>
             <span style={{ width: 10, height: 10, borderRadius: "50%", background: a.color, flexShrink: 0 }} />
             {a.label}
-            <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="rgba(232,234,240,0.5)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: "auto" }}><path d="M7 17 17 7M7 7h10v10" /></svg>
+            <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="rgba(238,241,247,0.5)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: "auto" }}><path d="M7 17 17 7M7 7h10v10" /></svg>
           </a>
         ))}
         <button type="button" onClick={onCerrar}
-          style={{ width: "100%", padding: "15px 20px", background: "rgba(255,255,255,0.04)", border: "none", borderTop: "1px solid rgba(255,255,255,0.07)", color: "rgba(232,234,240,0.6)", fontSize: 14.5, fontWeight: 700, cursor: "pointer" }}>
+          style={{ width: "100%", padding: "15px 20px", background: "rgba(255,255,255,0.04)", border: "none", borderTop: "1px solid rgba(255,255,255,0.07)", color: "rgba(238,241,247,0.6)", fontSize: 14.5, fontWeight: 700, cursor: "pointer" }}>
           Cancelar
         </button>
       </div>

@@ -111,7 +111,7 @@ function TFLocationPicker({ value, onChange }) {
         onChange={(e) => onCityChange(e.target.value)}
         style={{
           width: "100%", border: "none", borderBottom: "2px solid #b8c5d4",
-          padding: "10px 0", fontSize: 18, color: city ? "#0d3b66" : "#a8b8c8",
+          padding: "10px 0", fontSize: 18, color: city ? "#222b4c" : "#a8b8c8",
           background: "transparent", outline: "none", marginBottom: 28,
           cursor: "pointer", appearance: "none",
           backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23b8c5d4' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E\")",
@@ -148,7 +148,7 @@ function TFLocationPicker({ value, onChange }) {
             {open && suggestions.length > 0 && (
               <div style={{
                 position: "absolute", left: 0, right: 0, top: "calc(100% + 4px)",
-                background: "#fff", borderRadius: 10, zIndex: 50,
+                background: "#fff", borderRadius: 14, zIndex: 50,
                 boxShadow: "0 8px 32px rgba(13,59,102,0.13)",
                 border: "1px solid #e2e8f0", overflow: "hidden",
               }}>
@@ -167,7 +167,7 @@ function TFLocationPicker({ value, onChange }) {
                     onMouseEnter={(e) => (e.currentTarget.style.background = "#f8fafc")}
                     onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                   >
-                    <span style={{ fontSize: 14, fontWeight: 600, color: "#0d3b66", display: "block" }}>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: "#222b4c", display: "block" }}>
                       {s.shortLabel}
                     </span>
                     {s.subtitle && (
@@ -537,14 +537,14 @@ export default function OnboardingFlow({ onDraftReady }) {
               Configura en minutos, inscribe asistentes y gestiona el acceso con QR el día del evento.
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 12, width: "100%", maxWidth: 340, margin: "0 auto" }}>
-              <button type="button" onClick={() => { setSkipWizard(true); go(10); }} className="soft-btn soft-btn-primary wbtn" style={{ fontSize: 16, padding: "16px 24px", borderRadius: 12, width: "100%" }}>
+              <button type="button" onClick={() => { setSkipWizard(true); go(10); }} className="soft-btn soft-btn-primary wbtn" style={{ fontSize: 16, padding: "16px 24px", borderRadius: 14, width: "100%" }}>
                 <span className="wbtn-text">Crear un evento</span>
               </button>
               <button
                 type="button"
                 onClick={() => nav("/login")}
                 className="wbtn"
-                style={{ width: "100%", padding: "16px 24px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 12, fontWeight: 700, fontSize: 16, cursor: "pointer" }}
+                style={{ width: "100%", padding: "16px 24px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 14, fontWeight: 700, fontSize: 16, cursor: "pointer" }}
               >
                 <span className="wbtn-text">Iniciar sesión</span>
               </button>
@@ -552,7 +552,7 @@ export default function OnboardingFlow({ onDraftReady }) {
                 type="button"
                 onClick={() => nav("/discover")}
                 className="wbtn"
-                style={{ width: "100%", padding: "16px 24px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 12, cursor: "pointer", fontWeight: 700, fontSize: 16 }}
+                style={{ width: "100%", padding: "16px 24px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 14, cursor: "pointer", fontWeight: 700, fontSize: 16 }}
               >
                 <span className="wbtn-text-multi">Descubrir eventos</span>
               </button>
@@ -825,7 +825,7 @@ export default function OnboardingFlow({ onDraftReady }) {
 
             <div style={{ marginTop: 24, textAlign: "center" }}>
               <button type="button" onClick={() => nav("/login")}
-                style={{ background: "none", border: "none", color: "#0d3b66", fontWeight: 700, cursor: "pointer", fontSize: 14, textDecoration: "underline", textUnderlineOffset: 3 }}>
+                style={{ background: "none", border: "none", color: "#222b4c", fontWeight: 700, cursor: "pointer", fontSize: 14, textDecoration: "underline", textUnderlineOffset: 3 }}>
                 Ya tengo cuenta → Iniciar sesión
               </button>
             </div>
@@ -840,7 +840,7 @@ export default function OnboardingFlow({ onDraftReady }) {
             <p className="tf-hint" style={{ maxWidth: 380, margin: "0 auto 8px" }}>
               Enviamos un código de 4 dígitos a
             </p>
-            <p style={{ fontWeight: 800, fontSize: 15, color: "#0d3b66", marginBottom: 32 }}>
+            <p style={{ fontWeight: 800, fontSize: 15, color: "#222b4c", marginBottom: 32 }}>
               {pendingEmail}
             </p>
 
@@ -860,11 +860,11 @@ export default function OnboardingFlow({ onDraftReady }) {
                   autoComplete={i === 0 ? "one-time-code" : "off"}
                   style={{
                     width: 56, height: 64, textAlign: "center",
-                    fontSize: 28, fontWeight: 800, color: "#0d3b66",
-                    border: "2px solid #b8c5d4", borderRadius: 10,
+                    fontSize: 28, fontWeight: 800, color: "#222b4c",
+                    border: "2px solid #b8c5d4", borderRadius: 14,
                     outline: "none", background: "#f8fafc",
                     transition: "border-color 0.15s",
-                    borderColor: d ? "#0d3b66" : "#b8c5d4",
+                    borderColor: d ? "#222b4c" : "#b8c5d4",
                   }}
                 />
               ))}
@@ -890,7 +890,7 @@ export default function OnboardingFlow({ onDraftReady }) {
             <div style={{ marginTop: 28 }}>
               {resendStatus === "idle" && (
                 <button type="button" onClick={handleResend}
-                  style={{ background: "none", border: "none", color: "#0d3b66", fontWeight: 700, cursor: "pointer", fontSize: 13, textDecoration: "underline", textUnderlineOffset: 3 }}>
+                  style={{ background: "none", border: "none", color: "#222b4c", fontWeight: 700, cursor: "pointer", fontSize: 13, textDecoration: "underline", textUnderlineOffset: 3 }}>
                   ¿No llegó? Reenviar código
                 </button>
               )}

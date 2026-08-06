@@ -57,7 +57,7 @@ function EventCard({ ev, destacado = false, duplicado = false }) {
       {...(duplicado ? { "aria-hidden": "true", tabIndex: -1 } : null)}
       style={{
         display: "flex", alignItems: "flex-start", gap: 10,
-        padding: 10, borderRadius: 16, textDecoration: "none",
+        padding: 10, borderRadius: 18, textDecoration: "none",
         background: "rgba(255,255,255,0.055)", border: "1px solid rgba(255,255,255,0.1)",
       }}
     >
@@ -65,7 +65,7 @@ function EventCard({ ev, destacado = false, duplicado = false }) {
         {/* Fecha · hora */}
         <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 3, fontSize: 11 }}>
           {fecha && (
-            <span style={{ fontWeight: 800, color: "#c8dff0", background: "rgba(107,159,212,0.16)", borderRadius: 6, padding: "1px 7px", lineHeight: 1.35, letterSpacing: "0.02em" }}>
+            <span style={{ fontWeight: 800, color: "#bfd9f2", background: "rgba(127,179,230,0.16)", borderRadius: 6, padding: "1px 7px", lineHeight: 1.35, letterSpacing: "0.02em" }}>
               {fecha.d} {MONTHS[fecha.m - 1].toUpperCase()}
             </span>
           )}
@@ -74,7 +74,7 @@ function EventCard({ ev, destacado = false, duplicado = false }) {
               <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#ef4444" }} />EN VIVO
             </span>
           )}
-          {horaInicio && <span style={{ color: "rgba(232,234,240,0.5)" }}>{horaInicio}</span>}
+          {horaInicio && <span style={{ color: "rgba(238,241,247,0.5)" }}>{horaInicio}</span>}
           <span style={{
             marginLeft: "auto", fontWeight: 700, borderRadius: 6, padding: "1px 7px", lineHeight: 1.35, whiteSpace: "nowrap",
             background: ev.isPaid ? "rgba(251,191,36,0.12)" : "rgba(34,197,94,0.12)",
@@ -97,7 +97,7 @@ function EventCard({ ev, destacado = false, duplicado = false }) {
             </span>
           )}
           <h3 style={{
-            margin: 0, fontSize: 15, fontWeight: 700, color: "#e8eaf0", lineHeight: 1.25,
+            margin: 0, fontSize: 15, fontWeight: 500, color: "#eef1f7", lineHeight: 1.25,
             minWidth: 0, overflow: "hidden", display: "-webkit-box",
             WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
           }}>
@@ -108,12 +108,12 @@ function EventCard({ ev, destacado = false, duplicado = false }) {
         {/* Dónde */}
         {(lugar || ev.city) && (
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2, minWidth: 0 }}>
-            <span style={{ flexShrink: 0, width: ICON_BOX, height: ICON_BOX, display: "inline-flex", alignItems: "center", justifyContent: "center", color: "rgba(232,234,240,0.42)" }}>
+            <span style={{ flexShrink: 0, width: ICON_BOX, height: ICON_BOX, display: "inline-flex", alignItems: "center", justifyContent: "center", color: "rgba(238,241,247,0.42)" }}>
               {ev.isVirtual ? <VideoIcon /> : <PinIcon />}
             </span>
-            <span style={{ fontSize: 11.5, lineHeight: 1.3, color: "rgba(232,234,240,0.5)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            <span style={{ fontSize: 11.5, lineHeight: 1.3, color: "rgba(238,241,247,0.5)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {ev.isVirtual ? "Evento virtual" : lugar || ev.city}
-              {!ev.isVirtual && lugar && ev.city && <span style={{ color: "rgba(232,234,240,0.3)" }}> · {ev.city}</span>}
+              {!ev.isVirtual && lugar && ev.city && <span style={{ color: "rgba(238,241,247,0.3)" }}> · {ev.city}</span>}
             </span>
           </div>
         )}
@@ -124,18 +124,18 @@ function EventCard({ ev, destacado = false, duplicado = false }) {
             <img src={ev.hostAvatar} alt="" loading="lazy" decoding="async" width={ICON_BOX} height={ICON_BOX}
               style={{ width: ICON_BOX, height: ICON_BOX, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
           ) : (
-            <span style={{ width: ICON_BOX, height: ICON_BOX, borderRadius: "50%", flexShrink: 0, background: "rgba(107,159,212,0.25)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8.5, fontWeight: 700, color: "#c8dff0" }}>
+            <span style={{ width: ICON_BOX, height: ICON_BOX, borderRadius: "50%", flexShrink: 0, background: "rgba(127,179,230,0.25)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8.5, fontWeight: 700, color: "#bfd9f2" }}>
               {(ev.hostName || "?").slice(0, 1).toUpperCase()}
             </span>
           )}
-          <span style={{ fontSize: 11.5, lineHeight: 1.3, color: "rgba(232,234,240,0.5)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <span style={{ fontSize: 11.5, lineHeight: 1.3, color: "rgba(238,241,247,0.5)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {ev.hostName || "Organizador"}
           </span>
         </div>
       </div>
 
       {/* Imagen */}
-      <div style={{ position: "relative", flexShrink: 0, width: 74, height: 74, borderRadius: 12, overflow: "hidden", background: "#111" }}>
+      <div style={{ position: "relative", flexShrink: 0, width: 74, height: 74, borderRadius: 14, overflow: "hidden", background: "#111" }}>
         {destacado && gente >= POPULAR_MIN && (
           <span style={{ position: "absolute", top: 4, left: 4, zIndex: 1, color: "#fb923c", display: "inline-flex", filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.9))" }}>
             <FlameIcon size={14} />
@@ -170,7 +170,7 @@ function CategoryPill({ cat, count, active, onClick }) {
         display: "flex", alignItems: "center", gap: 12,
         background: active ? cat.color : "rgba(255,255,255,0.07)",
         border: `1px solid ${active ? cat.color : "rgba(255,255,255,0.11)"}`,
-        borderRadius: 16, padding: "12px 13px",
+        borderRadius: 18, padding: "12px 13px",
         cursor: "pointer", textAlign: "left",
         transition: "all 0.15s",
         boxShadow: active ? `0 4px 20px ${cat.color}55` : "none",
@@ -183,17 +183,17 @@ function CategoryPill({ cat, count, active, onClick }) {
         flexShrink: 0, width: 34, height: 34,
         display: "flex", alignItems: "center", justifyContent: "center",
         background: active ? "rgba(255,255,255,0.18)" : `${cat.color}22`,
-        borderRadius: 10,
+        borderRadius: 14,
       }}>
         {Icon ? Icon(iconColor) : <span style={{ fontSize: 22 }}>{cat.emoji}</span>}
       </div>
       {/* Text side — RIGHT */}
       <div style={{ minWidth: 0 }}>
-        <div style={{ fontSize: 12.5, fontWeight: 600, color: active ? "#fff" : "#e8eaf0", lineHeight: 1.3, marginBottom: count != null ? 2 : 0 }}>
+        <div style={{ fontSize: 12.5, fontWeight: 600, color: active ? "#fff" : "#eef1f7", lineHeight: 1.3, marginBottom: count != null ? 2 : 0 }}>
           {cat.label}
         </div>
         {count != null && (
-          <div style={{ fontSize: 12, fontWeight: 400, color: active ? "rgba(255,255,255,0.75)" : "rgba(232,234,240,0.42)", lineHeight: 1 }}>
+          <div style={{ fontSize: 12, fontWeight: 400, color: active ? "rgba(255,255,255,0.75)" : "rgba(238,241,247,0.42)", lineHeight: 1 }}>
             {count > 999 ? `${(count/1000).toFixed(1)}K` : count} {count === 1 ? "evento" : "eventos"}
           </div>
         )}
@@ -213,9 +213,9 @@ const chipStyle = (activo) => ({
   flexShrink: 0, whiteSpace: "nowrap", cursor: "pointer",
   padding: "9px 16px", borderRadius: 999, fontSize: 13.5,
   fontWeight: activo ? 700 : 600,
-  background: activo ? "rgba(107,159,212,0.22)" : "rgba(255,255,255,0.06)",
-  border: activo ? "1px solid rgba(107,159,212,0.5)" : "1px solid rgba(255,255,255,0.1)",
-  color: activo ? "#e8eaf0" : "rgba(232,234,240,0.65)",
+  background: activo ? "rgba(127,179,230,0.22)" : "rgba(255,255,255,0.06)",
+  border: activo ? "1px solid rgba(127,179,230,0.5)" : "1px solid rgba(255,255,255,0.1)",
+  color: activo ? "#eef1f7" : "rgba(238,241,247,0.65)",
 });
 
 const VideoIcon = () => (
@@ -385,8 +385,8 @@ export default function DiscoverPage({ embedded = false }) {
 
   return (
     <div style={embedded
-      ? { color: "#e8eaf0", fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }
-      : { minHeight: "100vh", background: "transparent", color: "#e8eaf0", fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>
+      ? { color: "#eef1f7", fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }
+      : { minHeight: "100vh", background: "transparent", color: "#eef1f7", fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>
 
       {/* ── Nav (solo en página independiente) ── */}
       {!embedded && (
@@ -402,19 +402,19 @@ export default function DiscoverPage({ embedded = false }) {
             justifySelf: "start",
             display: "inline-flex", alignItems: "center", justifyContent: "center",
             width: 40, height: 40, borderRadius: "50%", textDecoration: "none",
-            background: "rgba(107,159,212,0.25)", color: "#e8eaf0",
-            border: "1px solid rgba(107,159,212,0.4)",
+            background: "rgba(127,179,230,0.25)", color: "#eef1f7",
+            border: "1px solid rgba(127,179,230,0.4)",
           }}>
             <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M3 9.5 12 3l9 6.5" /><path d="M5 10v10h14V10" /><path d="M9 20v-6h6v6" /></svg>
           </a>
-          <a href="/" className="ef-hover-fill" style={{ justifySelf: "center", display: "flex", alignItems: "center", gap: 8, textDecoration: "none", padding: "6px 12px", borderRadius: 12 }}>
+          <a href="/" className="ef-hover-fill" style={{ justifySelf: "center", display: "flex", alignItems: "center", gap: 8, textDecoration: "none", padding: "6px 12px", borderRadius: 14 }}>
             <TapInMark size={20} color="#22c55e" />
-            <span style={{ fontWeight: 800, fontSize: 16, color: "#e8eaf0" }}>{BRAND_NAME}</span>
+            <span style={{ fontWeight: 800, fontSize: 16, color: "#eef1f7" }}>{BRAND_NAME}</span>
           </a>
           {/* Empieza gratis: solo texto, sin óvalo, sin flecha, sin relleno */}
           <a href="/app" style={{
             justifySelf: "end",
-            color: "#e8eaf0", textDecoration: "none",
+            color: "#eef1f7", textDecoration: "none",
             fontSize: 14, fontWeight: 700, padding: "6px 4px", background: "transparent", border: "none",
           }}>
             Empieza gratis
@@ -424,7 +424,7 @@ export default function DiscoverPage({ embedded = false }) {
 
       {/* ── Hero ── */}
       <div style={{ padding: "56px 24px 44px", textAlign: "center", maxWidth: 680, margin: "0 auto" }}>
-        <h1 style={{ fontSize: "clamp(28px,5vw,48px)", fontWeight: 900, lineHeight: 1.1, margin: "0 0 14px" }}>
+        <h1 style={{ fontSize: "clamp(28px,5vw,48px)", fontWeight: 500, lineHeight: 1.1, margin: "0 0 14px" }}>
           Descubre eventos en Colombia
         </h1>
         <p style={{ fontSize: 16, color: "#8fa3b1", margin: "0 0 32px", lineHeight: 1.5 }}>
@@ -443,7 +443,7 @@ export default function DiscoverPage({ embedded = false }) {
               width: "100%", boxSizing: "border-box",
               background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.11)",
               borderRadius: 28, padding: "14px 20px 14px 50px",
-              fontSize: 15, color: "#e8eaf0", outline: "none",
+              fontSize: 15, color: "#eef1f7", outline: "none",
               fontFamily: "inherit",
             }}
           />
@@ -472,7 +472,7 @@ export default function DiscoverPage({ embedded = false }) {
 
         {/* ── Categories ── */}
         <section style={{ marginBottom: 52 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 800, marginBottom: 16, color: "#e8eaf0" }}>
+          <h2 style={{ fontSize: 18, fontWeight: 500, marginBottom: 16, color: "#eef1f7" }}>
             Explorar por categoría
           </h2>
           <div style={{
@@ -495,7 +495,7 @@ export default function DiscoverPage({ embedded = false }) {
         {/* ── Ciudades ── */}
         {cities.length > 1 && (
           <section style={{ marginBottom: 40 }}>
-            <h2 style={{ fontSize: 18, fontWeight: 800, marginBottom: 14, color: "#e8eaf0" }}>
+            <h2 style={{ fontSize: 18, fontWeight: 500, marginBottom: 14, color: "#eef1f7" }}>
               ¿Dónde?
             </h2>
             {/* En móvil se desliza a los lados: con 20 ciudades, apiladas
@@ -519,7 +519,7 @@ export default function DiscoverPage({ embedded = false }) {
         {/* ── Events grid ── */}
         <section>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 8 }}>
-            <h2 style={{ fontSize: 18, fontWeight: 800, color: "#e8eaf0", margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
+            <h2 style={{ fontSize: 18, fontWeight: 500, color: "#eef1f7", margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
               {activeCat ? (
                 <>
                   {CAT_ICONS[activeCat.slug]
@@ -543,7 +543,7 @@ export default function DiscoverPage({ embedded = false }) {
                   type="button"
                   className="ef-hover-fill"
                   onClick={limpiarFiltros}
-                  style={{ background: "transparent", color: "#6b9fd4", border: "1px solid #6b9fd4", borderRadius: 20, padding: "5px 12px", fontSize: 12, cursor: "pointer", fontWeight: 600 }}
+                  style={{ background: "transparent", color: "#7fb3e6", border: "1px solid #7fb3e6", borderRadius: 22, padding: "5px 12px", fontSize: 12, cursor: "pointer", fontWeight: 600 }}
                 >
                   × Quitar filtros
                 </button>
@@ -563,7 +563,7 @@ export default function DiscoverPage({ embedded = false }) {
               <button
                 className="ef-hover-fill"
                 onClick={() => fetchEvents(search, activeCategory, 1, false, activeCity)}
-                style={{ background: "rgba(107,159,212,0.22)", color: "#e8eaf0", border: "1px solid rgba(107,159,212,0.4)", borderRadius: 10, padding: "11px 22px", cursor: "pointer", fontWeight: 700, fontSize: 14 }}
+                style={{ background: "rgba(127,179,230,0.22)", color: "#eef1f7", border: "1px solid rgba(127,179,230,0.4)", borderRadius: 14, padding: "11px 22px", cursor: "pointer", fontWeight: 700, fontSize: 14 }}
               >
                 Reintentar
               </button>
@@ -578,7 +578,7 @@ export default function DiscoverPage({ embedded = false }) {
                 <button
                   className="ef-hover-fill"
                   onClick={limpiarFiltros}
-                  style={{ background: "transparent", color: "#6b9fd4", border: "1px solid #6b9fd4", borderRadius: 10, padding: "10px 20px", cursor: "pointer", fontWeight: 600, fontSize: 14 }}
+                  style={{ background: "transparent", color: "#7fb3e6", border: "1px solid #7fb3e6", borderRadius: 14, padding: "10px 20px", cursor: "pointer", fontWeight: 600, fontSize: 14 }}
                 >
                   Ver todos los eventos
                 </button>
@@ -597,8 +597,8 @@ export default function DiscoverPage({ embedded = false }) {
                     disabled={loadingMore}
                     onClick={() => fetchEvents(search, activeCategory, page + 1, true, activeCity)}
                     style={{
-                      background: "rgba(107,159,212,0.18)", color: "#c8dff0",
-                      border: "1px solid rgba(107,159,212,0.35)", borderRadius: 12,
+                      background: "rgba(127,179,230,0.18)", color: "#bfd9f2",
+                      border: "1px solid rgba(127,179,230,0.35)", borderRadius: 14,
                       padding: "12px 28px", cursor: loadingMore ? "default" : "pointer",
                       fontWeight: 700, fontSize: 14, opacity: loadingMore ? 0.6 : 1,
                     }}
@@ -615,9 +615,9 @@ export default function DiscoverPage({ embedded = false }) {
         <section style={{ marginTop: 72, paddingTop: 40, borderTop: "1px solid rgba(255,255,255,0.08)", textAlign: "center" }}>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
             <TapInMark size={22} color="#22c55e" />
-            <span style={{ fontWeight: 800, fontSize: 17, color: "#e8eaf0" }}>{BRAND_NAME}</span>
+            <span style={{ fontWeight: 800, fontSize: 17, color: "#eef1f7" }}>{BRAND_NAME}</span>
           </div>
-          <h3 style={{ fontSize: 18, fontWeight: 800, color: "#e8eaf0", margin: "0 0 8px" }}>Comunícate con nosotros</h3>
+          <h3 style={{ fontSize: 18, fontWeight: 500, color: "#eef1f7", margin: "0 0 8px" }}>Comunícate con nosotros</h3>
           <p style={{ fontSize: 14, color: "#8fa3b1", margin: "0 0 16px", lineHeight: 1.5 }}>
             ¿Dudas, sugerencias o soporte? Escríbenos y te respondemos.
           </p>
@@ -627,7 +627,7 @@ export default function DiscoverPage({ embedded = false }) {
             style={{
               display: "inline-flex", alignItems: "center", gap: 8, textDecoration: "none",
               background: "rgba(34,197,94,0.12)", color: "#5ee07f",
-              border: "1px solid rgba(34,197,94,0.35)", borderRadius: 12,
+              border: "1px solid rgba(34,197,94,0.35)", borderRadius: 14,
               padding: "11px 20px", fontSize: 14, fontWeight: 700,
             }}
           >

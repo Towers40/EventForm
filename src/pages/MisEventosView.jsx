@@ -33,7 +33,7 @@ export default function MisEventosView({ events, loading, error, onRetry, onNew,
   return (
     <div style={{ maxWidth: 1560, margin: "0 auto" }}>
       <style>{GRID_CSS}</style>
-      <h1 style={{ fontSize: 24, fontWeight: 700, margin: "0 0 18px", color: "#e8eaf0", textAlign: "center" }}>Mis eventos</h1>
+      <h1 style={{ fontSize: 24, fontWeight: 500, margin: "0 0 18px", color: "#eef1f7", textAlign: "center" }}>Mis eventos</h1>
       {/* Los bloques de estado no se estiran a 1240 px: un mensaje centrado en
           una franja tan ancha queda desangelado. */}
 
@@ -158,12 +158,12 @@ function EventCard({ ev, onOpen, onEdit, onValidate, onDelete, onShare, onToggle
       ) : ev.coverNeedsMigration ? (
         // La portada estaba guardada dentro del evento y no se envía (hacía
         // que la lista pesara megas). Se sube sola en las próximas cargas.
-        <div style={{ width: "100%", aspectRatio: "16/7", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, background: "linear-gradient(135deg,#1a2540,#0d1520)", color: "rgba(232,234,240,0.5)", fontSize: 12, textAlign: "center", padding: "0 20px" }}>
+        <div style={{ width: "100%", aspectRatio: "16/7", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, background: "linear-gradient(135deg,#222b4c,#12182b)", color: "rgba(238,241,247,0.5)", fontSize: 12, textAlign: "center", padding: "0 20px" }}>
           <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-4.35-4.35a2 2 0 0 0-2.83 0L4 20"/></svg>
           Optimizando la portada…
         </div>
       ) : (
-        <div style={{ width: "100%", height: 6, background: "linear-gradient(90deg, #0d3b66, #1a5f8a)" }} />
+        <div style={{ width: "100%", height: 6, background: "linear-gradient(90deg, #222b4c, #7fb3e6)" }} />
       )}
 
       {/* Header del evento */}
@@ -179,24 +179,24 @@ function EventCard({ ev, onOpen, onEdit, onValidate, onDelete, onShare, onToggle
                 {isPast ? "Pasado" : sold ? "Sold out" : "Activo"}
               </span>
             </div>
-            <h3 style={{ fontSize: 17, fontWeight: 700, color: "#e8eaf0", margin: "0 0 2px", lineHeight: 1.3 }}>
+            <h3 style={{ fontSize: 17, fontWeight: 500, color: "#eef1f7", margin: "0 0 2px", lineHeight: 1.3 }}>
               {ev.title}
             </h3>
             {dateLabel && (
-              <p style={{ fontSize: 12, color: "#6b9fd4", margin: 0, fontWeight: 600, lineHeight: 1.35 }}>📅 {dateLabel}</p>
+              <p style={{ fontSize: 12, color: "#7fb3e6", margin: 0, fontWeight: 600, lineHeight: 1.35 }}>📅 {dateLabel}</p>
             )}
             {ev.city && <p style={{ fontSize: 12, color: "#8fa3b1", margin: 0, lineHeight: 1.35 }}>📍 {ev.city}</p>}
           </div>
           <div style={{ textAlign: "right", flexShrink: 0 }}>
-            <div style={{ fontSize: 26, fontWeight: 800, color: "#6b9fd4" }}>{regs.length}</div>
+            <div style={{ fontSize: 26, fontWeight: 800, color: "#7fb3e6" }}>{regs.length}</div>
             <div style={{ fontSize: 11, color: "#8fa3b1", fontWeight: 700 }}>inscritos</div>
           </div>
         </div>
 
         {/* Mini stats */}
         <div style={{ display: "flex", gap: 20, marginTop: 10 }}>
-          <span style={{ fontSize: 12, color: "rgba(232,234,240,0.5)" }}>✓ {checkins} check-ins</span>
-          <span style={{ fontSize: 12, color: "rgba(232,234,240,0.5)" }}>{capacityLabel(ev)}</span>
+          <span style={{ fontSize: 12, color: "rgba(238,241,247,0.5)" }}>✓ {checkins} check-ins</span>
+          <span style={{ fontSize: 12, color: "rgba(238,241,247,0.5)" }}>{capacityLabel(ev)}</span>
         </div>
       </div>
 
@@ -208,7 +208,7 @@ function EventCard({ ev, onOpen, onEdit, onValidate, onDelete, onShare, onToggle
         const pct = Math.min(100, Math.round((regs.length / max) * 100));
         return (
           <div style={{ height: 3, background: "rgba(255,255,255,0.08)", margin: "0 20px" }}>
-            <div style={{ height: "100%", width: `${pct}%`, background: pct >= 90 ? "#ef4444" : "#6b9fd4", transition: "width 0.3s" }} />
+            <div style={{ height: "100%", width: `${pct}%`, background: pct >= 90 ? "#ef4444" : "#7fb3e6", transition: "width 0.3s" }} />
           </div>
         );
       })()}
@@ -252,7 +252,7 @@ function EventCard({ ev, onOpen, onEdit, onValidate, onDelete, onShare, onToggle
         </button>
         <button type="button"
           className="soft-btn ef-hover-fill"
-          style={{ fontSize: 12, padding: "8px 14px", background: "rgba(220,38,38,0.12)", color: "#fca5a5", border: "1px solid rgba(220,38,38,0.3)", borderRadius: 10 }}
+          style={{ fontSize: 12, padding: "8px 14px", background: "rgba(220,38,38,0.12)", color: "#fca5a5", border: "1px solid rgba(220,38,38,0.3)", borderRadius: 14 }}
           onClick={onDelete}
         >
           Eliminar
@@ -270,17 +270,17 @@ function EventCard({ ev, onOpen, onEdit, onValidate, onDelete, onShare, onToggle
           {grupos.slice(0, 10).map(g => (
             <div key={g.key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
               <div style={{ minWidth: 0 }}>
-                <span style={{ fontSize: 14, fontWeight: 600, color: "#e8eaf0" }}>{g.name}</span>
+                <span style={{ fontSize: 14, fontWeight: 600, color: "#eef1f7" }}>{g.name}</span>
                 {g.total > 1 && (
-                  <span style={{ fontSize: 11, fontWeight: 800, color: "#6b9fd4", marginLeft: 7, background: "rgba(107,159,212,0.16)", padding: "2px 7px", borderRadius: 100 }}>
+                  <span style={{ fontSize: 11, fontWeight: 800, color: "#7fb3e6", marginLeft: 7, background: "rgba(127,179,230,0.16)", padding: "2px 7px", borderRadius: 100 }}>
                     ×{g.total}
                   </span>
                 )}
                 <span style={{ fontSize: 11, color: "#8fa3b1", marginLeft: 8 }}>{new Date(g.ts).toLocaleString("es-CO")}</span>
               </div>
               <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 100,
-                background: g.pendientes ? "rgba(251,191,36,0.16)" : g.usadas ? "rgba(107,159,212,0.25)" : "rgba(52,199,89,0.15)",
-                color: g.pendientes ? "#fbbf24" : g.usadas ? "#6b9fd4" : "#86efac" }}>
+                background: g.pendientes ? "rgba(251,191,36,0.16)" : g.usadas ? "rgba(127,179,230,0.25)" : "rgba(52,199,89,0.15)",
+                color: g.pendientes ? "#fbbf24" : g.usadas ? "#7fb3e6" : "#86efac" }}>
                 {g.pendientes ? "POR APROBAR" : g.usadas === g.total ? "CHECK-IN" : g.usadas ? `${g.usadas}/${g.total}` : "ACTIVO"}
               </span>
             </div>
@@ -304,7 +304,7 @@ function DraftCard({ ev, onEdit, onDelete }) {
         <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 100, background: "#fef3c7", color: "#92400e", display: "inline-block", marginBottom: 8 }}>
           Borrador — sin publicar
         </span>
-        <h3 style={{ fontSize: 16, fontWeight: 700, color: "#e8eaf0", margin: "0 0 4px" }}>
+        <h3 style={{ fontSize: 16, fontWeight: 500, color: "#eef1f7", margin: "0 0 4px" }}>
           {ev.title || "Sin título"}
         </h3>
         <p style={{ fontSize: 13, color: "#8fa3b1", margin: 0 }}>
@@ -316,7 +316,7 @@ function DraftCard({ ev, onEdit, onDelete }) {
         <button type="button" className="soft-btn soft-btn-primary ef-hover-fill" style={{ fontSize: 13 }} onClick={onEdit}>
           Continuar editando →
         </button>
-        <button type="button" className="soft-btn ef-hover-fill" style={{ fontSize: 13, background: "rgba(220,38,38,0.12)", color: "#fca5a5", border: "1px solid rgba(220,38,38,0.3)", borderRadius: 10 }} onClick={onDelete}>
+        <button type="button" className="soft-btn ef-hover-fill" style={{ fontSize: 13, background: "rgba(220,38,38,0.12)", color: "#fca5a5", border: "1px solid rgba(220,38,38,0.3)", borderRadius: 14 }} onClick={onDelete}>
           Descartar
         </button>
       </div>

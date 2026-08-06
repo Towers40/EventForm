@@ -90,7 +90,7 @@ export default function QrScanner({ active, onScan, onError }) {
           width: "100%",
           minHeight: 260,
           border: `2px solid ${NEGRO_PURO}`,
-          borderRadius: 12,
+          borderRadius: 14,
           overflow: "hidden",
           background: VERDE_PASTEL_BG,
         }}
