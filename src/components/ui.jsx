@@ -50,11 +50,45 @@ export const IcoShare  = () => svg(<><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0
 export const IcoMail   = () => svg(<><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" /></>);
 export const IcoRoute  = () => svg(<><path d="m3 11 19-8-8 19-2-9-9-2z" /></>);
 export const IcoQr     = () => svg(<><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><path d="M14 14h3v3M21 21v.01M21 14v.01M14 21v.01" /></>);
-export const IcoPin    = ({ size = 13 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+// ── Iconos de fila (fecha, lugar) ───────────────────────────────────────────
+// Comparten tamaño y grosor de trazo para que las filas de datos se vean
+// iguales en Descubrir, Mis eventos y el detalle del evento. Antes unas
+// pantallas usaban SVG y otras emoji (📅 📍), que además cambian de aspecto
+// según el sistema operativo.
+export const ROW_ICON = 13;   // tamaño del dibujo
+export const ROW_BOX  = 16;   // caja que lo contiene, para alinear el texto
+
+export const IcoPin = ({ size = ROW_ICON }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
   </svg>
 );
+
+export const IcoCalendar = ({ size = ROW_ICON }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="5" width="18" height="16" rx="2.5" /><path d="M8 3v4M16 3v4M3 10h18" />
+  </svg>
+);
+
+export const IcoVideo = ({ size = ROW_ICON }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+    <path d="m22 8-6 4 6 4V8z" /><rect x="2" y="6" width="14" height="12" rx="2" />
+  </svg>
+);
+
+/** Fila "icono + texto" con la caja y la alineación del sistema. */
+export function DataRow({ icon, children, color = "rgba(238,241,247,0.64)", size = 12, style }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0, ...style }}>
+      <span style={{ flexShrink: 0, width: ROW_BOX, height: ROW_BOX, display: "inline-flex", alignItems: "center", justifyContent: "center", color }}>
+        {icon}
+      </span>
+      <span style={{ fontSize: size, lineHeight: 1.3, color, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        {children}
+      </span>
+    </div>
+  );
+}
 
 // ── Marco estándar de imagen de evento ──────────────────────────────────────
 // Cuadrada, esquinas suavizadas y con margen a los lados: nunca pegada al

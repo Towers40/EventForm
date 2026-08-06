@@ -31,7 +31,7 @@ import {
 import { isSoldOut, capacityLabel, getCapacityMax } from "./lib/capacity.js";
 import { publicBaseUrl } from "./lib/platform.js";
 import SlideToCancel from "./components/SlideToCancel.jsx";
-import { IconButton } from "./components/ui.jsx";
+import { IconButton, DataRow, IcoCalendar, IcoPin } from "./components/ui.jsx";
 import {
   EVENT_TYPE_OTHER,
   EVENT_TYPE_PRESETS,
@@ -2046,10 +2046,10 @@ function Detail({ ev, onEdit, onValidate, onCrm, onShare, onSetApproval, publicU
         {ev.eventDescription && (
           <p style={{ fontSize: 14, color: NEGRO_MUTED_70, background: BLANCO_CONTRASTE, padding: 12, borderRadius: 8, border: `1px solid ${NEGRO_PURO}`, marginBottom: 12 }}>{ev.eventDescription}</p>
         )}
-        <p style={{ margin: "0 0 4px", color: NEGRO_PURO, fontSize: 15, fontWeight: 600 }}>📅 {formatEventSchedule(ev)}</p>
-        <p style={{ margin: "0 0 4px", color: NEGRO_PURO, fontSize: 15, fontWeight: 600 }}>
-          📍 {ev.city ? `${ev.city} — ` : ""}{ev.location || ev.address || "Sin ubicación"}
-        </p>
+        <DataRow icon={<IcoCalendar />} color={NEGRO_PURO} size={15} style={{ marginBottom: 4 }}>{formatEventSchedule(ev)}</DataRow>
+        <DataRow icon={<IcoPin />} color={NEGRO_MUTED_70} size={15} style={{ marginBottom: 4 }}>
+          {ev.city ? `${ev.city} — ` : ""}{ev.location || ev.address || "Sin ubicación"}
+        </DataRow>
         {ev.locationInstructions && (
           <p style={{ margin: "0 0 8px", color: NEGRO_MUTED_70, fontSize: 13, fontWeight: 600 }}>
             Indicaciones: {ev.locationInstructions}

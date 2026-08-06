@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { isSoldOut, capacityLabel } from "../lib/capacity.js";
 import { groupRegistrations } from "../lib/tickets.js";
+import { DataRow, IcoCalendar, IcoPin } from "../components/ui.jsx";
 import "../styles/typeform.css";
 
 function statusOf(ev) {
@@ -183,9 +184,9 @@ function EventCard({ ev, onOpen, onEdit, onValidate, onDelete, onShare, onToggle
               {ev.title}
             </h3>
             {dateLabel && (
-              <p style={{ fontSize: 12, color: "#7fb3e6", margin: 0, fontWeight: 600, lineHeight: 1.35 }}>📅 {dateLabel}</p>
+              <DataRow icon={<IcoCalendar />} color="#7fb3e6" style={{ marginBottom: 1 }}>{dateLabel}</DataRow>
             )}
-            {ev.city && <p style={{ fontSize: 12, color: "#8fa3b1", margin: 0, lineHeight: 1.35 }}>📍 {ev.city}</p>}
+            {ev.city && <DataRow icon={<IcoPin />}>{ev.city}</DataRow>}
           </div>
           <div style={{ textAlign: "right", flexShrink: 0 }}>
             <div style={{ fontSize: 26, fontWeight: 800, color: "#7fb3e6" }}>{regs.length}</div>

@@ -3,6 +3,7 @@ import { api } from "../lib/api.js";
 import { BRAND_NAME, CONTACT_EMAIL, TapInMark } from "../lib/brand.jsx";
 import { DISCOVER_CATEGORIES } from "../lib/categories.js";
 import { CAT_ICONS } from "../lib/categoryIcons.jsx";
+import { IcoPin, IcoVideo, ROW_ICON, ROW_BOX } from "../components/ui.jsx";
 
 const MONTHS = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
 
@@ -23,19 +24,14 @@ function isLive(ev) {
   return now >= start && now <= new Date(start.getTime() + 4 * 3600000);
 }
 
-const PinIcon = () => (
-  <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
-  </svg>
-);
 
 // A partir de aquí un evento se considera que "está llenando". Es un número
 // bajo a propósito: en eventos de barrio, 8 personas ya es señal.
 const POPULAR_MIN = 8;
 // Caja común para categoría, ubicación y avatar del organizador: sin esto cada
 // uno traía su propio tamaño y la columna de texto quedaba desalineada.
-const ICON_BOX = 16;
-const ICON_SIZE = 13;
+const ICON_BOX = ROW_BOX;
+const ICON_SIZE = ROW_ICON;
 
 function EventCard({ ev, destacado = false, duplicado = false }) {
   const live  = isLive(ev);
@@ -109,7 +105,7 @@ function EventCard({ ev, destacado = false, duplicado = false }) {
         {(lugar || ev.city) && (
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2, minWidth: 0 }}>
             <span style={{ flexShrink: 0, width: ICON_BOX, height: ICON_BOX, display: "inline-flex", alignItems: "center", justifyContent: "center", color: "rgba(238,241,247,0.42)" }}>
-              {ev.isVirtual ? <VideoIcon /> : <PinIcon />}
+              {ev.isVirtual ? <IcoVideo /> : <IcoPin />}
             </span>
             <span style={{ fontSize: 11.5, lineHeight: 1.3, color: "rgba(238,241,247,0.5)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {ev.isVirtual ? "Evento virtual" : lugar || ev.city}
@@ -218,11 +214,6 @@ const chipStyle = (activo) => ({
   color: activo ? "#eef1f7" : "rgba(238,241,247,0.65)",
 });
 
-const VideoIcon = () => (
-  <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-    <path d="m22 8-6 4 6 4V8z" /><rect x="2" y="6" width="14" height="12" rx="2" />
-  </svg>
-);
 
 /**
  * Carrusel continuo e infinito.
