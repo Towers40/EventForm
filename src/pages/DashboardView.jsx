@@ -83,9 +83,11 @@ function Anillo({ pct = 0, valor, unidad, etiqueta, nota, color = ACCENT, size =
             />
           )}
         </svg>
-        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "baseline", justifyContent: "center", gap: 1 }}>
-          <span style={{ fontSize: 26, fontWeight: 600, color: TEXT, lineHeight: 1.6, letterSpacing: "-0.5px" }}>{valor}</span>
-          {unidad && <span style={{ fontSize: 13, fontWeight: 600, color: SUB }}>{unidad}</span>}
+        {/* Centrado real: alineación por línea base empujaba el número contra
+            el borde de arriba del anillo. */}
+        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 1 }}>
+          <span style={{ fontSize: 26, fontWeight: 600, color: TEXT, lineHeight: 1, letterSpacing: "-0.5px" }}>{valor}</span>
+          {unidad && <span style={{ fontSize: 13, fontWeight: 600, color: SUB, lineHeight: 1, alignSelf: "center", marginTop: 5 }}>{unidad}</span>}
         </div>
       </div>
       <div style={{ textAlign: "center" }}>
@@ -159,6 +161,7 @@ function BarraGenero({ hombres, mujeres, otros }) {
 function MetricasEvento({ ev }) {
   const m = metricasDe(ev);
   const entradasTotales = m.aforo ?? m.reservadas;
+  const hayGenero = Boolean(m.campo) && m.conGenero > 0;
 
   return (
     <div style={{
@@ -185,39 +188,38 @@ function MetricasEvento({ ev }) {
         />
       </div>
 
-      {/* Cuadros */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginBottom: 18 }}>
+      {/* Cuadros. Hombre y Mujer solo salen si el evento pregunta el género y
+          alguien ha respondido: un "0 / sin datos" no es una métrica, es ruido. */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginBottom: hayGenero ? 18 : 0 }}>
         <Cuadro valor={entradasTotales} etiqueta="Entradas totales"
                 nota={m.aforo ? "aforo del evento" : "sin aforo definido"} />
         <Cuadro valor={m.reservadas} etiqueta="Reservadas" nota="entradas emitidas" color={ACCENT} />
-        <Cuadro valor={m.hombres} etiqueta="Hombre" color={HOMBRE}
-                nota={m.conGenero > 0 ? `${Math.round((m.hombres / m.conGenero) * 100)}% del total` : "sin datos"} />
-        <Cuadro valor={m.mujeres} etiqueta="Mujer" color={MUJER}
-                nota={m.conGenero > 0 ? `${Math.round((m.mujeres / m.conGenero) * 100)}% del total` : "sin datos"} />
+        {hayGenero && (
+          <Cuadro valor={m.hombres} etiqueta="Hombre" color={HOMBRE}
+                  nota={`${Math.round((m.hombres / m.conGenero) * 100)}% del total`} />
+        )}
+        {hayGenero && (
+          <Cuadro valor={m.mujeres} etiqueta="Mujer" color={MUJER}
+                  nota={`${Math.round((m.mujeres / m.conGenero) * 100)}% del total`} />
+        )}
       </div>
 
       {/* Reparto por género */}
-      <div>
-        <p style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: SUB, margin: "0 0 10px" }}>
-          Reparto por género
-        </p>
-        {!m.campo ? (
-          <p style={{ fontSize: 12.5, color: MUTED, margin: 0, lineHeight: 1.5 }}>
-            Este evento no pregunta el género. Añade un campo llamado «Género» al
-            formulario de inscripción y el reparto aparecerá aquí.
+      {hayGenero && (
+        <div>
+          <p style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: SUB, margin: "0 0 10px" }}>
+            Reparto por género
           </p>
-        ) : m.conGenero === 0 ? (
-          <p style={{ fontSize: 12.5, color: MUTED, margin: 0 }}>Todavía nadie ha respondido «{m.campo.label}».</p>
-        ) : (
           <BarraGenero hombres={m.hombres} mujeres={m.mujeres} otros={m.otros} />
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
 
 export default function DashboardView({ events }) {
   const [seleccionado, setSeleccionado] = useState(null);
+  const [verEventos, setVerEventos] = useState(false);
   const [anio, setAnio] = useState(new Date().getFullYear());
 
   const regs = events.flatMap((e) => e.registrations || []);
@@ -259,11 +261,23 @@ export default function DashboardView({ events }) {
     [events]
   );
 
-  const stat = (label, value, sub) => (
-    <div className="panel-card" style={{ padding: "20px 16px", textAlign: "center" }}>
-      <div style={{ fontSize: 30, fontWeight: 600, color: ACCENT, lineHeight: 1.1, letterSpacing: "-0.5px" }}>{value}</div>
-      <div style={{ fontSize: 12.5, fontWeight: 600, color: TEXT, marginTop: 6 }}>{label}</div>
-      {sub && <div style={{ fontSize: 11.5, color: MUTED, marginTop: 3 }}>{sub}</div>}
+  // Totales de todos los eventos juntos, para el resumen de "Eventos creados".
+  const globales = useMemo(() => {
+    let aforo = 0, hombres = 0, mujeres = 0, otros = 0, conGenero = 0;
+    for (const ev of events) {
+      const m = metricasDe(ev);
+      if (m.aforo) aforo += m.aforo;
+      hombres += m.hombres; mujeres += m.mujeres; otros += m.otros; conGenero += m.conGenero;
+    }
+    return { aforo, hombres, mujeres, otros, conGenero };
+  }, [events]);
+
+  // Recuadros compactos: antes ocupaban media pantalla en móvil porque el
+  // subtítulo de "Tasa de asistencia" estiraba a las cuatro por igual.
+  const stat = (label, value, extra) => (
+    <div className="panel-card" style={{ padding: "12px 10px", textAlign: "center", ...extra }}>
+      <div style={{ fontSize: 22, fontWeight: 600, color: ACCENT, lineHeight: 1.15, letterSpacing: "-0.5px" }}>{value}</div>
+      <div style={{ fontSize: 11.5, fontWeight: 600, color: TEXT, marginTop: 4, lineHeight: 1.25 }}>{label}</div>
     </div>
   );
 
@@ -294,13 +308,123 @@ export default function DashboardView({ events }) {
         Visión global de tu actividad en TapIn
       </p>
 
-      {/* Stats principales */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px,1fr))", gap: 12, marginBottom: 28 }}>
-        {stat("Eventos creados", events.length)}
+      {/* Stats principales. "Eventos creados" es el que abre el detalle: dentro
+          van las métricas generales y el listado para entrar evento por evento,
+          en vez de tener la lista suelta al final de la página. */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px,1fr))", gap: 10, marginBottom: verEventos ? 12 : 24 }}>
+        <button
+          type="button"
+          onClick={() => setVerEventos((v) => !v)}
+          aria-expanded={verEventos}
+          className="panel-card"
+          style={{
+            padding: "12px 10px", textAlign: "center", cursor: "pointer", position: "relative",
+            background: verEventos ? "rgba(127,179,230,0.14)" : undefined,
+            borderColor: verEventos ? "rgba(127,179,230,0.45)" : undefined,
+            fontFamily: "inherit",
+          }}
+        >
+          <div style={{ fontSize: 22, fontWeight: 600, color: ACCENT, lineHeight: 1.15, letterSpacing: "-0.5px" }}>{events.length}</div>
+          <div style={{ fontSize: 11.5, fontWeight: 600, color: TEXT, marginTop: 4, lineHeight: 1.25, display: "inline-flex", alignItems: "center", gap: 4 }}>
+            Eventos creados
+            <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={verEventos ? ACCENT : MUTED}
+                 strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round"
+                 style={{ transform: verEventos ? "rotate(180deg)" : "none", transition: "transform .2s" }}>
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </div>
+        </button>
         {stat("Inscritos totales", total)}
         {stat("Check-ins totales", checkins)}
-        {stat("Tasa de asistencia", total > 0 ? `${Math.round((checkins / total) * 100)}%` : "—", "check-ins / inscritos")}
+        {stat("Tasa de asistencia", total > 0 ? `${Math.round((checkins / total) * 100)}%` : "—")}
       </div>
+
+      {/* ── Detalle de "Eventos creados" ── */}
+      {verEventos && (
+        <div className="panel-card" style={{ padding: 20, marginBottom: 24 }}>
+          <p style={{ fontSize: 11, fontWeight: 800, color: "#8fa3b1", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 16px" }}>
+            Métricas generales
+          </p>
+
+          <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 26, marginBottom: 20 }}>
+            <Anillo
+              pct={globales.aforo ? Math.min(1, total / globales.aforo) : (total > 0 ? 1 : 0)}
+              valor={globales.aforo ? Math.round(Math.min(1, total / globales.aforo) * 100) : total}
+              unidad={globales.aforo ? "%" : null}
+              etiqueta="Reservadas"
+              nota={globales.aforo ? `${total} / ${globales.aforo}` : "sin aforos definidos"}
+              color={ACCENT}
+            />
+            <Anillo
+              pct={total > 0 ? checkins / total : 0}
+              valor={total > 0 ? Math.round((checkins / total) * 100) : "—"}
+              unidad={total > 0 ? "%" : null}
+              etiqueta="Asistencia"
+              nota={`${checkins} de ${total} entraron`}
+              color={OK}
+            />
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10 }}>
+            <Cuadro valor={events.length} etiqueta="Eventos" nota="creados en total" />
+            <Cuadro valor={globales.aforo || total} etiqueta="Entradas totales"
+                    nota={globales.aforo ? "suma de aforos" : "sin aforos definidos"} color={ACCENT} />
+          </div>
+
+          {globales.conGenero > 0 && (
+            <div style={{ marginTop: 18 }}>
+              <p style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: SUB, margin: "0 0 10px" }}>
+                Reparto por género
+              </p>
+              <BarraGenero hombres={globales.hombres} mujeres={globales.mujeres} otros={globales.otros} />
+            </div>
+          )}
+
+          {/* Listado para entrar a cada evento */}
+          <div style={{ borderTop: `1px solid ${LINEA}`, margin: "20px 0 14px" }} />
+          <p style={{ fontSize: 12.5, color: MUTED, margin: "0 0 12px" }}>
+            Elige un evento para ver sus métricas.
+          </p>
+
+          {listaEventos.length === 0 ? (
+            <p style={{ color: "#8fa3b1", fontSize: 14, margin: 0 }}>Todavía no has creado ningún evento.</p>
+          ) : listaEventos.map((ev) => {
+            const abierto = seleccionado === ev.id;
+            const nRegs = (ev.registrations || []).length;
+            return (
+              <div key={ev.id} style={{ marginBottom: 8 }}>
+                <button
+                  type="button"
+                  onClick={() => setSeleccionado(abierto ? null : ev.id)}
+                  aria-expanded={abierto}
+                  style={{
+                    width: "100%", display: "flex", alignItems: "center", gap: 12,
+                    padding: "12px 14px", borderRadius: 16, cursor: "pointer", textAlign: "left",
+                    background: abierto ? "rgba(127,179,230,0.14)" : "rgba(255,255,255,0.04)",
+                    border: `1px solid ${abierto ? "rgba(127,179,230,0.45)" : LINEA}`,
+                    transition: "background .15s, border-color .15s",
+                  }}
+                >
+                  <span style={{ minWidth: 0, flex: 1 }}>
+                    <span style={{ display: "block", fontSize: 14, fontWeight: 600, color: TEXT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {ev.title || "Evento sin título"}
+                    </span>
+                    <span style={{ display: "block", fontSize: 11.5, color: MUTED, marginTop: 2 }}>
+                      {fechaDe(ev) || "Sin fecha"} · {nRegs} {nRegs === 1 ? "reserva" : "reservas"}
+                    </span>
+                  </span>
+                  <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={abierto ? ACCENT : MUTED}
+                       strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round"
+                       style={{ flexShrink: 0, transform: abierto ? "rotate(180deg)" : "none", transition: "transform .2s" }}>
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
+                </button>
+                {abierto && <MetricasEvento ev={ev} />}
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Evento con más inscritos */}
       {topEvent && (
@@ -352,53 +476,6 @@ export default function DashboardView({ events }) {
         </p>
       </div>
 
-      {/* ── Eventos creados: listado desplegable con métricas por evento ── */}
-      <div className="panel-card" style={{ padding: 20 }}>
-        <p style={{ fontSize: 11, fontWeight: 800, color: "#8fa3b1", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 6px" }}>
-          Eventos creados
-        </p>
-        <p style={{ fontSize: 12.5, color: MUTED, margin: "0 0 14px" }}>
-          Elige un evento para ver sus métricas.
-        </p>
-
-        {listaEventos.length === 0 ? (
-          <p style={{ color: "#8fa3b1", fontSize: 14, margin: 0 }}>Todavía no has creado ningún evento.</p>
-        ) : listaEventos.map((ev) => {
-          const abierto = seleccionado === ev.id;
-          const nRegs = (ev.registrations || []).length;
-          return (
-            <div key={ev.id} style={{ marginBottom: 8 }}>
-              <button
-                type="button"
-                onClick={() => setSeleccionado(abierto ? null : ev.id)}
-                aria-expanded={abierto}
-                style={{
-                  width: "100%", display: "flex", alignItems: "center", gap: 12,
-                  padding: "12px 14px", borderRadius: 16, cursor: "pointer", textAlign: "left",
-                  background: abierto ? "rgba(127,179,230,0.14)" : "rgba(255,255,255,0.04)",
-                  border: `1px solid ${abierto ? "rgba(127,179,230,0.45)" : LINEA}`,
-                  transition: "background .15s, border-color .15s",
-                }}
-              >
-                <span style={{ minWidth: 0, flex: 1 }}>
-                  <span style={{ display: "block", fontSize: 14, fontWeight: 600, color: TEXT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {ev.title || "Evento sin título"}
-                  </span>
-                  <span style={{ display: "block", fontSize: 11.5, color: MUTED, marginTop: 2 }}>
-                    {fechaDe(ev) || "Sin fecha"} · {nRegs} {nRegs === 1 ? "reserva" : "reservas"}
-                  </span>
-                </span>
-                <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={abierto ? ACCENT : MUTED}
-                     strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round"
-                     style={{ flexShrink: 0, transform: abierto ? "rotate(180deg)" : "none", transition: "transform .2s" }}>
-                  <path d="m6 9 6 6 6-6" />
-                </svg>
-              </button>
-              {abierto && <MetricasEvento ev={ev} />}
-            </div>
-          );
-        })}
-      </div>
     </div>
   );
 }

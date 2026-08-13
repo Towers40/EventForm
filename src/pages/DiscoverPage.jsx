@@ -160,14 +160,14 @@ function EventCard({ ev, destacado = false, duplicado = false }) {
  * el ancho de la fila, no el tamaño del icono. Recuadro de 36 px con el dibujo
  * a 17 px (antes 34/28 dentro de una píldora ancha) y el nombre debajo.
  */
-function CategoryPill({ cat, count, active, onClick }) {
+function CategoryPill({ cat, active, onClick }) {
   const Icon = CAT_ICONS[cat.slug];
   const iconColor = active ? "#fff" : cat.color;
   return (
     <button
       type="button"
       onClick={onClick}
-      title={count != null ? `${cat.label} · ${count} ${count === 1 ? "evento" : "eventos"}` : cat.label}
+      title={cat.label}
       aria-pressed={active}
       style={{
         display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
@@ -192,9 +192,6 @@ function CategoryPill({ cat, count, active, onClick }) {
         color: active ? "#eef1f7" : "rgba(238,241,247,0.55)",
       }}>
         {cat.label}
-        {count != null && count > 0 && (
-          <span style={{ color: "rgba(238,241,247,0.32)", fontWeight: 500 }}> {count}</span>
-        )}
       </span>
     </button>
   );
@@ -286,7 +283,6 @@ export default function DiscoverPage({ embedded = false }) {
   const [search,         setSearch]         = useState("");
   const [activeCategory, setActiveCategory] = useState(null);
   const [activeCity,     setActiveCity]     = useState(null);
-  const [categoryCounts, setCategoryCounts] = useState({});
   const [cities,         setCities]         = useState([]);
   const [populares,      setPopulares]      = useState([]);
   const searchTimer = useRef(null);
@@ -319,15 +315,6 @@ export default function DiscoverPage({ embedded = false }) {
     }
   }
 
-  async function fetchCategories() {
-    try {
-      const { categories } = await api.discoverCategories();
-      const counts = {};
-      (categories || []).forEach(c => { counts[c.slug] = c.count; });
-      setCategoryCounts(counts);
-    } catch {}
-  }
-
   async function fetchCities() {
     try { setCities((await api.discoverCities()).cities || []); } catch {}
   }
@@ -344,7 +331,6 @@ export default function DiscoverPage({ embedded = false }) {
 
   useEffect(() => {
     fetchEvents("", null, 1);
-    fetchCategories();
     fetchCities();
     fetchPopulares();
   }, []);
@@ -452,7 +438,6 @@ export default function DiscoverPage({ embedded = false }) {
             <CategoryPill
               key={cat.slug}
               cat={cat}
-              count={categoryCounts[cat.slug] ?? null}
               active={activeCategory === cat.slug}
               onClick={() => handleCategory(cat.slug)}
             />
