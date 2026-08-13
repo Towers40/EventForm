@@ -155,6 +155,11 @@ function EventCard({ ev, destacado = false, duplicado = false }) {
   );
 }
 
+/**
+ * Categoría en formato compacto: va justo debajo del buscador, así que manda
+ * el ancho de la fila, no el tamaño del icono. Recuadro de 36 px con el dibujo
+ * a 17 px (antes 34/28 dentro de una píldora ancha) y el nombre debajo.
+ */
 function CategoryPill({ cat, count, active, onClick }) {
   const Icon = CAT_ICONS[cat.slug];
   const iconColor = active ? "#fff" : cat.color;
@@ -162,38 +167,35 @@ function CategoryPill({ cat, count, active, onClick }) {
     <button
       type="button"
       onClick={onClick}
+      title={count != null ? `${cat.label} · ${count} ${count === 1 ? "evento" : "eventos"}` : cat.label}
+      aria-pressed={active}
       style={{
-        display: "flex", alignItems: "center", gap: 12,
-        background: active ? cat.color : "rgba(255,255,255,0.07)",
-        border: `1px solid ${active ? cat.color : "rgba(255,255,255,0.11)"}`,
-        borderRadius: 18, padding: "12px 13px",
-        cursor: "pointer", textAlign: "left",
-        transition: "all 0.15s",
-        boxShadow: active ? `0 4px 20px ${cat.color}55` : "none",
+        display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
+        width: 66, padding: 0, background: "transparent", border: "none",
+        cursor: "pointer", transition: "all 0.15s",
       }}
-      onMouseEnter={e => { if (!active) { e.currentTarget.style.background = "rgba(255,255,255,0.11)"; } }}
-      onMouseLeave={e => { if (!active) { e.currentTarget.style.background = "rgba(255,255,255,0.07)"; } }}
     >
-      {/* Icon side — LEFT */}
-      <div style={{
-        flexShrink: 0, width: 34, height: 34,
+      <span style={{
+        flexShrink: 0, width: 36, height: 36,
         display: "flex", alignItems: "center", justifyContent: "center",
-        background: active ? "rgba(255,255,255,0.18)" : `${cat.color}22`,
-        borderRadius: 14,
+        background: active ? cat.color : `${cat.color}1f`,
+        border: `1px solid ${active ? cat.color : "rgba(255,255,255,0.1)"}`,
+        borderRadius: 12,
+        boxShadow: active ? `0 4px 16px ${cat.color}55` : "none",
+        transition: "all 0.15s",
       }}>
-        {Icon ? Icon(iconColor) : <span style={{ fontSize: 22 }}>{cat.emoji}</span>}
-      </div>
-      {/* Text side — RIGHT */}
-      <div style={{ minWidth: 0 }}>
-        <div style={{ fontSize: 12.5, fontWeight: 600, color: active ? "#fff" : "#eef1f7", lineHeight: 1.3, marginBottom: count != null ? 2 : 0 }}>
-          {cat.label}
-        </div>
-        {count != null && (
-          <div style={{ fontSize: 12, fontWeight: 400, color: active ? "rgba(255,255,255,0.75)" : "rgba(238,241,247,0.42)", lineHeight: 1 }}>
-            {count > 999 ? `${(count/1000).toFixed(1)}K` : count} {count === 1 ? "evento" : "eventos"}
-          </div>
+        {Icon ? Icon(iconColor, 17) : <span style={{ fontSize: 16 }}>{cat.emoji}</span>}
+      </span>
+      <span style={{
+        fontSize: 10.5, lineHeight: 1.2, textAlign: "center",
+        fontWeight: active ? 700 : 500,
+        color: active ? "#eef1f7" : "rgba(238,241,247,0.55)",
+      }}>
+        {cat.label}
+        {count != null && count > 0 && (
+          <span style={{ color: "rgba(238,241,247,0.32)", fontWeight: 500 }}> {count}</span>
         )}
-      </div>
+      </span>
     </button>
   );
 }
@@ -439,6 +441,23 @@ export default function DiscoverPage({ embedded = false }) {
             }}
           />
         </div>
+
+        {/* Categorías: pegadas al buscador, porque filtrar por categoría es
+            parte de buscar. Fila centrada que se envuelve sola en móvil. */}
+        <div style={{
+          display: "flex", flexWrap: "wrap", justifyContent: "center",
+          gap: 10, maxWidth: 560, margin: "18px auto 0",
+        }}>
+          {DISCOVER_CATEGORIES.map(cat => (
+            <CategoryPill
+              key={cat.slug}
+              cat={cat}
+              count={categoryCounts[cat.slug] ?? null}
+              active={activeCategory === cat.slug}
+              onClick={() => handleCategory(cat.slug)}
+            />
+          ))}
+        </div>
       </div>
 
       <div style={{ maxWidth: 1560, margin: "0 auto", padding: "0 24px 80px" }}>
@@ -447,7 +466,7 @@ export default function DiscoverPage({ embedded = false }) {
         {!filtrando && populares.length > 0 && (
           <section style={{ marginBottom: 48 }}>
             {/* Solo la llama: la sección se explica sola por su posición. */}
-            <div style={{ marginBottom: 12, color: "#fb923c", display: "flex" }} aria-label="Eventos que se están llenando">
+            <div style={{ marginBottom: 12, color: "#fb923c", display: "flex", justifyContent: "center" }} aria-label="Eventos que se están llenando">
               <FlameIcon size={22} />
             </div>
             {/* Dos copias: la segunda es la que permite el bucle sin corte.
@@ -460,28 +479,6 @@ export default function DiscoverPage({ embedded = false }) {
             </div>
           </section>
         )}
-
-        {/* ── Categories ── */}
-        <section style={{ marginBottom: 52 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 500, marginBottom: 16, color: "#eef1f7" }}>
-            Explorar por categoría
-          </h2>
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))",
-            gap: 10,
-          }}>
-            {DISCOVER_CATEGORIES.map(cat => (
-              <CategoryPill
-                key={cat.slug}
-                cat={cat}
-                count={categoryCounts[cat.slug] ?? null}
-                active={activeCategory === cat.slug}
-                onClick={() => handleCategory(cat.slug)}
-              />
-            ))}
-          </div>
-        </section>
 
         {/* ── Ciudades ── */}
         {cities.length > 1 && (
@@ -636,19 +633,28 @@ export default function DiscoverPage({ embedded = false }) {
         }
         @media (max-width: 480px) { .hide-mobile { display: none !important; } }
 
-        /* Listado: una columna en móvil, dos en tableta y tres en escritorio.
-           La tarjeta es una fila compacta, así que en 3 columnas sigue
-           cabiendo todo sin recortar información. */
-        .ef-ev-grid { display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr); }
-        @media (min-width: 760px)  { .ef-ev-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-        @media (min-width: 1100px) { .ef-ev-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-        @media (min-width: 1400px) { .ef-ev-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+        /* Listado: una columna en móvil, dos en tableta y hasta cuatro en
+           escritorio. Es flex y no grid a propósito: con grid, dos eventos en
+           una fila de cuatro columnas quedaban pegados a la izquierda con un
+           hueco enorme al lado. Con flex + justify-content:center las tarjetas
+           conservan el ancho de columna y la fila incompleta queda centrada,
+           haya 1 evento o 40. */
+        .ef-ev-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+        /* border-box: la tarjeta tiene padding y borde propios y, en
+           content-box, cada columna medía 22 px de más y entraba una menos. */
+        .ef-ev-grid > * { flex: 0 1 100%; min-width: 0; box-sizing: border-box; }
+        @media (min-width: 760px)  { .ef-ev-grid > * { flex-basis: calc((100% - 10px) / 2); } }
+        @media (min-width: 1100px) { .ef-ev-grid > * { flex-basis: calc((100% - 20px) / 3); } }
+        @media (min-width: 1400px) { .ef-ev-grid > * { flex-basis: calc((100% - 30px) / 4); } }
 
         /* Destacados: cinta continua. Sin scroll-snap, que tiraría de la
            posición y cortaría el movimiento; y con flex en vez de grid para
-           que las tarjetas mantengan su ancho y la fila pueda desbordar. */
+           que las tarjetas mantengan su ancho y la fila pueda desbordar.
+           "safe center" centra la cinta cuando cabe entera (uno o dos
+           destacados) sin recortar el principio cuando desborda. */
         .ef-pop {
           display: flex; gap: 10px;
+          justify-content: safe center;
           overflow-x: auto; padding-bottom: 4px;
           scroll-behavior: auto;
         }
