@@ -5,9 +5,11 @@ import { COLOMBIA_CITIES } from "../lib/colombia.js";
 import { EVENT_TYPE_OTHER, EVENT_TYPE_PRESETS } from "../lib/colombia.js";
 import { searchPlacesInColombia } from "../lib/geocoding.js";
 import { VERDE_CORPORATIVO } from "../lib/theme.js";
+import { DS } from "../lib/ds.jsx";
 import { TapInMark } from "../lib/brand.jsx";
 import { api } from "../lib/api.js";
 import DateTimePicker from "./DateTimePicker.jsx";
+import PosterMarquee from "./PosterMarquee.jsx";
 import CreateEventForm from "./CreateEventForm.jsx";
 import "../styles/typeform.css";
 
@@ -514,17 +516,44 @@ export default function OnboardingFlow({ onDraftReady }) {
 
   return (
     <div className="tf-screen">
+      {/* Muestrario en movimiento detrás de la bienvenida. Va aquí y no dentro
+          de .tf-body porque la animación de entrada de ese contenedor usa
+          transform, y un transform en un ancestro anula el position:fixed. */}
+      {phase === 0 && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none" }}>
+          <PosterMarquee />
+        </div>
+      )}
+
       {phase > 0 && (
         <div className="tf-progress">
           <div className="tf-progress-fill" style={{ width: `${progressPct}%` }} />
         </div>
       )}
 
-      <div className={`tf-body ${animClass}`}>
+      <div
+        className={`tf-body ${animClass}`}
+        style={phase === 0 ? { position: "relative", zIndex: 1 } : undefined}
+      >
 
         {/* ── BIENVENIDA ── */}
         {phase === 0 && (
-          <div style={{ textAlign: "center" }}>
+          <div style={{ textAlign: "center", position: "relative" }}>
+            {/* Halo bajo el texto. El velo de la cinta apaga el centro de la
+                pantalla, pero el bloque de texto no siempre cae ahí (en móvil
+                es mucho más alto); este halo viaja con el contenido y asegura
+                el contraste pase el póster que pase por detrás. */}
+            <div
+              aria-hidden="true"
+              style={{
+                position: "absolute",
+                inset: "-90px -56px",
+                zIndex: -1,
+                pointerEvents: "none",
+                background:
+                  "radial-gradient(closest-side, rgba(8,11,24,0.97) 0%, rgba(8,11,24,0.92) 52%, rgba(8,11,24,0.6) 76%, rgba(8,11,24,0) 100%)",
+              }}
+            />
             <div style={{ marginBottom: 36 }}>
               <span style={{ display: "block", lineHeight: 1, marginBottom: 10 }}><TapInMark size={48} color={VERDE_CORPORATIVO} /></span>
               <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: "0.15em", color: "#8fa3b1" }}>TAPIN COLOMBIA</span>
@@ -533,18 +562,24 @@ export default function OnboardingFlow({ onDraftReady }) {
               Empecemos a crear<br />
               <strong style={{ fontWeight: 700 }}>tu próximo evento</strong>
             </h1>
-            <p className="tf-hint" style={{ maxWidth: 420, margin: "0 auto 44px", fontSize: 16 }}>
-              Configura en minutos, inscribe asistentes y gestiona el acceso con QR el día del evento.
+            <p className="tf-hint" style={{ maxWidth: 460, margin: "0 auto 40px", fontSize: 16 }}>
+              Del club de running al festival, del cumpleaños a la conferencia.
+              Configúralo en minutos, inscribe asistentes y controla el acceso con QR.
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 12, width: "100%", maxWidth: 340, margin: "0 auto" }}>
-              <button type="button" onClick={() => { setSkipWizard(true); go(10); }} className="soft-btn soft-btn-primary wbtn" style={{ fontSize: 16, padding: "16px 24px", borderRadius: 14, width: "100%" }}>
-                <span className="wbtn-text">Crear un evento</span>
+              <button
+                type="button"
+                onClick={() => { setSkipWizard(true); go(10); }}
+                className="soft-btn ef-hover-fill"
+                style={{ fontSize: 16, padding: "16px 24px", borderRadius: 14, width: "100%", background: DS.ctaBg, color: DS.ctaColor, fontWeight: 700, border: "1px solid rgba(255,255,255,0.75)", boxShadow: "0 10px 30px rgba(0,0,0,0.45)" }}
+              >
+                Crear un evento
               </button>
               <button
                 type="button"
                 onClick={() => nav("/login")}
                 className="wbtn"
-                style={{ width: "100%", padding: "16px 24px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 14, fontWeight: 700, fontSize: 16, cursor: "pointer" }}
+                style={{ width: "100%", padding: "16px 24px", background: "rgba(255,255,255,0.13)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", border: "1px solid rgba(255,255,255,0.24)", borderRadius: 14, fontWeight: 700, fontSize: 16, cursor: "pointer" }}
               >
                 <span className="wbtn-text">Iniciar sesión</span>
               </button>
@@ -552,7 +587,7 @@ export default function OnboardingFlow({ onDraftReady }) {
                 type="button"
                 onClick={() => nav("/discover")}
                 className="wbtn"
-                style={{ width: "100%", padding: "16px 24px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 14, cursor: "pointer", fontWeight: 700, fontSize: 16 }}
+                style={{ width: "100%", padding: "16px 24px", background: "rgba(255,255,255,0.13)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", border: "1px solid rgba(255,255,255,0.24)", borderRadius: 14, cursor: "pointer", fontWeight: 700, fontSize: 16 }}
               >
                 <span className="wbtn-text-multi">Descubrir eventos</span>
               </button>
