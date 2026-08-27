@@ -475,99 +475,106 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
           </div>
 
           {/* ── Nombre del evento ──
-              La tipografía se elige AQUÍ, encima del nombre y antes de
-              escribirlo, no escondida en "Opciones" al final: es una decisión
-              sobre el nombre. Va detrás de un botón y no siempre desplegada:
-              quien se quede con la letra de la app —la mayoría— no tiene que
-              pasar por encima de seis opciones para escribir el título. */}
-          <div style={{ ...cardStyle, padding: "10px 12px 14px" }}>
+              La tipografía se elige AQUÍ, en el propio campo del nombre: es
+              una decisión sobre el nombre, no un ajuste más del final. El
+              control es un recuadro pequeño al lado del título, y su menú se
+              abre FLOTANDO por encima de la pantalla —no empujando el resto
+              hacia abajo—, para que el campo no se mueva de sitio mientras se
+              prueba una letra y otra. */}
+          <div style={{ ...cardStyle, overflow: "visible", position: "relative", display: "flex", alignItems: "center", gap: 8, padding: "6px 8px 6px 16px" }}>
+            <div {...eventFontProps(draft.fontId, { extraStyle: { flex: 1, minWidth: 0 } })}>
+              <input
+                type="text" placeholder="Nombre del evento"
+                value={draft.title || ""}
+                onChange={e => up("title", e.target.value)}
+                style={{ width: "100%", boxSizing: "border-box", background: "transparent", border: "none", padding: "12px 0", fontSize: 20 * fuente.headingScale, fontWeight: fuente.headingWeight, color: TEXT, outline: "none", caretColor: ACCENT, letterSpacing: fuente.headingSpacing }}
+              />
+            </div>
 
-            {/* Botón: muestra la letra puesta, escrita con ella misma. */}
+            {/* El recuadro: la letra puesta, escrita con ella misma. */}
             <button
               type="button" className="ef-hover-fill"
               onClick={() => { if (!fontMenu) loadAllEventFonts(); setFontMenu(v => !v); }}
               aria-expanded={fontMenu}
+              aria-label={`Tipografía: ${fuente.name}`}
+              title={`Tipografía: ${fuente.name}`}
               style={{
-                width: "100%", display: "flex", alignItems: "center", gap: 10,
-                padding: "8px 10px", borderRadius: 14, cursor: "pointer", textAlign: "left",
-                background: fontMenu ? "rgba(127,179,230,0.14)" : "rgba(255,255,255,0.05)",
-                border: fontMenu ? "1px solid rgba(127,179,230,0.4)" : BORDER,
+                flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 3,
+                height: 38, padding: "0 8px", borderRadius: 12, cursor: "pointer",
+                background: fontMenu ? "rgba(127,179,230,0.2)" : "rgba(255,255,255,0.06)",
+                border: fontMenu ? "1px solid rgba(127,179,230,0.45)" : BORDER,
+                color: fontMenu ? TEXT : "rgba(238,241,247,0.8)",
               }}
             >
               <span style={{
-                flexShrink: 0, width: 30, height: 26,
-                display: "flex", alignItems: "center", justifyContent: "center",
                 fontFamily: fuente.family, fontWeight: fuente.headingWeight,
                 letterSpacing: fuente.headingSpacing,
-                fontSize: 17 * fuente.headingScale, color: TEXT,
+                fontSize: 16 * fuente.headingScale, lineHeight: 1,
               }}>
                 Aa
               </span>
-              <span style={{ flex: 1, minWidth: 0, fontSize: 13, color: SUB }}>Tipografía</span>
-              <span style={{
-                fontFamily: fuente.family, fontSize: 13.5, fontWeight: 600,
-                color: (draft.fontId || DEFAULT_FONT_ID) === DEFAULT_FONT_ID ? SUB : ACCENT,
-                whiteSpace: "nowrap",
-              }}>
-                {fuente.name}
-              </span>
-              <span style={{ flexShrink: 0, color: SUB, display: "flex", transform: fontMenu ? "rotate(180deg)" : "none", transition: "transform 0.18s" }}>
+              <span style={{ display: "flex", color: SUB, transform: fontMenu ? "rotate(180deg)" : "none", transition: "transform 0.18s" }}>
                 <I.ChevronDown />
               </span>
             </button>
 
-            {/* Menú desplegado: las seis se reparten el ancho (flex: 1) en vez
-                de medir fijo y desplazarse; una opción cortada por el borde no
-                parece una opción, parece un fallo. */}
+            {/* Ventana flotante. La capa de debajo cierra al tocar fuera: sin
+                ella habría que acertarle otra vez al recuadro. */}
             {fontMenu && (
               <>
-                <div style={{ display: "flex", gap: 5, marginTop: 8 }}>
+                <div
+                  onClick={() => setFontMenu(false)}
+                  style={{ position: "fixed", inset: 0, zIndex: 40 }}
+                />
+                <div
+                  role="listbox"
+                  style={{
+                    position: "absolute", top: "calc(100% + 6px)", right: 0, zIndex: 41,
+                    width: 232, maxWidth: "calc(100vw - 40px)",
+                    background: "rgba(22,25,44,0.98)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
+                    border: "1px solid rgba(255,255,255,0.14)", borderRadius: 18,
+                    boxShadow: "0 18px 50px rgba(0,0,0,0.55)", padding: 6, overflow: "hidden",
+                  }}
+                >
                   {EVENT_FONTS.map(f => {
                     const activa = (draft.fontId || DEFAULT_FONT_ID) === f.id;
                     return (
                       <button
                         key={f.id} type="button" className="ef-hover-fill"
+                        role="option" aria-selected={activa}
                         onClick={() => { up("fontId", f.id); setFontMenu(false); }}
-                        aria-pressed={activa}
-                        title={`${f.name} — ${f.note}`}
+                        title={f.note}
                         style={{
-                          flex: "1 1 0", minWidth: 0, padding: "7px 2px 6px",
-                          display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
-                          borderRadius: 14, cursor: "pointer",
-                          background: activa ? "rgba(127,179,230,0.2)" : "rgba(255,255,255,0.05)",
-                          border: activa ? "1px solid rgba(127,179,230,0.5)" : BORDER,
+                          width: "100%", display: "flex", alignItems: "center", gap: 10,
+                          padding: "8px 10px", borderRadius: 12, cursor: "pointer", textAlign: "left",
+                          background: activa ? "rgba(127,179,230,0.18)" : "transparent",
+                          border: "none",
                         }}
                       >
                         <span style={{
+                          flexShrink: 0, width: 30, textAlign: "center",
                           fontFamily: f.family, fontWeight: f.headingWeight,
                           letterSpacing: f.headingSpacing,
-                          fontSize: 20 * f.headingScale, lineHeight: 1.15,
-                          color: activa ? TEXT : "rgba(238,241,247,0.75)",
+                          fontSize: 18 * f.headingScale, lineHeight: 1.1,
+                          color: activa ? TEXT : "rgba(238,241,247,0.85)",
                         }}>
                           Aa
                         </span>
-                        <span style={{ fontSize: 9, lineHeight: 1.2, whiteSpace: "nowrap", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", color: activa ? ACCENT : SUB, fontWeight: activa ? 700 : 500 }}>
-                          {f.name}
+                        <span style={{ flex: 1, minWidth: 0 }}>
+                          <span style={{ display: "block", fontSize: 13.5, fontWeight: 600, color: activa ? TEXT : "rgba(238,241,247,0.9)", lineHeight: 1.25 }}>
+                            {f.name}
+                          </span>
+                          <span style={{ display: "block", fontSize: 10.5, color: SUB, lineHeight: 1.25 }}>
+                            {f.tagline}
+                          </span>
                         </span>
+                        {activa && <span style={{ color: ACCENT, display: "flex", flexShrink: 0 }}><I.Check /></span>}
                       </button>
                     );
                   })}
                 </div>
-                <p style={{ margin: "8px 4px 0", fontSize: 11.5, color: SUB, lineHeight: 1.4 }}>
-                  {fuente.note}
-                </p>
               </>
             )}
-
-            {/* El nombre se escribe ya con la letra elegida. */}
-            <div {...eventFontProps(draft.fontId)}>
-              <input
-                type="text" placeholder="Nombre del evento"
-                value={draft.title || ""}
-                onChange={e => up("title", e.target.value)}
-                style={{ width: "100%", boxSizing: "border-box", background: "transparent", border: "none", padding: "12px 8px 2px", fontSize: 20 * fuente.headingScale, fontWeight: fuente.headingWeight, color: TEXT, outline: "none", caretColor: ACCENT, letterSpacing: fuente.headingSpacing }}
-              />
-            </div>
           </div>
 
           {/* ── Date card ── */}
