@@ -1617,7 +1617,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
       <div className="panel-card" style={{ marginBottom: 20, overflow: "hidden" }}>
         <HeaderImageUpload
           image={draft.headerImage}
-          onChange={(headerImage) => setDraft({ ...draft, headerImage })}
+          onChange={(headerImage, themeColor) => setDraft({ ...draft, headerImage, themeColor: themeColor ?? null })}
         />
         <div style={{ padding: "20px 24px 4px" }}>
           <input

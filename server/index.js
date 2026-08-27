@@ -157,6 +157,28 @@ async function attachRegs(ev) {
   return ev;
 }
 
+/**
+ * Caras de quienes ya se inscribieron, tal como las pinta la tarjeta.
+ *
+ * Del asistente CON cuenta sale su nombre de pila y su foto; del que se
+ * inscribió sin cuenta, solo la inicial. Nunca sale el correo ni el apellido:
+ * el listado es público y esto se ve sin haber entrado a la app.
+ */
+function parseAttendeePreview(raw) {
+  if (!raw) return [];
+  let lista;
+  try { lista = JSON.parse(raw); } catch { return []; }
+  if (!Array.isArray(lista)) return [];
+  return lista.slice(0, 4).map((a) => {
+    const nombre = String(a?.n || "").trim();
+    return {
+      name: nombre ? nombre.split(/\s+/)[0] : "",
+      initial: String(a?.i || nombre.charAt(0) || "?").toUpperCase().slice(0, 1),
+      avatar: a?.a || null,
+    };
+  });
+}
+
 // ─── Auth ──────────────────────────────────────────────────────────────────
 app.post("/api/auth/register", requireDb, async (req, res) => {
   try {
@@ -471,11 +493,26 @@ app.get("/api/public/events/:slug", requireDb, async (req, res) => {
     // pasarela activa; si no, son dos viajes de red por visita para nada.
     if (paymentsEnabled && ev.isPaid && Number(ev.price) > 0) await releaseExpiredHolds(ev.id);
 
-    // Aforo, reventa y datos del organizador en UN solo viaje.
-    const [ocupRes, resaleRes, hostRes] = await db.batch([
+    // Aforo, reventa, organizador y caras de quienes van, en UN solo viaje.
+    const [ocupRes, resaleRes, hostRes, carasRes] = await db.batch([
       { sql: `SELECT COUNT(*) AS c FROM registrations WHERE event_id = ? AND cancelled = 0 AND resale_status != 'listed'`, args: [ev.id] },
       { sql: `SELECT COUNT(*) AS c FROM registrations WHERE event_id = ? AND resale_status = 'listed' AND cancelled = 0`, args: [ev.id] },
       { sql: "SELECT name, email, avatar FROM users WHERE id = ?", args: [ev.hostId] },
+      // Mismas cuatro caras que en Descubrir (ver parseAttendeePreview).
+      { sql: `SELECT json_group_array(json_object('n', nm, 'i', ini, 'a', av)) AS caras FROM (
+                SELECT CASE WHEN u2.name IS NOT NULL AND u2.name != '' THEN u2.name END AS nm,
+                       upper(substr(COALESCE(NULLIF(u2.name, ''), t.email, '?'), 1, 1)) AS ini,
+                       CASE WHEN u2.avatar LIKE 'http%' THEN u2.avatar END AS av,
+                       t.created_at AS created_at
+                  FROM (SELECT r2.email AS email, r2.created_at AS created_at
+                          FROM registrations r2
+                         WHERE r2.event_id = ? AND r2.cancelled = 0
+                           AND r2.payment_status != 'pending'
+                           AND r2.resale_status != 'listed'
+                         ORDER BY r2.created_at ASC LIMIT 16) t
+                  LEFT JOIN users u2 ON u2.email = t.email
+                 ORDER BY (av IS NULL), (nm IS NULL), created_at ASC
+                 LIMIT 4)`, args: [ev.id] },
     ], "read");
     ev.registrationCount = Number(ocupRes.rows[0]?.c || 0);
     ev.resaleAvailable = Number(resaleRes.rows[0]?.c || 0);
@@ -487,6 +524,7 @@ app.get("/api/public/events/:slug", requireDb, async (req, res) => {
     // Solo se expone el avatar si es una URL (los base64 no viajan; ver Descubrir).
     const hostAv = hostRows[0]?.avatar;
     ev.hostAvatar = hostAv && String(hostAv).startsWith("http") ? hostAv : null;
+    ev.attendeePreview = parseAttendeePreview(carasRes.rows[0]?.caras);
     // La página pública es lo que ve el asistente: tras una edición debe
     // reflejarse pronto, pero sin caché era 1 función + 4 consultas por visita.
     setCache(res, { cdn: 15, swr: 60 });
@@ -1269,7 +1307,35 @@ app.get("/api/public/events", requireDb, async (req, res) => {
                    -- las 24 de la página y va por el índice (event_id,cancelled).
                    (SELECT COUNT(*) FROM registrations r
                      WHERE r.event_id = events.id AND r.cancelled = 0
-                       AND r.payment_status != 'pending') AS attendees
+                       AND r.payment_status != 'pending') AS attendees,
+                   -- Enlace al perfil del organizador desde la tarjeta.
+                   events.host_id AS host_id,
+                   -- Personalización del evento (color de la portada y tipografía):
+                   -- dos campos cortos del payload, no la portada entera.
+                   json_extract(payload, '$.themeColor') AS theme_color,
+                   json_extract(payload, '$.fontId')     AS font_id,
+                   -- Quiénes van: hasta CUATRO caras por evento. El LIMIT va en
+                   -- la subconsulta interior a propósito — así el JOIN con users
+                   -- se hace sobre 4 filas, no sobre las 900 inscripciones que
+                   -- puede tener un evento grande. Del asistente sin cuenta solo
+                   -- sale la inicial: su correo no viaja al cliente.
+                   (SELECT json_group_array(json_object('n', nm, 'i', ini, 'a', av)) FROM (
+                      SELECT CASE WHEN u2.name IS NOT NULL AND u2.name != '' THEN u2.name END AS nm,
+                             upper(substr(COALESCE(NULLIF(u2.name, ''), t.email, '?'), 1, 1)) AS ini,
+                             CASE WHEN u2.avatar LIKE 'http%' THEN u2.avatar END AS av,
+                             t.created_at AS created_at
+                        FROM (SELECT r2.email AS email, r2.created_at AS created_at
+                                FROM registrations r2
+                               WHERE r2.event_id = events.id AND r2.cancelled = 0
+                                 AND r2.payment_status != 'pending'
+                                 AND r2.resale_status != 'listed'
+                               ORDER BY r2.created_at ASC LIMIT 16) t
+                        LEFT JOIN users u2 ON u2.email = t.email
+                       -- Primero quien tiene foto, luego quien tiene nombre y
+                       -- por último por orden de inscripción: cuatro iniciales
+                       -- grises no dicen nada, cuatro caras sí.
+                       ORDER BY (av IS NULL), (nm IS NULL), created_at ASC
+                       LIMIT 4)) AS attendee_preview
             FROM events
             LEFT JOIN users u ON u.id = events.host_id
             ${where}
@@ -1300,7 +1366,11 @@ app.get("/api/public/events", requireDb, async (req, res) => {
       price: r.price != null ? Number(r.price) : null,
       hostName: r.host_name || "",
       hostAvatar: r.host_avatar || null,
+      hostId: r.host_id || null,
+      themeColor: r.theme_color || null,
+      fontId: r.font_id || null,
       attendees: Number(r.attendees || 0),
+      attendeePreview: parseAttendeePreview(r.attendee_preview),
     }));
 
     // 30 s: suficiente para que una edición salga pronto en Descubrir y para
@@ -1344,6 +1414,113 @@ app.get("/api/public/categories", requireDb, async (req, res) => {
     });
     setCache(res, { cdn: 120, swr: 300 });
     res.json({ categories: rows.map(r => ({ slug: r.category, count: Number(r.count) })) });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Perfil público de un organizador: quién es y todo lo que ha hecho o va a
+// hacer. Es la ficha a la que lleva su nombre desde cualquier tarjeta de
+// Descubrir — sin esto, el nombre del organizador era texto muerto.
+//
+// Solo eventos PÚBLICOS: los privados y los de "solo enlace" no aparecen aquí
+// ni aunque sean del mismo organizador.
+app.get("/api/public/hosts/:id", requireDb, async (req, res) => {
+  try {
+    const hostId = String(req.params.id || "").trim();
+    if (!hostId) return res.status(404).json({ error: "Organizador no encontrado" });
+    const today = new Date().toISOString().split("T")[0];
+
+    const proyeccion = `events.id, events.slug, events.category, events.is_paid, events.price,
+             json_extract(payload, '$.title')     AS title,
+             json_extract(payload, '$.city')      AS city,
+             json_extract(payload, '$.location')  AS location,
+             json_extract(payload, '$.address')   AS address,
+             json_extract(payload, '$.isVirtual') AS is_virtual,
+             json_extract(payload, '$.startDate') AS start_date,
+             json_extract(payload, '$.startTime') AS start_time,
+             json_extract(payload, '$.endDate')   AS end_date,
+             json_extract(payload, '$.endTime')   AS end_time,
+             json_extract(payload, '$.themeColor') AS theme_color,
+             CASE WHEN json_extract(payload, '$.headerImage') LIKE 'http%'
+                  THEN json_extract(payload, '$.headerImage') END AS header_image,
+             (SELECT COUNT(*) FROM registrations r
+               WHERE r.event_id = events.id AND r.cancelled = 0
+                 AND r.payment_status != 'pending') AS attendees,
+             -- Las mismas caras que en Descubrir: sin esto, aquí las tarjetas
+             -- salían con el contador pelado y se veían de otra familia.
+             (SELECT json_group_array(json_object('n', nm, 'i', ini, 'a', av)) FROM (
+                SELECT CASE WHEN u2.name IS NOT NULL AND u2.name != '' THEN u2.name END AS nm,
+                       upper(substr(COALESCE(NULLIF(u2.name, ''), t.email, '?'), 1, 1)) AS ini,
+                       CASE WHEN u2.avatar LIKE 'http%' THEN u2.avatar END AS av,
+                       t.created_at AS created_at
+                  FROM (SELECT r2.email AS email, r2.created_at AS created_at
+                          FROM registrations r2
+                         WHERE r2.event_id = events.id AND r2.cancelled = 0
+                           AND r2.payment_status != 'pending'
+                           AND r2.resale_status != 'listed'
+                         ORDER BY r2.created_at ASC LIMIT 16) t
+                  LEFT JOIN users u2 ON u2.email = t.email
+                 ORDER BY (av IS NULL), (nm IS NULL), created_at ASC
+                 LIMIT 4)) AS attendee_preview`;
+    // El corte por fecha es el mismo de Descubrir: cuenta endDate y, si no lo
+    // hay, startDate.
+    const vigente = `(json_extract(payload, '$.endDate') >= ?
+        OR (json_extract(payload, '$.endDate') IS NULL AND json_extract(payload, '$.startDate') >= ?)
+        OR (json_extract(payload, '$.endDate') = '' AND json_extract(payload, '$.startDate') >= ?))`;
+
+    const [userRes, proxRes, pasadosRes] = await db.batch([
+      { sql: "SELECT id, name, email, avatar, created_at FROM users WHERE id = ?", args: [hostId] },
+      { sql: `SELECT ${proyeccion} FROM events
+               WHERE host_id = ? AND visibility = 'public' AND ${vigente}
+               ORDER BY COALESCE(json_extract(payload, '$.startDate'), '9999-99-99') ASC
+               LIMIT 60`, args: [hostId, today, today, today] },
+      { sql: `SELECT ${proyeccion} FROM events
+               WHERE host_id = ? AND visibility = 'public' AND NOT ${vigente}
+               ORDER BY COALESCE(json_extract(payload, '$.startDate'), '0000-00-00') DESC
+               LIMIT 24`, args: [hostId, today, today, today] },
+    ], "read");
+
+    const u = userRes.rows[0];
+    if (!u) return res.status(404).json({ error: "Organizador no encontrado" });
+
+    const mapEv = (r) => ({
+      id: r.id,
+      slug: r.slug,
+      title: r.title || "Evento",
+      city: r.city || "",
+      location: r.location || "",
+      address: r.address || "",
+      isVirtual: Boolean(r.is_virtual),
+      startDate: r.start_date || "",
+      startTime: r.start_time || "",
+      endDate: r.end_date || "",
+      endTime: r.end_time || "",
+      headerImage: r.header_image || "",
+      themeColor: r.theme_color || null,
+      category: r.category || null,
+      isPaid: Boolean(r.is_paid),
+      price: r.price != null ? Number(r.price) : null,
+      attendees: Number(r.attendees || 0),
+      attendeePreview: parseAttendeePreview(r.attendee_preview),
+    });
+
+    const proximos = proxRes.rows.map(mapEv);
+    const pasados  = pasadosRes.rows.map(mapEv);
+
+    setCache(res, { cdn: 60, swr: 300 });
+    res.json({
+      host: {
+        id: u.id,
+        name: u.name || "Organizador",
+        // El correo NO viaja: para escribirle está el botón de la página del
+        // evento, que ya pasa por mailto sin publicar la dirección en un listado.
+        avatar: u.avatar && String(u.avatar).startsWith("http") ? u.avatar : null,
+        since: u.created_at || null,
+        totalEvents: proximos.length + pasados.length,
+        totalAttendees: [...proximos, ...pasados].reduce((n, e) => n + e.attendees, 0),
+      },
+      upcoming: proximos,
+      past: pasados,
+    });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

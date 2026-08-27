@@ -15,6 +15,7 @@ const LoginPage      = lazy(() => import("./pages/LoginPage.jsx"));
 const PrivacyPage    = lazy(() => import("./pages/PrivacyPage.jsx"));
 const VerifyEmailPage = lazy(() => import("./pages/VerifyEmailPage.jsx"));
 const DiscoverPage   = lazy(() => import("./pages/DiscoverPage.jsx"));
+const OrganizerPage  = lazy(() => import("./pages/OrganizerPage.jsx"));
 
 const Loading = () => (
   <div className="tf-screen"><div className="tf-body"><p>Cargando…</p></div></div>
@@ -51,6 +52,8 @@ export default function AppRouter() {
             <Route path="/verify-email" element={<VerifyEmailPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/discover" element={<DiscoverPage />} />
+            {/* Perfil público de un organizador y todo lo que organiza. */}
+            <Route path="/o/:hostId" element={<OrganizerPage />} />
             <Route path="/app" element={<AppGate />} />
             <Route path="/" element={<Navigate to="/app" replace />} />
           </Routes>

@@ -3,166 +3,23 @@ import { api } from "../lib/api.js";
 import { BRAND_NAME, CONTACT_EMAIL, TapInMark } from "../lib/brand.jsx";
 import { DISCOVER_CATEGORIES } from "../lib/categories.js";
 import { CAT_ICONS } from "../lib/categoryIcons.jsx";
-import { IcoPin, IcoVideo, ROW_ICON, ROW_BOX } from "../components/ui.jsx";
-
-const MONTHS = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
-
-function formatTime12(t) {
-  if (!t) return "";
-  const [h, m] = t.split(":").map(Number);
-  const ampm = h < 12 ? "AM" : "PM";
-  return `${h % 12 || 12}:${String(m).padStart(2,"0")} ${ampm}`;
-}
-
-function isLive(ev) {
-  if (!ev.startDate || !ev.startTime) return false;
-  const now = new Date();
-  const start = new Date(`${ev.startDate}T${ev.startTime}`);
-  if (ev.endDate && ev.endTime) {
-    return now >= start && now <= new Date(`${ev.endDate}T${ev.endTime}`);
-  }
-  return now >= start && now <= new Date(start.getTime() + 4 * 3600000);
-}
-
-
-// A partir de aquí un evento se considera que "está llenando". Es un número
-// bajo a propósito: en eventos de barrio, 8 personas ya es señal.
-const POPULAR_MIN = 8;
-// Caja común para categoría, ubicación y avatar del organizador: sin esto cada
-// uno traía su propio tamaño y la columna de texto quedaba desalineada.
-const ICON_BOX = ROW_BOX;
-const ICON_SIZE = ROW_ICON;
-
-function EventCard({ ev, destacado = false, duplicado = false }) {
-  const live  = isLive(ev);
-  const gente = Number(ev.attendees || 0);
-  const cat   = DISCOVER_CATEGORIES.find(c => c.slug === ev.category)
-    || DISCOVER_CATEGORIES.find(c => c.slug === "otro");
-  const price = ev.isPaid
-    ? (ev.price ? `$${Number(ev.price).toLocaleString("es-CO")}` : "De pago")
-    : "Gratis";
-  const horaInicio = formatTime12(ev.startTime);
-  const lugar = (ev.location || ev.address || "").trim();
-  const [, mesN, diaN] = (ev.startDate || "").split("-").map(Number);
-  const fecha = mesN && diaN ? { m: mesN, d: diaN } : null;
-
-  return (
-    <a
-      href={`/e/${ev.slug}`}
-      className="ef-hover-fill"
-      {...(duplicado ? { "aria-hidden": "true", tabIndex: -1 } : null)}
-      style={{
-        display: "flex", alignItems: "flex-start", gap: 10,
-        padding: 10, borderRadius: 18, textDecoration: "none",
-        background: "rgba(255,255,255,0.055)", border: "1px solid rgba(255,255,255,0.1)",
-      }}
-    >
-      <div style={{ flex: 1, minWidth: 0 }}>
-        {/* Fecha · hora */}
-        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 3, fontSize: 11 }}>
-          {fecha && (
-            <span style={{ fontWeight: 800, color: "#bfd9f2", background: "rgba(127,179,230,0.16)", borderRadius: 6, padding: "1px 7px", lineHeight: 1.35, letterSpacing: "0.02em" }}>
-              {fecha.d} {MONTHS[fecha.m - 1].toUpperCase()}
-            </span>
-          )}
-          {live && (
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, color: "#fca5a5", fontWeight: 800 }}>
-              <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#ef4444" }} />EN VIVO
-            </span>
-          )}
-          {horaInicio && <span style={{ color: "rgba(238,241,247,0.5)" }}>{horaInicio}</span>}
-          <span style={{
-            marginLeft: "auto", fontWeight: 700, borderRadius: 6, padding: "1px 7px", lineHeight: 1.35, whiteSpace: "nowrap",
-            background: ev.isPaid ? "rgba(251,191,36,0.12)" : "rgba(34,197,94,0.12)",
-            color: ev.isPaid ? "#fbbf24" : "#22c55e",
-          }}>
-            {price}
-          </span>
-        </div>
-
-        {/* Nombre + categoría. Los tres iconos de la tarjeta (categoría,
-            ubicación y organizador) comparten caja de ICON_BOX px para que la
-            columna de texto quede alineada. */}
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 6, marginBottom: 3 }}>
-          {cat && CAT_ICONS[cat.slug] && (
-            <span title={cat.label} style={{
-              flexShrink: 0, display: "inline-flex", alignItems: "center", justifyContent: "center",
-              width: ICON_BOX, height: ICON_BOX, marginTop: 1, color: cat.color,
-            }}>
-              {CAT_ICONS[cat.slug](cat.color, ICON_SIZE)}
-            </span>
-          )}
-          <h3 style={{
-            margin: 0, fontSize: 15, fontWeight: 500, color: "#eef1f7", lineHeight: 1.25,
-            minWidth: 0, overflow: "hidden", display: "-webkit-box",
-            WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
-          }}>
-            {ev.title}
-          </h3>
-        </div>
-
-        {/* Dónde */}
-        {(lugar || ev.city) && (
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2, minWidth: 0 }}>
-            <span style={{ flexShrink: 0, width: ICON_BOX, height: ICON_BOX, display: "inline-flex", alignItems: "center", justifyContent: "center", color: "rgba(238,241,247,0.42)" }}>
-              {ev.isVirtual ? <IcoVideo /> : <IcoPin />}
-            </span>
-            <span style={{ fontSize: 11.5, lineHeight: 1.3, color: "rgba(238,241,247,0.5)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {ev.isVirtual ? "Evento virtual" : lugar || ev.city}
-              {!ev.isVirtual && lugar && ev.city && <span style={{ color: "rgba(238,241,247,0.3)" }}> · {ev.city}</span>}
-            </span>
-          </div>
-        )}
-
-        {/* Organizador. El número de inscritos ya no se muestra. */}
-        <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
-          {ev.hostAvatar ? (
-            <img src={ev.hostAvatar} alt="" loading="lazy" decoding="async" width={ICON_BOX} height={ICON_BOX}
-              style={{ width: ICON_BOX, height: ICON_BOX, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
-          ) : (
-            <span style={{ width: ICON_BOX, height: ICON_BOX, borderRadius: "50%", flexShrink: 0, background: "rgba(127,179,230,0.25)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8.5, fontWeight: 700, color: "#bfd9f2" }}>
-              {(ev.hostName || "?").slice(0, 1).toUpperCase()}
-            </span>
-          )}
-          <span style={{ fontSize: 11.5, lineHeight: 1.3, color: "rgba(238,241,247,0.5)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {ev.hostName || "Organizador"}
-          </span>
-        </div>
-      </div>
-
-      {/* Imagen */}
-      <div style={{ position: "relative", flexShrink: 0, width: 74, height: 74, borderRadius: 14, overflow: "hidden", background: "#111" }}>
-        {destacado && gente >= POPULAR_MIN && (
-          <span style={{ position: "absolute", top: 4, left: 4, zIndex: 1, color: "#fb923c", display: "inline-flex", filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.9))" }}>
-            <FlameIcon size={14} />
-          </span>
-        )}
-        {ev.headerImage ? (
-          <img src={ev.headerImage} alt={ev.title} loading="lazy" decoding="async" width={74} height={74} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-        ) : (
-          <div style={{
-            width: "100%", height: "100%",
-            background: cat ? `linear-gradient(135deg, ${cat.color}44, #111)` : "linear-gradient(135deg, #1e3a5f, #0d1b2a)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            {cat && CAT_ICONS[cat.slug]
-              ? <div style={{ opacity: 0.55 }}>{CAT_ICONS[cat.slug](cat.color, 28)}</div>
-              : <span style={{ fontSize: 24, opacity: 0.5 }}>🗓️</span>}
-          </div>
-        )}
-      </div>
-    </a>
-  );
-}
+import EventCard, { FlameIcon } from "../components/EventCard.jsx";
 
 /**
- * Categoría en formato compacto: va justo debajo del buscador, así que manda
- * el ancho de la fila, no el tamaño del icono. Recuadro de 36 px con el dibujo
- * a 17 px (antes 34/28 dentro de una píldora ancha) y el nombre debajo.
+ * Categoría, sin recuadro de color.
+ *
+ * Antes cada icono venía dentro de una caja teñida de su color (tech azul,
+ * social amarilla…). Siete cajas de colores distintos en fila leen como siete
+ * botones sueltos, no como una sola familia: el fondo tapaba el dibujo y
+ * separaba unos de otros. Ahora el icono va directo sobre el fondo de la
+ * interfaz —el color sigue estando, pero en el trazo— y los elementos van
+ * mucho más juntos (66 → 54 px de ancho, 10 → 2 px de separación).
+ *
+ * Lo seleccionado se marca con el color a plena intensidad, el nombre en
+ * blanco y una barra fina debajo; no con un relleno.
  */
 function CategoryPill({ cat, active, onClick }) {
   const Icon = CAT_ICONS[cat.slug];
-  const iconColor = active ? "#fff" : cat.color;
   return (
     <button
       type="button"
@@ -170,39 +27,34 @@ function CategoryPill({ cat, active, onClick }) {
       title={cat.label}
       aria-pressed={active}
       style={{
-        display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
-        width: 66, padding: 0, background: "transparent", border: "none",
-        cursor: "pointer", transition: "all 0.15s",
+        display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+        width: 54, padding: "4px 0 0", background: "transparent", border: "none",
+        cursor: "pointer", opacity: active ? 1 : 0.72, transition: "opacity 0.15s",
       }}
     >
       <span style={{
-        flexShrink: 0, width: 36, height: 36,
+        flexShrink: 0, width: 30, height: 30,
         display: "flex", alignItems: "center", justifyContent: "center",
-        background: active ? cat.color : `${cat.color}1f`,
-        border: `1px solid ${active ? cat.color : "rgba(255,255,255,0.1)"}`,
-        borderRadius: 12,
-        boxShadow: active ? `0 4px 16px ${cat.color}55` : "none",
-        transition: "all 0.15s",
       }}>
-        {Icon ? Icon(iconColor, 17) : <span style={{ fontSize: 16 }}>{cat.emoji}</span>}
+        {Icon ? Icon(cat.color, 24) : <span style={{ fontSize: 20 }}>{cat.emoji}</span>}
       </span>
       <span style={{
-        fontSize: 10.5, lineHeight: 1.2, textAlign: "center",
+        fontSize: 11, lineHeight: 1.2, textAlign: "center", whiteSpace: "nowrap",
         fontWeight: active ? 700 : 500,
-        color: active ? "#eef1f7" : "rgba(238,241,247,0.55)",
+        color: active ? "#eef1f7" : "rgba(238,241,247,0.6)",
       }}>
-        {cat.label}
+        {cat.short || cat.label}
       </span>
+      {/* Barra de selección: ocupa sitio siempre (transparente si no está
+          activa) para que al elegir una categoría la fila no dé un salto. */}
+      <span style={{
+        width: 18, height: 2, borderRadius: 2,
+        background: active ? cat.color : "transparent",
+      }} />
     </button>
   );
 }
 
-const FlameIcon = ({ size = 16 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
-       strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-    <path d="M12 2s1 3.5-1.5 6C8 10.5 6 12.4 6 15a6 6 0 0 0 12 0c0-2.2-1-3.6-2-5-.6 1-1.3 1.6-2 1.6 1-3.2-.6-7-2-9.6z" />
-  </svg>
-);
 
 const chipStyle = (activo) => ({
   flexShrink: 0, whiteSpace: "nowrap", cursor: "pointer",
@@ -430,10 +282,7 @@ export default function DiscoverPage({ embedded = false }) {
 
         {/* Categorías: pegadas al buscador, porque filtrar por categoría es
             parte de buscar. Fila centrada que se envuelve sola en móvil. */}
-        <div style={{
-          display: "flex", flexWrap: "wrap", justifyContent: "center",
-          gap: 10, maxWidth: 560, margin: "18px auto 0",
-        }}>
+        <div className="ef-cats">
           {DISCOVER_CATEGORIES.map(cat => (
             <CategoryPill
               key={cat.slug}
@@ -618,19 +467,17 @@ export default function DiscoverPage({ embedded = false }) {
         }
         @media (max-width: 480px) { .hide-mobile { display: none !important; } }
 
-        /* Listado: una columna en móvil, dos en tableta y hasta cuatro en
-           escritorio. Es flex y no grid a propósito: con grid, dos eventos en
-           una fila de cuatro columnas quedaban pegados a la izquierda con un
-           hueco enorme al lado. Con flex + justify-content:center las tarjetas
-           conservan el ancho de columna y la fila incompleta queda centrada,
-           haya 1 evento o 40. */
-        .ef-ev-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
-        /* border-box: la tarjeta tiene padding y borde propios y, en
-           content-box, cada columna medía 22 px de más y entraba una menos. */
-        .ef-ev-grid > * { flex: 0 1 100%; min-width: 0; box-sizing: border-box; }
-        @media (min-width: 760px)  { .ef-ev-grid > * { flex-basis: calc((100% - 10px) / 2); } }
-        @media (min-width: 1100px) { .ef-ev-grid > * { flex-basis: calc((100% - 20px) / 3); } }
-        @media (min-width: 1400px) { .ef-ev-grid > * { flex-basis: calc((100% - 30px) / 4); } }
+        /* Categorías: fila apretada bajo el buscador. El ancho máximo es lo
+           que decide cuántas caben por línea; en móvil se baja a 232 px para
+           que queden 4 + 3 centradas y no 6 + 1 huérfana. */
+        .ef-cats {
+          display: flex; flex-wrap: wrap; justify-content: center;
+          gap: 2px; max-width: 420px; margin: 16px auto 0;
+        }
+        @media (max-width: 470px) { .ef-cats { max-width: 232px; } }
+
+        /* La rejilla del listado (.ef-ev-grid) vive en typeform.css: la
+           comparte el perfil del organizador. */
 
         /* Destacados: cinta continua. Sin scroll-snap, que tiraría de la
            posición y cortaría el movimiento; y con flex en vez de grid para

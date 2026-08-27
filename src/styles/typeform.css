@@ -709,3 +709,17 @@ h1, h2, h3, .ef-title {
   overscroll-behavior-x: contain; /* no arrastra la página al llegar al final */
 }
 .ef-hscroll::-webkit-scrollbar { display: none; }
+
+/* Rejilla de tarjetas de evento. La comparten Descubrir y el perfil de un
+   organizador, por eso vive aquí y no en el <style> de una página.
+   Es flex y no grid a propósito: con grid, dos eventos en una fila de cuatro
+   columnas quedaban pegados a la izquierda con un hueco enorme al lado. Con
+   flex + justify-content:center las tarjetas conservan el ancho de columna y
+   la fila incompleta queda centrada, haya 1 evento o 40. */
+.ef-ev-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+/* border-box: la tarjeta tiene padding y borde propios y, en content-box,
+   cada columna medía 22 px de más y entraba una menos. */
+.ef-ev-grid > * { flex: 0 1 100%; min-width: 0; box-sizing: border-box; }
+@media (min-width: 760px)  { .ef-ev-grid > * { flex-basis: calc((100% - 10px) / 2); } }
+@media (min-width: 1100px) { .ef-ev-grid > * { flex-basis: calc((100% - 20px) / 3); } }
+@media (min-width: 1400px) { .ef-ev-grid > * { flex-basis: calc((100% - 30px) / 4); } }

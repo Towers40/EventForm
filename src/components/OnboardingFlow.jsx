@@ -8,6 +8,7 @@ import { VERDE_CORPORATIVO } from "../lib/theme.js";
 import { DS } from "../lib/ds.jsx";
 import { TapInMark } from "../lib/brand.jsx";
 import { api } from "../lib/api.js";
+import { dominantColorFromFile } from "../lib/dominantColor.js";
 import DateTimePicker from "./DateTimePicker.jsx";
 import PosterMarquee from "./PosterMarquee.jsx";
 import CreateEventForm from "./CreateEventForm.jsx";
@@ -786,6 +787,11 @@ export default function OnboardingFlow({ onDraftReady }) {
                     const reader = new FileReader();
                     reader.onload = () => setDraft((p) => ({ ...p, headerImage: reader.result || "" }));
                     reader.readAsDataURL(file);
+                    // El color dominante de la portada tiñe después la página
+                    // del evento; se guarda aquí para no tener que volver a
+                    // analizar la imagen en cada visita.
+                    dominantColorFromFile(file).then((color) =>
+                      setDraft((p) => ({ ...p, themeColor: color || null })));
                     e.target.value = "";
                   }}
                 />
@@ -795,7 +801,7 @@ export default function OnboardingFlow({ onDraftReady }) {
                   type="button"
                   className="soft-btn soft-btn-secondary"
                   style={{ marginTop: 12, width: "100%" }}
-                  onClick={() => setDraft((p) => ({ ...p, headerImage: "" }))}
+                  onClick={() => setDraft((p) => ({ ...p, headerImage: "", themeColor: null }))}
                 >
                   Quitar imagen
                 </button>

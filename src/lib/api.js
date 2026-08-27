@@ -99,5 +99,7 @@ export const api = {
     return request(`/api/public/events${qs ? `?${qs}` : ""}`);
   },
   discoverCategories: () => request("/api/public/categories"),
+  // Perfil público de un organizador: sus datos y todo lo que organiza.
+  publicHost: (id) => request(`/api/public/hosts/${encodeURIComponent(id)}`),
   discoverCities: () => request("/api/public/cities"),
 };

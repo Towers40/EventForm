@@ -90,6 +90,64 @@ export function DataRow({ icon, children, color = "rgba(238,241,247,0.64)", size
   );
 }
 
+// ── Quién va ────────────────────────────────────────────────────────────────
+// Fila de caras superpuestas + "+N" con el resto. Responde de un vistazo a la
+// única pregunta que decide si vas a un evento: ¿quién más va y cuántos son?
+//
+// `gente` es el TOTAL de inscritos y `personas` las pocas que llegan con
+// nombre o foto; el círculo del final cubre la diferencia. Si no llega nadie
+// pero el contador es mayor que cero (evento con inscritos sin cuenta), se
+// pinta igualmente el círculo con el número: el dato importante es cuántos son.
+export function AttendeeStack({
+  personas = [], gente = 0, size = 22, max = 4, texto = true, style,
+}) {
+  const total    = Math.max(Number(gente) || 0, personas.length);
+  if (total <= 0) return null;
+  const visibles = personas.slice(0, max);
+  const resto    = total - visibles.length;
+  const fuente   = Math.max(8.5, size * 0.42);
+  const circulo  = {
+    width: size, height: size, borderRadius: "50%", flexShrink: 0,
+    // El borde del color del fondo es lo que separa una cara de la siguiente
+    // cuando se solapan; sin él se ven como una mancha.
+    border: "1.5px solid rgba(20,23,40,0.95)",
+    marginLeft: -size * 0.3,
+    display: "flex", alignItems: "center", justifyContent: "center",
+    fontSize: fuente, fontWeight: 700, lineHeight: 1, boxSizing: "border-box",
+  };
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 7, minWidth: 0, ...style }}>
+      <div style={{ display: "flex", alignItems: "center", paddingLeft: size * 0.3 }}>
+        {visibles.map((p, i) => (
+          p.avatar ? (
+            <img
+              key={i} src={p.avatar} alt="" title={p.name || undefined}
+              loading="lazy" decoding="async" width={size} height={size}
+              style={{ ...circulo, objectFit: "cover", background: "rgba(127,179,230,0.25)" }}
+            />
+          ) : (
+            <span key={i} title={p.name || undefined}
+              style={{ ...circulo, background: "rgba(127,179,230,0.3)", color: "#dbe9fa" }}>
+              {(p.initial || p.name?.[0] || "?").toUpperCase()}
+            </span>
+          )
+        ))}
+        {resto > 0 && (
+          <span style={{ ...circulo, background: "rgba(255,255,255,0.12)", color: "rgba(238,241,247,0.8)", fontSize: fuente * 0.95 }}>
+            +{resto > 99 ? "99" : resto}
+          </span>
+        )}
+      </div>
+      {texto && (
+        <span style={{ fontSize: 11.5, color: "rgba(238,241,247,0.5)", whiteSpace: "nowrap" }}>
+          {total === 1 ? "1 va" : `${total} van`}
+        </span>
+      )}
+    </div>
+  );
+}
+
 // ── Marco estándar de imagen de evento ──────────────────────────────────────
 // Cuadrada, esquinas suavizadas y con margen a los lados: nunca pegada al
 // borde de la pantalla. Es el mismo marco en la página del evento, en la

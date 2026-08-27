@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { uploadImage } from "../lib/upload.js";
+import { dominantColorFromFile } from "../lib/dominantColor.js";
 
 function ImageIcon() {
   return (
@@ -11,6 +12,9 @@ function ImageIcon() {
   );
 }
 
+// `onChange` recibe además el color dominante de la portada: es lo que tiñe
+// después la página pública del evento. Al quitar la imagen llega null, para
+// que el evento no se quede con el color de una portada que ya no existe.
 export default function HeaderImageUpload({ image, onChange }) {
   const [busy, setBusy] = useState(false);
   const [err,  setErr]  = useState("");
@@ -21,8 +25,12 @@ export default function HeaderImageUpload({ image, onChange }) {
     setErr("");
     setBusy(true);
     try {
-      const url = await uploadImage(file);
-      onChange(url);
+      // Subida y análisis del color van en paralelo: no dependen entre sí.
+      const [url, color] = await Promise.all([
+        uploadImage(file),
+        dominantColorFromFile(file),
+      ]);
+      onChange(url, color || null);
     } catch (ex) {
       setErr(ex.message || "Error al procesar la imagen.");
     } finally {
@@ -74,7 +82,7 @@ export default function HeaderImageUpload({ image, onChange }) {
       {image && (
         <button
           type="button"
-          onClick={() => onChange("")}
+          onClick={() => onChange("", null)}
           style={{
             position: "absolute", top: 10, left: 10,
             background: "rgba(0,0,0,0.55)", border: "none",

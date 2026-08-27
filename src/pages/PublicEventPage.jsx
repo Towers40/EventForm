@@ -6,8 +6,10 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { api, apiEnabled } from "../lib/api.js";
 import { loadEvents } from "../lib/storage.js";
 import { isSoldOut } from "../lib/capacity.js";
-import { IconButton, IcoBack, IcoShare, IcoMail, IcoQr, EventCover, CopiedToast } from "../components/ui.jsx";
+import { IconButton, IcoBack, IcoShare, IcoMail, IcoQr, EventCover, CopiedToast, AttendeeStack } from "../components/ui.jsx";
 import LocationMap from "../components/LocationMap.jsx";
+import { eventTint, dominantColorFromUrl } from "../lib/dominantColor.js";
+import { getEventFont, loadEventFont } from "../lib/fonts.js";
 import { COVER_PAD } from "../lib/ui-tokens.js";
 import { useShare } from "../lib/useShare.js";
 import "../styles/typeform.css";
@@ -32,16 +34,19 @@ function fmtTime(t) {
 }
 
 // ── Calendar date widget ──────────────────────────────────────────────────────
-function DateChip({ dateStr }) {
+function DateChip({ dateStr, tinte }) {
   const p = parseDateParts(dateStr);
   if (!p) return null;
   return (
     <div style={{
       width: 52, height: 52, borderRadius: 14, flexShrink: 0,
-      background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)",
+      // Con color de portada, el recuadro de la fecha se tiñe con él: es la
+      // pieza más visible después del título y ata el dato al evento.
+      background: tinte ? tinte.soft : "rgba(255,255,255,0.1)",
+      border: `1px solid ${tinte ? tinte.border : "rgba(255,255,255,0.15)"}`,
       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
     }}>
-      <span style={{ fontSize: 10, fontWeight: 700, color: "#7fb3e6", letterSpacing: "0.06em", lineHeight: 1 }}>
+      <span style={{ fontSize: 10, fontWeight: 700, color: tinte ? tinte.accent : "#7fb3e6", letterSpacing: "0.06em", lineHeight: 1 }}>
         {MONTHS_ES[p.m - 1].toUpperCase()}
       </span>
       <span style={{ fontSize: 22, fontWeight: 800, color: "#eef1f7", lineHeight: 1.1 }}>{p.d}</span>
@@ -87,6 +92,9 @@ export default function PublicEventPage() {
   const [err, setErr]              = useState("");
   const [cancelling, setCancelling] = useState(false);
   const [refreshTick, setRefreshTick] = useState(0); // fuerza recarga del estado
+  // Color de la portada para eventos publicados ANTES de que existiera esta
+  // personalización: no lo traen guardado, así que se calcula aquí una vez.
+  const [colorPortada, setColorPortada] = useState(null);
   const { compartir, copiado } = useShare();
 
   useEffect(() => {
@@ -178,6 +186,21 @@ export default function PublicEventPage() {
     return () => { clearInterval(tick); window.removeEventListener("focus", bump); };
   }, [regs, reg, token]);
 
+  // Portada sin color guardado → se analiza en el navegador (queda en caché,
+  // ver dominantColorFromUrl). Los eventos nuevos ya llegan con `themeColor` y
+  // no entran aquí.
+  useEffect(() => {
+    const img = event?.headerImage;
+    if (!img || event?.themeColor) return;
+    let vivo = true;
+    dominantColorFromUrl(img).then(c => { if (vivo && c) setColorPortada(c); });
+    return () => { vivo = false; };
+  }, [event?.headerImage, event?.themeColor]);
+
+  // La tipografía elegida por el organizador se descarga solo aquí, en su
+  // evento: quien no la use no paga por ella.
+  useEffect(() => { loadEventFont(event?.fontId); }, [event?.fontId]);
+
   // Los eventos con aprobación exigen cuenta: es en "Mis tickets" donde la
   // persona ve si su QR sigue pendiente o ya se activó.
   const goToLogin = () => {
@@ -251,6 +274,10 @@ export default function PublicEventPage() {
       onBack={() => { if (window.history.length > 1) window.history.back(); else window.location.href = "/app"; }} />
   );
 
+  // Personalización del evento: el color que domina su portada y la
+  // tipografía que eligió el organizador.
+  const tinte     = eventTint(event.themeColor || colorPortada);
+  const fuente    = getEventFont(event.fontId);
   const soldOut     = isSoldOut(event);
   const needsAccount = Boolean(event.requireApproval) && !token;
   const startP    = parseDateParts(event.startDate);
@@ -271,6 +298,18 @@ export default function PublicEventPage() {
 
   return (
     <div style={{ minHeight: "100dvh", background: BG, paddingBottom: 60 }}>
+      {/* ── Tinte del evento ──
+          Manchas muy abiertas y transparentes del color que más ocupa la
+          portada, fijas sobre el fondo global de la app. Difuminado y no color
+          plano a propósito: un verde plano detrás del texto lo haría ilegible
+          y convertiría cada evento en otra aplicación. Así el evento "sabe" a
+          su portada desde que se abre, sin dejar de ser TapIn. */}
+      {tinte && (
+        <div aria-hidden="true" style={{
+          position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none",
+          background: tinte.glow,
+        }} />
+      )}
       {/* Acciones flotantes: solo iconos, como el resto de la app. */}
       <div style={{ position: "fixed", top: "calc(14px + var(--ef-top-offset, 0px))", left: 14, right: 14, zIndex: 20, display: "flex", justifyContent: "space-between", pointerEvents: "none" }}>
         <span style={{ pointerEvents: "auto" }}>
@@ -285,7 +324,9 @@ export default function PublicEventPage() {
           </IconButton>
         </span>
       </div>
-      <div style={{ maxWidth: 520, margin: "0 auto" }}>
+      {/* La tipografía del evento manda dentro de su página; la barra de
+          acciones de arriba, que es de la app, se queda como está. */}
+      <div style={{ maxWidth: 520, margin: "0 auto", position: "relative", zIndex: 1, fontFamily: fuente.family }}>
 
         {/* ── Portada: cuadrada, con margen y esquinas suavizadas ── */}
         <div style={{ paddingTop: 68 }}>
@@ -296,7 +337,15 @@ export default function PublicEventPage() {
         <div style={{ padding: `24px ${COVER_PAD}px 0` }}>
 
           {/* Title */}
-          <h1 style={{ fontSize: 32, fontWeight: 500, color: TEXT, margin: "0 0 10px", lineHeight: 1.15, letterSpacing: "-0.5px" }}>
+          {/* fontFamily explícito: index.css tiene una regla `h1, h2` que gana
+              a la familia heredada del contenedor, así que sin esto el título
+              se seguía pintando en Inter. */}
+          <h1 style={{
+            fontFamily: fuente.family,
+            fontSize: 32 * fuente.headingScale, fontWeight: fuente.headingWeight,
+            color: TEXT, margin: "0 0 10px", lineHeight: 1.15,
+            letterSpacing: fuente.headingSpacing,
+          }}>
             {event.title}
           </h1>
 
@@ -304,14 +353,24 @@ export default function PublicEventPage() {
           {event.hostName && (
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 24 }}>
               <Avatar name={event.hostName} src={event.hostAvatar} size={26} />
-              <span style={{ fontSize: 14, color: SUB }}>Organizado por <strong style={{ color: TEXT, fontWeight: 600 }}>{event.hostName}</strong></span>
+              {/* El nombre lleva a su perfil: quién es y qué más organiza. */}
+              {event.hostId ? (
+                <a href={`/o/${event.hostId}`} style={{ fontSize: 14, color: SUB, textDecoration: "none" }}>
+                  Organizado por{" "}
+                  <strong style={{ color: TEXT, fontWeight: 600, borderBottom: "1px solid rgba(238,241,247,0.35)" }}>
+                    {event.hostName}
+                  </strong>
+                </a>
+              ) : (
+                <span style={{ fontSize: 14, color: SUB }}>Organizado por <strong style={{ color: TEXT, fontWeight: 600 }}>{event.hostName}</strong></span>
+              )}
             </div>
           )}
 
           {/* Date row */}
           {startP && dateDesc && (
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-              <DateChip dateStr={event.startDate} />
+              <DateChip dateStr={event.startDate} tinte={tinte} />
               {/* Las tres líneas van juntas: antes cada una traía su propio
                   margen y el bloque se leía como tres datos sueltos. */}
               <div style={{ lineHeight: 1.32 }}>
@@ -386,6 +445,29 @@ export default function PublicEventPage() {
                 )}
               </div>
               {hasCoords && <LocationMap lat={event.lat} lng={event.lng} label={locName} height={190} />}
+            </div>
+          )}
+
+          {/* ── Quién va ──
+              Va DEBAJO de la ubicación porque es el último dato que empuja a
+              decidir: ya sabes qué es, cuándo y dónde; falta saber con quién.
+              De quien se inscribió sin cuenta solo se muestra su inicial. */}
+          {event.registrationCount > 0 && (
+            <div style={{ marginBottom: 28, borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 24 }}>
+              <p style={{ margin: "0 0 12px", fontSize: 13, fontWeight: 600, color: SUB, textTransform: "uppercase", letterSpacing: "0.08em" }}>Quién va</p>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                <AttendeeStack
+                  personas={event.attendeePreview || []}
+                  gente={event.registrationCount}
+                  size={38}
+                  texto={false}
+                />
+                <span style={{ fontSize: 14, color: "rgba(238,241,247,0.8)" }}>
+                  {event.registrationCount === 1
+                    ? "1 persona ya tiene su lugar"
+                    : `${event.registrationCount} personas ya tienen su lugar`}
+                </span>
+              </div>
             </div>
           )}
 
