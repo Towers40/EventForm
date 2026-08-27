@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { uploadImage } from "../lib/upload.js";
-import { dominantColorFromFile, eventTint } from "../lib/dominantColor.js";
+import { dominantColorFromFile, dominantColorFromUrl, eventTint } from "../lib/dominantColor.js";
 import { EVENT_FONTS, DEFAULT_FONT_ID, getEventFont, loadAllEventFonts, loadEventFont, eventFontProps } from "../lib/fonts.js";
 import { resolveLimit, hoursFor, minutesFor, clampToLimit, MINUTE_VALUES } from "../lib/datetime.js";
-import { IconButton, IcoBack } from "./ui.jsx";
+import { IconButton, IcoBack, EventTintLayer } from "./ui.jsx";
 
 // ── Tokens ──────────────────────────────────────────────────────────────────
 const CARD   = "rgba(255,255,255,0.08)";
@@ -268,6 +268,14 @@ function Toggle({ value, onChange }) {
   );
 }
 
+// Paleta para elegir el color a mano. Son tonos medios y saturados a
+// propósito: sobre el navy oscuro de la app, un pastel no se ve y un color
+// apagado ensucia. El difuminado los baja de intensidad por sí solo.
+const COLORES = [
+  "#e0574a", "#e08a2e", "#d4b02f", "#5aad4f",
+  "#2fa89c", "#3d8ad9", "#6a5ae0", "#a557d6", "#db5a94",
+];
+
 // ── Icons ────────────────────────────────────────────────────────────────────
 const I = {
   MapPin:    () => <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>,
@@ -299,6 +307,10 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
   const [showCap,     setShowCap]     = useState(false);
   const [visSheet,    setVisSheet]    = useState(false);
   const [fontMenu,    setFontMenu]    = useState(false);
+  const [showColor,   setShowColor]   = useState(false);
+  // Color que da la portada actual. Se guarda aparte del elegido para poder
+  // volver a él después de haber tocado otro a mano.
+  const [colorPortada, setColorPortada] = useState(null);
   const [imgBusy,     setImgBusy]     = useState(false);
   const [isDragging,  setIsDragging]  = useState(false);
   const [err,         setErr]         = useState("");
@@ -327,6 +339,16 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
   const tinte     = eventTint(draft.themeColor);
   const initials  = (user?.name || "?").split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
 
+  // Al abrir un evento ya creado no se conoce el color de su portada (se
+  // calculó el día que se subió). Se recalcula una vez, en segundo plano, para
+  // poder ofrecer "el de la portada" en el selector de color.
+  useEffect(() => {
+    if (colorPortada || !draft.headerImage) return;
+    let vivo = true;
+    dominantColorFromUrl(draft.headerImage).then(c => { if (vivo && c) setColorPortada(c); });
+    return () => { vivo = false; };
+  }, [draft.headerImage, colorPortada]);
+
   // Solo se descarga la letra puesta; las otras cinco esperan a que se abra el
   // menú (ahí sí hay que enseñarlas escritas con su propia letra, o las seis
   // saldrían en Inter, que es justo lo que no sirve para elegir).
@@ -349,7 +371,15 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
         uploadImage(file),
         dominantColorFromFile(file),
       ]);
-      setDraft(p => ({ ...p, headerImage: url, themeColor: color || null }));
+      setColorPortada(color || null);
+      // Si ya se eligió un color a mano, cambiar de portada NO lo pisa: sería
+      // deshacer una decisión sin avisar. Se vuelve al de la portada desde el
+      // propio selector de color.
+      setDraft(p => ({
+        ...p,
+        headerImage: url,
+        themeColor: p.themeColorManual ? p.themeColor : (color || null),
+      }));
     }
     catch (ex) { alert(ex.message); }
     finally { setImgBusy(false); e.target.value = ""; }
@@ -380,12 +410,17 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
         /* Sin fondo propio: hereda el degradado global de la página (antes pintaba
            su propio degradado sobre la columna y se veía como un recuadro). */
         .ce-bg { min-height: 100dvh; }
-        .ce-scroll { max-width: 540px; margin: 0 auto; padding: 0 16px 100px; }
+        .ce-scroll { max-width: 540px; margin: 0 auto; padding: 0 16px 100px; position: relative; z-index: 1; }
         .ce-header-inner { max-width: 540px; margin: 0 auto; }
         @media (min-width: 768px) { .ce-scroll { padding-bottom: 60px; } }
       `}</style>
 
       <div className="ce-bg">
+        {/* En cuanto hay portada, la pantalla de creación se tiñe con su color:
+            es la única forma de ver mientras se crea cómo va a quedar el
+            evento. Es la MISMA capa que usa la página pública, así que lo que
+            se ve aquí es literalmente lo que verá quien lo abra. */}
+        <EventTintLayer tinte={tinte} />
         <div className="ce-scroll">
           {/* ── Volver (acción translúcida) — regresa a la pantalla anterior ── */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginTop: 16 }}>
@@ -435,7 +470,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
               <input type="file" accept="image/*" hidden onChange={handleImage} ref={imgRef} />
             </label>
             {draft.headerImage && (
-              <button type="button" className="ef-hover-fill" onClick={() => setDraft(p => ({ ...p, headerImage: "", imagePos: { x: 50, y: 50 }, themeColor: null }))} style={{ position: "absolute", top: 10, right: 10, background: "rgba(0,0,0,0.55)", border: "none", borderRadius: 22, padding: "4px 10px", color: "#fff", fontSize: 11, cursor: "pointer" }}>Quitar</button>
+              <button type="button" className="ef-hover-fill" onClick={() => { setColorPortada(null); setDraft(p => ({ ...p, headerImage: "", imagePos: { x: 50, y: 50 }, ...(p.themeColorManual ? {} : { themeColor: null }) })); }} style={{ position: "absolute", top: 10, right: 10, background: "rgba(0,0,0,0.55)", border: "none", borderRadius: 22, padding: "4px 10px", color: "#fff", fontSize: 11, cursor: "pointer" }}>Quitar</button>
             )}
           </div>
 
@@ -757,7 +792,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
 
             {/* Capacity */}
             <button type="button" className="ef-hover-fill" onClick={() => setShowCap(true)}
-              style={{ width: "100%", background: "none", border: "none", padding: 0, cursor: "pointer", display: "block", ...(tinte ? rowDivider : {}), textAlign: "left" }}>
+              style={{ width: "100%", background: "none", border: "none", padding: 0, cursor: "pointer", display: "block", ...rowDivider, textAlign: "left" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "15px 18px" }}>
                 <span style={{ color: SUB }}><I.Capacity /></span>
                 <span style={{ flex: 1, fontSize: 15, color: TEXT, textAlign: "left" }}>Capacidad</span>
@@ -767,10 +802,11 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
               </div>
             </button>
 
-            {/* Color del evento: no se elige, se hereda de la portada. La fila
-                existe para que se entienda de dónde sale el tinte de la página
-                del evento y no parezca un capricho de la app. */}
-            {tinte && (
+            {/* Color del evento. Lo pone la portada solo, pero se puede
+                cambiar: hay portadas cuyo color dominante no es el que el
+                organizador quiere para su evento. */}
+            <button type="button" className="ef-hover-fill" onClick={() => setShowColor(true)}
+              style={{ width: "100%", background: "none", border: "none", padding: 0, cursor: "pointer", display: "block", textAlign: "left" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "15px 18px" }}>
                 <span style={{ color: SUB, display: "flex" }}>
                   <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
@@ -779,15 +815,21 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
                 </span>
                 <span style={{ flex: 1, fontSize: 15, color: TEXT }}>
                   Color del evento
-                  <span style={{ display: "block", fontSize: 12, color: SUB, marginTop: 2 }}>Tomado de tu portada</span>
+                  <span style={{ display: "block", fontSize: 12, color: SUB, marginTop: 2 }}>
+                    {!draft.themeColor
+                      ? "Sin color"
+                      : draft.themeColorManual ? "Elegido a mano" : "Tomado de tu portada"}
+                  </span>
                 </span>
-                <span aria-label={`Color ${tinte.hex}`} style={{
+                <span aria-label={draft.themeColor ? `Color ${draft.themeColor}` : "Sin color"} style={{
                   width: 26, height: 26, borderRadius: "50%", flexShrink: 0,
-                  background: tinte.hex, border: "1px solid rgba(255,255,255,0.25)",
-                  boxShadow: `0 0 0 4px ${tinte.soft}`,
+                  background: tinte ? tinte.hex : "rgba(255,255,255,0.08)",
+                  border: `1px ${tinte ? "solid" : "dashed"} rgba(255,255,255,0.35)`,
+                  boxShadow: tinte ? `0 0 0 4px ${tinte.soft}` : "none",
                 }} />
+                <span style={{ color: SUB, flexShrink: 0 }}><I.ChevronRight /></span>
               </div>
-            )}
+            </button>
           </div>
 
           {/* Error */}
@@ -865,6 +907,88 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
                 onClick={() => setShowCap(false)}
                 style={{ flex: 2, padding: "14px 0", background: "rgba(127,179,230,0.25)", border: "1px solid rgba(127,179,230,0.4)", borderRadius: 18, color: TEXT, fontSize: 14, cursor: "pointer", fontWeight: 700 }}>
                 Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Color del evento ── */}
+      {showColor && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.55)" }} onClick={() => setShowColor(false)}>
+          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, maxWidth: 540, margin: "0 auto", background: "rgba(18,20,38,0.98)", borderRadius: "24px 24px 0 0", padding: "28px 20px 44px", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", border: "1px solid rgba(255,255,255,0.11)", borderBottom: "none" }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ width: 36, height: 4, background: "rgba(255,255,255,0.18)", borderRadius: 2, margin: "0 auto 24px" }} />
+            <p style={{ fontSize: 17, fontWeight: 700, color: TEXT, margin: "0 0 6px" }}>Color del evento</p>
+            <p style={{ fontSize: 13, color: SUB, margin: "0 0 18px", lineHeight: 1.45 }}>
+              Tiñe el fondo de la página del evento, la inscripción y la entrada.
+              Lo pone tu portada, pero puedes cambiarlo.
+            </p>
+
+            {/* El de la portada, primero: es el que la app propone sola. */}
+            {colorPortada && (
+              <button type="button" className="ef-hover-fill"
+                onClick={() => setDraft(p => ({ ...p, themeColor: colorPortada, themeColorManual: false }))}
+                style={{
+                  width: "100%", display: "flex", alignItems: "center", gap: 12,
+                  padding: "12px 14px", marginBottom: 14, borderRadius: 16, cursor: "pointer", textAlign: "left",
+                  background: !draft.themeColorManual && draft.themeColor ? "rgba(127,179,230,0.18)" : "rgba(255,255,255,0.05)",
+                  border: !draft.themeColorManual && draft.themeColor ? "1px solid rgba(127,179,230,0.45)" : BORDER,
+                }}>
+                <span style={{ width: 30, height: 30, borderRadius: "50%", flexShrink: 0, background: colorPortada, border: "1px solid rgba(255,255,255,0.25)" }} />
+                <span style={{ flex: 1, fontSize: 14.5, color: TEXT, fontWeight: 600 }}>
+                  El de tu portada
+                  <span style={{ display: "block", fontSize: 12, color: SUB, fontWeight: 400, marginTop: 2 }}>
+                    El color que más ocupa la imagen
+                  </span>
+                </span>
+                {!draft.themeColorManual && draft.themeColor && <span style={{ color: ACCENT }}><I.Check /></span>}
+              </button>
+            )}
+
+            <p style={{ fontSize: 12, fontWeight: 700, color: SUB, margin: "0 0 10px", letterSpacing: "0.04em", textTransform: "uppercase" }}>
+              O elige otro
+            </p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 16 }}>
+              {COLORES.map(c => {
+                const activo = draft.themeColorManual && draft.themeColor?.toLowerCase() === c;
+                return (
+                  <button key={c} type="button" aria-label={`Color ${c}`} title={c}
+                    onClick={() => setDraft(p => ({ ...p, themeColor: c, themeColorManual: true }))}
+                    style={{
+                      width: 40, height: 40, borderRadius: "50%", cursor: "pointer", flexShrink: 0,
+                      background: c, padding: 0,
+                      border: activo ? "2px solid #eef1f7" : "1px solid rgba(255,255,255,0.2)",
+                      boxShadow: activo ? `0 0 0 4px ${c}55` : "none",
+                      display: "flex", alignItems: "center", justifyContent: "center", color: "#fff",
+                    }}>
+                    {activo && <I.Check />}
+                  </button>
+                );
+              })}
+              {/* Cualquier otro color, con el selector del sistema. */}
+              <label title="Otro color" style={{
+                width: 40, height: 40, borderRadius: "50%", cursor: "pointer", flexShrink: 0,
+                border: "1px solid rgba(255,255,255,0.2)",
+                background: "conic-gradient(#e0574a,#d4b02f,#5aad4f,#2fa89c,#3d8ad9,#6a5ae0,#db5a94,#e0574a)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <span style={{ width: 16, height: 16, borderRadius: "50%", background: "rgba(18,20,38,0.9)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 13, lineHeight: 1 }}>+</span>
+                <input type="color" value={draft.themeColor || "#3d8ad9"} hidden
+                  onChange={e => setDraft(p => ({ ...p, themeColor: e.target.value, themeColorManual: true }))} />
+              </label>
+            </div>
+
+            <div style={{ display: "flex", gap: 10 }}>
+              <button type="button" className="ef-hover-fill"
+                onClick={() => setDraft(p => ({ ...p, themeColor: null, themeColorManual: true }))}
+                style={{ flex: 1, padding: "14px 0", background: "rgba(255,255,255,0.07)", border: BORDER, borderRadius: 18, color: SUB, fontSize: 14, cursor: "pointer", fontWeight: 600 }}>
+                Sin color
+              </button>
+              <button type="button" className="ef-hover-fill"
+                onClick={() => setShowColor(false)}
+                style={{ flex: 2, padding: "14px 0", background: "rgba(127,179,230,0.25)", border: "1px solid rgba(127,179,230,0.4)", borderRadius: 18, color: TEXT, fontSize: 14, cursor: "pointer", fontWeight: 700 }}>
+                Listo
               </button>
             </div>
           </div>

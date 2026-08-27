@@ -31,7 +31,7 @@ import {
 import { isSoldOut, capacityLabel, getCapacityMax } from "./lib/capacity.js";
 import { publicBaseUrl } from "./lib/platform.js";
 import SlideToCancel from "./components/SlideToCancel.jsx";
-import { IconButton, DataRow, IcoCalendar, IcoPin } from "./components/ui.jsx";
+import { IconButton, DataRow, IcoCalendar, IcoPin, EventTintLayer } from "./components/ui.jsx";
 import {
   EVENT_TYPE_OTHER,
   EVENT_TYPE_PRESETS,
@@ -40,6 +40,7 @@ import {
 import { DISCOVER_CATEGORIES } from "./lib/categories.js";
 import { CAT_ICONS } from "./lib/categoryIcons.jsx";
 import { eventFontProps, getEventFont, loadEventFont } from "./lib/fonts.js";
+import { eventTint } from "./lib/dominantColor.js";
 import {
   VERDE_PASTEL_BG,
   VERDE_CORPORATIVO,
@@ -1615,13 +1616,20 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
   };
 
   return (
-    <div style={{ maxWidth: 540, margin: "0 auto", paddingBottom: 80 }}>
+    <div style={{ maxWidth: 540, margin: "0 auto", paddingBottom: 80, position: "relative", zIndex: 1 }}>
+      {/* El segundo paso de la creación también se tiñe con el color del
+          evento: es la misma pantalla de trabajo y tiene que verse lo mismo. */}
+      <EventTintLayer tinte={eventTint(draft.themeColor)} />
 
       {/* ── Encabezado del evento ── */}
       <div className="panel-card" style={{ marginBottom: 20, overflow: "hidden" }}>
         <HeaderImageUpload
           image={draft.headerImage}
-          onChange={(headerImage, themeColor) => setDraft({ ...draft, headerImage, themeColor: themeColor ?? null })}
+          onChange={(headerImage, themeColor) => setDraft(p => ({
+            ...p, headerImage,
+            // Un color elegido a mano no se pisa al cambiar de portada.
+            themeColor: p.themeColorManual ? p.themeColor : (themeColor ?? null),
+          }))}
         />
         {/* Título y descripción con la letra del evento: aquí se escribe lo
             que después se lee en su página, así que se escribe tal cual se
