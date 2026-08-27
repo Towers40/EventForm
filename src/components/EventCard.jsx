@@ -1,8 +1,6 @@
-import { useEffect } from "react";
 import { DISCOVER_CATEGORIES } from "../lib/categories.js";
 import { CAT_ICONS } from "../lib/categoryIcons.jsx";
 import { IcoPin, IcoVideo, ROW_ICON, ROW_BOX, AttendeeStack } from "./ui.jsx";
-import { loadEventFont, eventFontProps, getEventFont } from "../lib/fonts.js";
 
 // La tarjeta de evento del listado. Vive aquí y no dentro de Descubrir porque
 // la usan también el perfil de un organizador y cualquier listado que venga
@@ -37,12 +35,11 @@ const POPULAR_MIN = 8;
 const ICON_BOX = ROW_BOX;
 const ICON_SIZE = ROW_ICON;
 
+// El listado va TODO con la letra de la app, aunque cada evento tenga la suya.
+// Se probó al revés —cada tarjeta con su tipografía— y una lista de veinte
+// eventos se volvía veinte diseños: la letra del organizador aparece cuando se
+// entra a su evento, que es donde personaliza y no compite con nadie.
 export default function EventCard({ ev, destacado = false, duplicado = false }) {
-  // Cada tarjeta se ve con la letra de SU evento: es lo primero que se
-  // reconoce de un evento en un listado, antes incluso que la portada. Solo se
-  // descarga la de los eventos que hay en pantalla, y una sola vez por letra.
-  useEffect(() => { loadEventFont(ev.fontId); }, [ev.fontId]);
-  const fuente = getEventFont(ev.fontId);
   const live  = isLive(ev);
   const gente = Number(ev.attendees || 0);
   const cat   = DISCOVER_CATEGORIES.find(c => c.slug === ev.category)
@@ -63,14 +60,12 @@ export default function EventCard({ ev, destacado = false, duplicado = false }) 
   return (
     <div
       {...(duplicado ? { "aria-hidden": "true" } : null)}
-      {...eventFontProps(ev.fontId, {
-        extraStyle: {
-          position: "relative",
-          display: "flex", alignItems: "flex-start", gap: 10,
-          padding: 10, borderRadius: 18,
-          background: "rgba(255,255,255,0.055)", border: "1px solid rgba(255,255,255,0.1)",
-        },
-      })}
+      style={{
+        position: "relative",
+        display: "flex", alignItems: "flex-start", gap: 10,
+        padding: 10, borderRadius: 18,
+        background: "rgba(255,255,255,0.055)", border: "1px solid rgba(255,255,255,0.1)",
+      }}
     >
       <a
         href={`/e/${ev.slug}`}
@@ -115,8 +110,7 @@ export default function EventCard({ ev, destacado = false, duplicado = false }) 
             </span>
           )}
           <h3 style={{
-            margin: 0, fontSize: 15 * fuente.headingScale, fontWeight: fuente.headingWeight,
-            color: "#eef1f7", lineHeight: 1.25,
+            margin: 0, fontSize: 15, fontWeight: 500, color: "#eef1f7", lineHeight: 1.25,
             minWidth: 0, overflow: "hidden", display: "-webkit-box",
             WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
           }}>

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { uploadImage } from "../lib/upload.js";
 import { dominantColorFromFile, eventTint } from "../lib/dominantColor.js";
-import { EVENT_FONTS, DEFAULT_FONT_ID, getEventFont, loadAllEventFonts, loadEventFont, eventFontProps } from "../lib/fonts.js";
+import { EVENT_FONTS, DEFAULT_FONT_ID, getEventFont, loadAllEventFonts, eventFontProps } from "../lib/fonts.js";
 import { resolveLimit, hoursFor, minutesFor, clampToLimit, MINUTE_VALUES } from "../lib/datetime.js";
 import { IconButton, IcoBack } from "./ui.jsx";
 
@@ -285,7 +285,6 @@ const I = {
   X:         () => <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
   Video:     () => <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>,
   Home:      () => <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M3 9.5 12 3l9 6.5"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>,
-  Type:      () => <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>,
 };
 
 // ── MAIN COMPONENT ───────────────────────────────────────────────────────────
@@ -299,7 +298,6 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
   const [showPrice,   setShowPrice]   = useState(false);
   const [showCap,     setShowCap]     = useState(false);
   const [visSheet,    setVisSheet]    = useState(false);
-  const [showFont,    setShowFont]    = useState(false);
   const [imgBusy,     setImgBusy]     = useState(false);
   const [isDragging,  setIsDragging]  = useState(false);
   const [err,         setErr]         = useState("");
@@ -328,9 +326,10 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
   const tinte     = eventTint(draft.themeColor);
   const initials  = (user?.name || "?").split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
 
-  // La tipografía elegida se descarga en cuanto se elige: así el nombre del
-  // evento se escribe ya con ella y se ve cómo va a quedar.
-  useEffect(() => { loadEventFont(draft.fontId || DEFAULT_FONT_ID); }, [draft.fontId]);
+  // Las seis tipografías se descargan al abrir el formulario: la tira de
+  // arriba las enseña todas escritas con su propia letra, y sin cargarlas
+  // saldrían las seis en Inter, que es justo lo que no hay que enseñar.
+  useEffect(() => { loadAllEventFonts(); }, []);
 
   // Focus capacity input when opened
   useEffect(() => { if (showCap) capRef.current?.focus(); }, [showCap]);
@@ -440,15 +439,58 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
           </div>
 
           {/* ── Nombre del evento ──
-              Se escribe ya con la letra elegida: elegir tipografía sin ver el
-              nombre propio escrito con ella es elegir a ciegas. */}
-          <div {...eventFontProps(draft.fontId)}>
-            <input
-              type="text" placeholder="Nombre del evento"
-              value={draft.title || ""}
-              onChange={e => up("title", e.target.value)}
-              style={{ width: "100%", boxSizing: "border-box", background: CARD, border: BORDER, borderRadius: RADIUS, padding: "18px 20px", fontSize: 20 * fuente.headingScale, fontWeight: fuente.headingWeight, color: TEXT, outline: "none", marginBottom: 12, caretColor: ACCENT, letterSpacing: fuente.headingSpacing }}
-            />
+              La tipografía se elige AQUÍ, encima del nombre y antes de
+              escribirlo, no escondida en "Opciones" al final: es una decisión
+              sobre el nombre, y así se escribe ya viendo cómo va a quedar.
+              Cada opción se muestra escrita con su propia letra. */}
+          <div style={{ ...cardStyle, padding: "12px 12px 14px" }}>
+            {/* Las seis se reparten el ancho disponible (flex: 1) en vez de
+                medir fijo y desplazarse: una opción cortada por el borde no
+                parece una opción, parece un fallo. En un móvil estrecho salen
+                de ~48 px y en escritorio se ensanchan solas. */}
+            <div style={{ display: "flex", gap: 5, paddingBottom: 10 }}>
+              {EVENT_FONTS.map(f => {
+                const activa = (draft.fontId || DEFAULT_FONT_ID) === f.id;
+                return (
+                  <button
+                    key={f.id} type="button" className="ef-hover-fill"
+                    onClick={() => up("fontId", f.id)}
+                    aria-pressed={activa}
+                    title={`${f.name} — ${f.note}`}
+                    style={{
+                      flex: "1 1 0", minWidth: 0, padding: "7px 2px 6px",
+                      display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+                      borderRadius: 14, cursor: "pointer",
+                      background: activa ? "rgba(127,179,230,0.2)" : "rgba(255,255,255,0.05)",
+                      border: activa ? "1px solid rgba(127,179,230,0.5)" : BORDER,
+                    }}
+                  >
+                    <span style={{
+                      fontFamily: f.family, fontWeight: f.headingWeight,
+                      letterSpacing: f.headingSpacing,
+                      fontSize: 20 * f.headingScale, lineHeight: 1.15,
+                      color: activa ? TEXT : "rgba(238,241,247,0.75)",
+                    }}>
+                      Aa
+                    </span>
+                    <span style={{ fontSize: 9, lineHeight: 1.2, whiteSpace: "nowrap", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", color: activa ? ACCENT : SUB, fontWeight: activa ? 700 : 500 }}>
+                      {f.name}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <div {...eventFontProps(draft.fontId)}>
+              <input
+                type="text" placeholder="Nombre del evento"
+                value={draft.title || ""}
+                onChange={e => up("title", e.target.value)}
+                style={{ width: "100%", boxSizing: "border-box", background: "transparent", border: "none", padding: "6px 8px 2px", fontSize: 20 * fuente.headingScale, fontWeight: fuente.headingWeight, color: TEXT, outline: "none", caretColor: ACCENT, letterSpacing: fuente.headingSpacing }}
+              />
+            </div>
+            <p style={{ margin: "6px 8px 0", fontSize: 11.5, color: SUB, lineHeight: 1.4 }}>
+              {fuente.note}
+            </p>
           </div>
 
           {/* ── Date card ── */}
@@ -673,26 +715,12 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
 
             {/* Capacity */}
             <button type="button" className="ef-hover-fill" onClick={() => setShowCap(true)}
-              style={{ width: "100%", background: "none", border: "none", padding: 0, cursor: "pointer", display: "block", ...rowDivider, textAlign: "left" }}>
+              style={{ width: "100%", background: "none", border: "none", padding: 0, cursor: "pointer", display: "block", ...(tinte ? rowDivider : {}), textAlign: "left" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "15px 18px" }}>
                 <span style={{ color: SUB }}><I.Capacity /></span>
                 <span style={{ flex: 1, fontSize: 15, color: TEXT, textAlign: "left" }}>Capacidad</span>
                 <span style={{ fontSize: 15, color: (capVal && Number(capVal) > 0) ? ACCENT : SUB, fontWeight: (capVal && Number(capVal) > 0) ? 600 : 400, display: "flex", alignItems: "center", gap: 4 }}>
                   {capLabel} <I.ChevronsUD />
-                </span>
-              </div>
-            </button>
-
-            {/* Tipografía: lo único de la personalización que se elige a mano
-                (el color lo pone la portada sola). */}
-            <button type="button" className="ef-hover-fill"
-              onClick={() => { loadAllEventFonts(); setShowFont(true); }}
-              style={{ width: "100%", background: "none", border: "none", padding: 0, cursor: "pointer", display: "block", ...(tinte ? rowDivider : {}), textAlign: "left" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "15px 18px" }}>
-                <span style={{ color: SUB }}><I.Type /></span>
-                <span style={{ flex: 1, fontSize: 15, color: TEXT, textAlign: "left" }}>Tipografía</span>
-                <span style={{ fontSize: 15, color: draft.fontId && draft.fontId !== DEFAULT_FONT_ID ? ACCENT : SUB, fontWeight: 600, display: "flex", alignItems: "center", gap: 6, fontFamily: fuente.family }}>
-                  {fuente.name} <I.ChevronsUD />
                 </span>
               </div>
             </button>
@@ -797,52 +825,6 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
                 Confirmar
               </button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Tipografía del evento ──
-          Cada opción se muestra ESCRITA CON SU PROPIA LETRA: es la única forma
-          de elegir tipografía: leyendo un nombre en Inter no se decide nada. */}
-      {showFont && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.55)" }} onClick={() => setShowFont(false)}>
-          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, maxWidth: 540, margin: "0 auto", maxHeight: "88vh", overflowY: "auto", background: "rgba(18,20,38,0.98)", borderRadius: "24px 24px 0 0", padding: "28px 20px 44px", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", border: "1px solid rgba(255,255,255,0.11)", borderBottom: "none" }}
-            onClick={e => e.stopPropagation()}>
-            <div style={{ width: 36, height: 4, background: "rgba(255,255,255,0.18)", borderRadius: 2, margin: "0 auto 24px" }} />
-            <p style={{ fontSize: 17, fontWeight: 700, color: TEXT, margin: "0 0 6px" }}>Tipografía del evento</p>
-            <p style={{ fontSize: 13, color: SUB, margin: "0 0 16px" }}>
-              Cambia la letra del título y de la página pública. El resto de la app no se toca.
-            </p>
-            {EVENT_FONTS.map(f => {
-              const activa = (draft.fontId || DEFAULT_FONT_ID) === f.id;
-              return (
-                <button key={f.id} type="button" className="ef-hover-fill"
-                  onClick={() => { up("fontId", f.id); setShowFont(false); }}
-                  style={{
-                    width: "100%", display: "block", textAlign: "left", cursor: "pointer",
-                    padding: "14px 16px", marginBottom: 8, borderRadius: 18,
-                    background: activa ? "rgba(127,179,230,0.18)" : "rgba(255,255,255,0.05)",
-                    border: activa ? "1px solid rgba(127,179,230,0.45)" : BORDER,
-                  }}>
-                  <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
-                    <span style={{
-                      fontFamily: f.family, fontWeight: f.headingWeight,
-                      letterSpacing: f.headingSpacing,
-                      fontSize: 21 * f.headingScale, color: TEXT, lineHeight: 1.2,
-                    }}>
-                      {draft.title?.trim() ? draft.title.slice(0, 22) : "Tu evento"}
-                    </span>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: activa ? ACCENT : SUB, whiteSpace: "nowrap", letterSpacing: "0.04em", textTransform: "uppercase" }}>
-                      {f.tagline}
-                    </span>
-                  </div>
-                  <p style={{ margin: "6px 0 0", fontSize: 12.5, color: SUB, lineHeight: 1.45 }}>
-                    <span style={{ color: activa ? "#bfd9f2" : "rgba(238,241,247,0.7)", fontWeight: 700 }}>{f.name}</span>
-                    {" · "}{f.note}
-                  </p>
-                </button>
-              );
-            })}
           </div>
         </div>
       )}

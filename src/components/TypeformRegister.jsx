@@ -195,7 +195,7 @@ export default function TypeformRegister({ event, tintColor, onSubmit, onBack })
 
   if (soldOut) {
     return (
-      <div {...eventFontProps(event.fontId, { extraClass: "tf-screen" })}>
+      <div className="tf-screen">
         <div className="tf-body" style={{ textAlign: "center" }}>
           <h1 className="tf-question">Entradas agotadas</h1>
           <p className="tf-hint">Este evento ya no acepta más inscripciones.</p>
@@ -209,13 +209,12 @@ export default function TypeformRegister({ event, tintColor, onSubmit, onBack })
     );
   }
 
-  // Reservar es parte del evento, no un trámite aparte: el formulario se ve
-  // con la letra que eligió quien lo organiza.
+  // El formulario va en la letra de la app: son campos de TapIn y se rellenan
+  // igual en todos los eventos. Lo único que conserva la letra elegida es el
+  // nombre del evento, que es lo que dice DÓNDE se está inscribiendo uno. El
+  // color del evento sí acompaña, que no depende de leerse.
   return (
-    <div {...eventFontProps(event.fontId, {
-      extraClass: "tf-screen",
-      extraStyle: { display: "block", overflowY: "auto" },
-    })}>
+    <div className="tf-screen" style={{ display: "block", overflowY: "auto" }}>
       <EventTintLayer tinte={tinte} />
       <div style={{ maxWidth: 520, margin: "0 auto", padding: "20px 16px 80px", position: "relative", zIndex: 1 }}>
 
@@ -233,7 +232,9 @@ export default function TypeformRegister({ event, tintColor, onSubmit, onBack })
           <h1 style={{ fontSize: 22, fontWeight: 500, color: "#eef1f7", margin: 0, lineHeight: 1.2 }}>
             Inscripción
           </h1>
-          <p style={{ fontSize: 14, color: "#8fa3b1", margin: "4px 0 0" }}>{event.title}</p>
+          <p {...eventFontProps(event.fontId, {
+            extraStyle: { fontSize: 14, color: "#8fa3b1", margin: "4px 0 0" },
+          })}>{event.title}</p>
         </div>
 
         <form onSubmit={handleSubmit} noValidate>
@@ -252,10 +253,7 @@ export default function TypeformRegister({ event, tintColor, onSubmit, onBack })
                     style={{ width: 34, height: 34, borderRadius: 14, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)", color: quantity <= 1 ? "rgba(255,255,255,0.25)" : "#eef1f7", fontSize: 19, fontWeight: 700, cursor: quantity <= 1 ? "default" : "pointer", lineHeight: 1 }}>
                     −
                   </button>
-                  {/* La cifra vuelve a Inter (ver .ef-app-font): en algunas
-                      tipografías el "1" suelto no se lee como un uno, y aquí
-                      un número mal leído son entradas de más o de menos. */}
-                  <span aria-live="polite" className="ef-app-font" style={{ minWidth: 28, textAlign: "center", fontSize: 18, fontWeight: 800, color: "#7fb3e6" }}>{quantity}</span>
+                  <span aria-live="polite" style={{ minWidth: 28, textAlign: "center", fontSize: 18, fontWeight: 800, color: "#7fb3e6" }}>{quantity}</span>
                   <button type="button" aria-label="Una entrada más"
                     onClick={() => setQuantity((q) => Math.min(maxPerUser, q + 1))}
                     disabled={quantity >= maxPerUser}

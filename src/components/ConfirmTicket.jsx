@@ -18,9 +18,7 @@ export default function ConfirmTicket({ ev, reg, regs, onDone, standalone, tintC
 
   const inner = (
     // La entrada es el último paso del evento: se ve con su misma letra.
-    <div {...eventFontProps(ev?.fontId, {
-      extraStyle: { maxWidth: 520, margin: "0 auto", padding: "24px 16px 80px", position: "relative", zIndex: 1 },
-    })}>
+    <div style={{ maxWidth: 520, margin: "0 auto", padding: "24px 16px 80px", position: "relative", zIndex: 1 }}>
 
       {/* Volver: solo icono, como en el resto de la app. */}
       {onBack && (
@@ -42,7 +40,11 @@ export default function ConfirmTicket({ ev, reg, regs, onDone, standalone, tintC
             ? (varias ? `✓ ${tickets.length} ENTRADAS CONFIRMADAS` : "✓ INSCRIPCIÓN CONFIRMADA")
             : "⏳ SUJETO A APROBACIÓN"}
         </div>
-        <h2 style={{ fontSize: 22, fontWeight: 500, color: "#eef1f7", margin: 0 }}>{ev.title}</h2>
+        {/* El nombre del evento conserva su letra; el resto de la entrada
+            (QR, instrucciones, acciones) es de la app. */}
+        <h2 {...eventFontProps(ev?.fontId, {
+          extraStyle: { fontSize: 22, fontWeight: 500, color: "#eef1f7", margin: 0 },
+        })}>{ev.title}</h2>
         {varias && (
           <p style={{ fontSize: 13, color: "#8fa3b1", margin: "8px 0 0", lineHeight: 1.5 }}>
             Cada acompañante entra con su propio código. Cada QR permite un solo ingreso.
@@ -69,9 +71,8 @@ export default function ConfirmTicket({ ev, reg, regs, onDone, standalone, tintC
         </button>
       )}
 
-      {/* Organizer CTA. Vuelve a la letra de la app: es TapIn quien invita a
-          crear una cuenta, no el evento. */}
-      <div className="ef-app-font" style={{
+      {/* Organizer CTA */}
+      <div style={{
         marginTop: 28, padding: "18px 20px", borderRadius: 14,
         background: "rgba(127,179,230,0.08)",
         border: "1px solid rgba(127,179,230,0.2)",
@@ -87,11 +88,9 @@ export default function ConfirmTicket({ ev, reg, regs, onDone, standalone, tintC
         </a>
       </div>
 
-      {/* Cancelar asistencia. También en la letra de la app: es un control de
-          seguridad de ancho fijo y con una tipografía ancha el rótulo se
-          montaba sobre la flecha. */}
+      {/* Cancel attendance — barra deslizable */}
       {onCancel && (
-        <div className="ef-app-font" style={{ marginTop: 24 }}>
+        <div style={{ marginTop: 24 }}>
           <SlideToCancel onComplete={() => setConfirmOpen(true)} disabled={cancelling} maxWidth={260} height={50} />
         </div>
       )}

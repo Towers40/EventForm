@@ -58,12 +58,13 @@ export default function TicketPage() {
           <span style={{ color: "#eef1f7", fontWeight: 800, fontSize: 17, marginLeft: 8 }}>{BRAND_NAME}</span>
         </div>
 
-        {/* De aquí abajo es el evento: su nombre, su fecha y su entrada. */}
-        <div {...eventFontProps(ev?.fontId)}>
 
         {ev && (
           <div style={{ textAlign: "center", marginBottom: 18 }}>
-            <h1 style={{ fontSize: 22, fontWeight: 500, color: "#eef1f7", margin: "0 0 6px" }}>{ev.title}</h1>
+            {/* Solo el nombre lleva la letra del evento. */}
+            <h1 {...eventFontProps(ev?.fontId, {
+              extraStyle: { fontSize: 22, fontWeight: 500, color: "#eef1f7", margin: "0 0 6px" },
+            })}>{ev.title}</h1>
             <p style={{ fontSize: 13.5, color: "#bfd9f2", margin: 0 }}>{fmt(ev.startDate || ev.date, ev.startTime)}</p>
             {(ev.city || ev.location) && (
               <p style={{ fontSize: 13, color: "rgba(238,241,247,0.55)", margin: "4px 0 0" }}>{[ev.location, ev.city].filter(Boolean).join(" — ")}</p>
@@ -94,7 +95,6 @@ export default function TicketPage() {
         {ev?.slug && (
           <a href={`/e/${ev.slug}`} className="soft-btn soft-btn-secondary" style={{ display: "block", textAlign: "center", textDecoration: "none", marginTop: 18, fontSize: 13 }}>Ver evento</a>
         )}
-        </div>
       </div>
     </div>
   );

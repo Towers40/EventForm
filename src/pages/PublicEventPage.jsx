@@ -323,12 +323,12 @@ export default function PublicEventPage() {
           </IconButton>
         </span>
       </div>
-      {/* La tipografía del evento manda en TODA su página —título, fecha,
-          organizador, descripción, botones—; la barra de acciones flotante,
-          que es de la app y no del evento, se queda como está. */}
-      <div {...eventFontProps(event.fontId, {
-        extraStyle: { maxWidth: 520, margin: "0 auto", position: "relative", zIndex: 1 },
-      })}>
+      {/* La tipografía elegida NO baña la página entera: se reserva para lo que
+          el organizador escribe —el nombre, la fecha en palabras y lo que
+          cuenta del evento—. Los datos de servicio (ubicación, organizador,
+          entradas) van en la letra de la app: son de TapIn y tienen que leerse
+          igual en todos los eventos. */}
+      <div style={{ maxWidth: 520, margin: "0 auto", position: "relative", zIndex: 1 }}>
 
         {/* ── Portada: cuadrada, con margen y esquinas suavizadas ── */}
         <div style={{ paddingTop: 68 }}>
@@ -338,15 +338,16 @@ export default function PublicEventPage() {
         {/* ── Content ── */}
         <div style={{ padding: `24px ${COVER_PAD}px 0` }}>
 
-          {/* Title */}
-          {/* La familia la pone .ef-event-font; aquí solo el tamaño y el peso,
-              que cambian según la letra (una display necesita menos cuerpo que
-              una de texto para ocupar lo mismo). */}
-          <h1 style={{
-            fontSize: 32 * fuente.headingScale, fontWeight: fuente.headingWeight,
-            color: TEXT, margin: "0 0 10px", lineHeight: 1.15,
-            letterSpacing: fuente.headingSpacing,
-          }}>
+          {/* Nombre del evento: la pieza con la letra elegida. El cuerpo y el
+              peso se ajustan a ella —una display necesita menos cuerpo que una
+              de texto para ocupar lo mismo—. */}
+          <h1 {...eventFontProps(event.fontId, {
+            extraStyle: {
+              fontSize: 32 * fuente.headingScale, fontWeight: fuente.headingWeight,
+              color: TEXT, margin: "0 0 10px", lineHeight: 1.15,
+              letterSpacing: fuente.headingSpacing,
+            },
+          })}>
             {event.title}
           </h1>
 
@@ -371,10 +372,14 @@ export default function PublicEventPage() {
           {/* Date row */}
           {startP && dateDesc && (
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+              {/* El recuadro del día se queda con la letra de la app: es un
+                  icono de calendario, no texto del evento, y tiene que verse
+                  igual en todos. */}
               <DateChip dateStr={event.startDate} tinte={tinte} />
-              {/* Las tres líneas van juntas: antes cada una traía su propio
-                  margen y el bloque se leía como tres datos sueltos. */}
-              <div style={{ lineHeight: 1.32 }}>
+              {/* La fecha en palabras SÍ va con la letra elegida. Las tres
+                  líneas van juntas: antes cada una traía su propio margen y el
+                  bloque se leía como tres datos sueltos. */}
+              <div {...eventFontProps(event.fontId, { extraStyle: { lineHeight: 1.32 } })}>
                 <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: TEXT }}>{dateDesc.dateStr}</p>
                 {dateDesc.timeStr && <p style={{ margin: 0, fontSize: 13, color: SUB }}>{dateDesc.timeStr}</p>}
                 {endP && endP.d !== startP.d && (
@@ -423,9 +428,10 @@ export default function PublicEventPage() {
             )}
           </div>
 
-          {/* Description */}
+          {/* Lo que el organizador cuenta de su evento: con su letra, rótulo
+              incluido. Es su voz, no la de la app. */}
           {event.eventDescription && (
-            <div style={{ marginBottom: 28 }}>
+            <div {...eventFontProps(event.fontId, { extraStyle: { marginBottom: 28 } })}>
               <p style={{ margin: "0 0 10px", fontSize: 13, fontWeight: 600, color: SUB, textTransform: "uppercase", letterSpacing: "0.08em" }}>Acerca del evento</p>
               <p style={{ margin: 0, color: "rgba(238,241,247,0.8)", fontSize: 15, lineHeight: 1.75, whiteSpace: "pre-wrap" }}>
                 {event.eventDescription}
