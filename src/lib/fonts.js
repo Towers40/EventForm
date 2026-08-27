@@ -108,3 +108,24 @@ export function loadEventFont(id) {
 export function loadAllEventFonts() {
   for (const f of EVENT_FONTS) loadEventFont(f.id);
 }
+
+/**
+ * Props para teñir de la tipografía del evento TODO lo que hay dentro de una
+ * superficie: la tarjeta, la página, el formulario de inscripción, la entrada.
+ *
+ *     <div {...eventFontProps(ev.fontId)}>…</div>
+ *
+ * Devuelve la clase que sube la especificidad (ver .ef-event-font en
+ * typeform.css) y la variable con la familia. `extraStyle` y `extraClass`
+ * permiten conservar los estilos propios del contenedor.
+ *
+ * NO carga la fuente: eso lo hace `loadEventFont`, que hay que llamar desde un
+ * efecto para que la descarga no ocurra durante el render.
+ */
+export function eventFontProps(fontId, { extraClass = "", extraStyle = {} } = {}) {
+  const f = getEventFont(fontId);
+  return {
+    className: `ef-event-font${extraClass ? " " + extraClass : ""}`,
+    style: { "--ef-font": f.family, ...extraStyle },
+  };
+}

@@ -1,12 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import LocationMap from "./LocationMap.jsx";
 import SlideToCancel from "./SlideToCancel.jsx";
 import TicketCarousel from "./TicketCarousel.jsx";
-import { IconButton, IcoBack, EventCover } from "./ui.jsx";
+import { IconButton, IcoBack, EventCover, EventTintLayer } from "./ui.jsx";
+import { eventTint } from "../lib/dominantColor.js";
+import { loadEventFont, eventFontProps } from "../lib/fonts.js";
 import "../styles/typeform.css";
 
-export default function ConfirmTicket({ ev, reg, regs, onDone, standalone, onCancel, cancelling, onBack }) {
+export default function ConfirmTicket({ ev, reg, regs, onDone, standalone, tintColor, onCancel, cancelling, onBack }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
+  useEffect(() => { loadEventFont(ev?.fontId); }, [ev?.fontId]);
   // `approved` solo llega en false cuando el evento requiere aprobación.
   const approved = reg?.approved !== false;
   // Eventos que permiten varias entradas por persona: un QR por entrada.
@@ -14,7 +17,10 @@ export default function ConfirmTicket({ ev, reg, regs, onDone, standalone, onCan
   const varias = tickets.length > 1;
 
   const inner = (
-    <div style={{ maxWidth: 520, margin: "0 auto", padding: "24px 16px 80px" }}>
+    // La entrada es el último paso del evento: se ve con su misma letra.
+    <div {...eventFontProps(ev?.fontId, {
+      extraStyle: { maxWidth: 520, margin: "0 auto", padding: "24px 16px 80px", position: "relative", zIndex: 1 },
+    })}>
 
       {/* Volver: solo icono, como en el resto de la app. */}
       {onBack && (
@@ -63,8 +69,9 @@ export default function ConfirmTicket({ ev, reg, regs, onDone, standalone, onCan
         </button>
       )}
 
-      {/* Organizer CTA */}
-      <div style={{
+      {/* Organizer CTA. Vuelve a la letra de la app: es TapIn quien invita a
+          crear una cuenta, no el evento. */}
+      <div className="ef-app-font" style={{
         marginTop: 28, padding: "18px 20px", borderRadius: 14,
         background: "rgba(127,179,230,0.08)",
         border: "1px solid rgba(127,179,230,0.2)",
@@ -80,9 +87,11 @@ export default function ConfirmTicket({ ev, reg, regs, onDone, standalone, onCan
         </a>
       </div>
 
-      {/* Cancel attendance — barra deslizable */}
+      {/* Cancelar asistencia. También en la letra de la app: es un control de
+          seguridad de ancho fijo y con una tipografía ancha el rótulo se
+          montaba sobre la flecha. */}
       {onCancel && (
-        <div style={{ marginTop: 24 }}>
+        <div className="ef-app-font" style={{ marginTop: 24 }}>
           <SlideToCancel onComplete={() => setConfirmOpen(true)} disabled={cancelling} maxWidth={260} height={50} />
         </div>
       )}
@@ -116,6 +125,9 @@ export default function ConfirmTicket({ ev, reg, regs, onDone, standalone, onCan
   if (standalone) {
     return (
       <div className="tf-screen" style={{ display: "block", overflowY: "auto" }}>
+        {/* La entrada llega desde la página del evento: mismo color de fondo,
+            para que no parezca que se cambió de aplicación. */}
+        <EventTintLayer tinte={eventTint(tintColor || ev?.themeColor)} />
         {inner}
       </div>
     );

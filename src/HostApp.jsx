@@ -39,6 +39,7 @@ import {
 } from "./lib/colombia.js";
 import { DISCOVER_CATEGORIES } from "./lib/categories.js";
 import { CAT_ICONS } from "./lib/categoryIcons.jsx";
+import { eventFontProps, getEventFont, loadEventFont } from "./lib/fonts.js";
 import {
   VERDE_PASTEL_BG,
   VERDE_CORPORATIVO,
@@ -1447,6 +1448,9 @@ function CreateEventWizard({ draft, setDraft, step, setStep, onDone, onCancel })
 
 // ─── BUILDER ──────────────────────────────────────────────────────────────────
 function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDelete, onMove, onPublish }) {
+  // Al editar un evento ya publicado se entra aquí directamente: su tipografía
+  // hay que descargarla, o el título se escribiría en Inter.
+  useEffect(() => { loadEventFont(draft?.fontId); }, [draft?.fontId]);
   const [showTools, setShowTools] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [dragId, setDragId] = useState(null);
@@ -1619,21 +1623,26 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
           image={draft.headerImage}
           onChange={(headerImage, themeColor) => setDraft({ ...draft, headerImage, themeColor: themeColor ?? null })}
         />
-        <div style={{ padding: "20px 24px 4px" }}>
+        {/* Título y descripción con la letra del evento: aquí se escribe lo
+            que después se lee en su página, así que se escribe tal cual se
+            va a ver. */}
+        <div {...eventFontProps(draft.fontId, { extraStyle: { padding: "20px 24px 4px" } })}>
           <input
             value={draft.title}
             onChange={(e) => setDraft({ ...draft, title: e.target.value })}
             placeholder="Título del evento"
             style={{
               width: "100%", border: "none", outline: "none",
-              fontSize: 24, fontWeight: 700, color: "#eef1f7",
+              fontSize: 24 * getEventFont(draft.fontId).headingScale,
+              fontWeight: getEventFont(draft.fontId).headingWeight,
+              letterSpacing: getEventFont(draft.fontId).headingSpacing,
+              color: "#eef1f7",
               background: "transparent", boxSizing: "border-box",
-              fontFamily: "system-ui, -apple-system, sans-serif",
               textAlign: "center",
             }}
           />
         </div>
-        <div style={{ padding: "8px 24px 20px" }}>
+        <div {...eventFontProps(draft.fontId, { extraStyle: { padding: "8px 24px 20px" } })}>
           <textarea
             placeholder="Descripción del evento — cuéntales a tus asistentes de qué se trata, qué esperar, código de vestimenta, etc."
             value={draft.eventDescription || ""}
@@ -1643,7 +1652,6 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
               width: "100%", border: "none", outline: "none", resize: "none",
               fontSize: 14, color: "rgba(238,241,247,0.5)", lineHeight: 1.7,
               background: "transparent", boxSizing: "border-box",
-              fontFamily: "system-ui, -apple-system, sans-serif",
             }}
           />
         </div>

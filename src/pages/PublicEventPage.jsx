@@ -6,10 +6,10 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { api, apiEnabled } from "../lib/api.js";
 import { loadEvents } from "../lib/storage.js";
 import { isSoldOut } from "../lib/capacity.js";
-import { IconButton, IcoBack, IcoShare, IcoMail, IcoQr, EventCover, CopiedToast, AttendeeStack } from "../components/ui.jsx";
+import { IconButton, IcoBack, IcoShare, IcoMail, IcoQr, EventCover, CopiedToast, AttendeeStack, EventTintLayer } from "../components/ui.jsx";
 import LocationMap from "../components/LocationMap.jsx";
 import { eventTint, dominantColorFromUrl } from "../lib/dominantColor.js";
-import { getEventFont, loadEventFont } from "../lib/fonts.js";
+import { loadEventFont, eventFontProps, getEventFont } from "../lib/fonts.js";
 import { COVER_PAD } from "../lib/ui-tokens.js";
 import { useShare } from "../lib/useShare.js";
 import "../styles/typeform.css";
@@ -265,18 +265,25 @@ export default function PublicEventPage() {
     </div>
   );
 
+  // El color puede venir guardado en el evento o haberse calculado aquí a
+  // partir de la portada; sea cual sea, las tres pantallas del evento
+  // (página, inscripción y entrada) usan el mismo.
+  const colorEvento = event?.themeColor || colorPortada;
+
   if (phase === "register") return (
-    <TypeformRegister event={event} onSubmit={handleSubmit} onBack={() => setPhase("event")} />
+    <TypeformRegister event={event} tintColor={colorEvento}
+      onSubmit={handleSubmit} onBack={() => setPhase("event")} />
   );
 
   if (phase === "ticket") return (
-    <ConfirmTicket ev={event} reg={reg} regs={regs} standalone onCancel={handleCancel} cancelling={cancelling}
+    <ConfirmTicket ev={event} reg={reg} regs={regs} standalone tintColor={colorEvento}
+      onCancel={handleCancel} cancelling={cancelling}
       onBack={() => { if (window.history.length > 1) window.history.back(); else window.location.href = "/app"; }} />
   );
 
   // Personalización del evento: el color que domina su portada y la
   // tipografía que eligió el organizador.
-  const tinte     = eventTint(event.themeColor || colorPortada);
+  const tinte     = eventTint(colorEvento);
   const fuente    = getEventFont(event.fontId);
   const soldOut     = isSoldOut(event);
   const needsAccount = Boolean(event.requireApproval) && !token;
@@ -298,18 +305,10 @@ export default function PublicEventPage() {
 
   return (
     <div style={{ minHeight: "100dvh", background: BG, paddingBottom: 60 }}>
-      {/* ── Tinte del evento ──
-          Manchas muy abiertas y transparentes del color que más ocupa la
-          portada, fijas sobre el fondo global de la app. Difuminado y no color
-          plano a propósito: un verde plano detrás del texto lo haría ilegible
-          y convertiría cada evento en otra aplicación. Así el evento "sabe" a
-          su portada desde que se abre, sin dejar de ser TapIn. */}
-      {tinte && (
-        <div aria-hidden="true" style={{
-          position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none",
-          background: tinte.glow,
-        }} />
-      )}
+      {/* Difuminado y no color plano a propósito: un verde plano detrás del
+          texto lo haría ilegible y convertiría cada evento en otra
+          aplicación. */}
+      <EventTintLayer tinte={tinte} />
       {/* Acciones flotantes: solo iconos, como el resto de la app. */}
       <div style={{ position: "fixed", top: "calc(14px + var(--ef-top-offset, 0px))", left: 14, right: 14, zIndex: 20, display: "flex", justifyContent: "space-between", pointerEvents: "none" }}>
         <span style={{ pointerEvents: "auto" }}>
@@ -324,9 +323,12 @@ export default function PublicEventPage() {
           </IconButton>
         </span>
       </div>
-      {/* La tipografía del evento manda dentro de su página; la barra de
-          acciones de arriba, que es de la app, se queda como está. */}
-      <div style={{ maxWidth: 520, margin: "0 auto", position: "relative", zIndex: 1, fontFamily: fuente.family }}>
+      {/* La tipografía del evento manda en TODA su página —título, fecha,
+          organizador, descripción, botones—; la barra de acciones flotante,
+          que es de la app y no del evento, se queda como está. */}
+      <div {...eventFontProps(event.fontId, {
+        extraStyle: { maxWidth: 520, margin: "0 auto", position: "relative", zIndex: 1 },
+      })}>
 
         {/* ── Portada: cuadrada, con margen y esquinas suavizadas ── */}
         <div style={{ paddingTop: 68 }}>
@@ -337,11 +339,10 @@ export default function PublicEventPage() {
         <div style={{ padding: `24px ${COVER_PAD}px 0` }}>
 
           {/* Title */}
-          {/* fontFamily explícito: index.css tiene una regla `h1, h2` que gana
-              a la familia heredada del contenedor, así que sin esto el título
-              se seguía pintando en Inter. */}
+          {/* La familia la pone .ef-event-font; aquí solo el tamaño y el peso,
+              que cambian según la letra (una display necesita menos cuerpo que
+              una de texto para ocupar lo mismo). */}
           <h1 style={{
-            fontFamily: fuente.family,
             fontSize: 32 * fuente.headingScale, fontWeight: fuente.headingWeight,
             color: TEXT, margin: "0 0 10px", lineHeight: 1.15,
             letterSpacing: fuente.headingSpacing,

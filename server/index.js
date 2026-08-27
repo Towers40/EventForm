@@ -573,6 +573,10 @@ app.get("/api/public/tickets/:ticketId", requireDb, async (req, res) => {
           headerImage: ev.headerImage || "",
           city: ev.city || "",
           location: ev.location || "",
+          // Personalización: la entrada se ve con la letra y el color del
+          // evento, igual que su página.
+          fontId: ev.fontId || null,
+          themeColor: ev.themeColor || null,
         },
       },
     });
@@ -1440,6 +1444,7 @@ app.get("/api/public/hosts/:id", requireDb, async (req, res) => {
              json_extract(payload, '$.endDate')   AS end_date,
              json_extract(payload, '$.endTime')   AS end_time,
              json_extract(payload, '$.themeColor') AS theme_color,
+             json_extract(payload, '$.fontId')     AS font_id,
              CASE WHEN json_extract(payload, '$.headerImage') LIKE 'http%'
                   THEN json_extract(payload, '$.headerImage') END AS header_image,
              (SELECT COUNT(*) FROM registrations r
@@ -1496,6 +1501,7 @@ app.get("/api/public/hosts/:id", requireDb, async (req, res) => {
       endTime: r.end_time || "",
       headerImage: r.header_image || "",
       themeColor: r.theme_color || null,
+      fontId: r.font_id || null,
       category: r.category || null,
       isPaid: Boolean(r.is_paid),
       price: r.price != null ? Number(r.price) : null,

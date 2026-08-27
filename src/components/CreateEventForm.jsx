@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { uploadImage } from "../lib/upload.js";
 import { dominantColorFromFile, eventTint } from "../lib/dominantColor.js";
-import { EVENT_FONTS, DEFAULT_FONT_ID, getEventFont, loadAllEventFonts, loadEventFont } from "../lib/fonts.js";
+import { EVENT_FONTS, DEFAULT_FONT_ID, getEventFont, loadAllEventFonts, loadEventFont, eventFontProps } from "../lib/fonts.js";
 import { resolveLimit, hoursFor, minutesFor, clampToLimit, MINUTE_VALUES } from "../lib/datetime.js";
 import { IconButton, IcoBack } from "./ui.jsx";
 
@@ -439,13 +439,17 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
             )}
           </div>
 
-          {/* ── Event name ── */}
-          <input
-            type="text" placeholder="Nombre del evento"
-            value={draft.title || ""}
-            onChange={e => up("title", e.target.value)}
-            style={{ width: "100%", boxSizing: "border-box", background: CARD, border: BORDER, borderRadius: RADIUS, padding: "18px 20px", fontSize: 20 * fuente.headingScale, fontWeight: fuente.headingWeight, color: TEXT, outline: "none", marginBottom: 12, caretColor: ACCENT, fontFamily: fuente.family, letterSpacing: fuente.headingSpacing }}
-          />
+          {/* ── Nombre del evento ──
+              Se escribe ya con la letra elegida: elegir tipografía sin ver el
+              nombre propio escrito con ella es elegir a ciegas. */}
+          <div {...eventFontProps(draft.fontId)}>
+            <input
+              type="text" placeholder="Nombre del evento"
+              value={draft.title || ""}
+              onChange={e => up("title", e.target.value)}
+              style={{ width: "100%", boxSizing: "border-box", background: CARD, border: BORDER, borderRadius: RADIUS, padding: "18px 20px", fontSize: 20 * fuente.headingScale, fontWeight: fuente.headingWeight, color: TEXT, outline: "none", marginBottom: 12, caretColor: ACCENT, letterSpacing: fuente.headingSpacing }}
+            />
+          </div>
 
           {/* ── Date card ── */}
           <div style={cardStyle}>
@@ -554,7 +558,10 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
               style={{ width: "100%", background: "none", border: "none", padding: 0, cursor: "pointer", display: "block", ...(showDesc ? rowDivider : {}), textAlign: "left" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "15px 18px" }}>
                 <span style={{ color: SUB }}><I.Text /></span>
-                <span style={{ flex: 1, fontSize: 15, color: draft.eventDescription ? TEXT : SUB, textAlign: "left" }}>
+                {/* El resumen es texto del evento: se lee con su letra. */}
+                <span {...eventFontProps(draft.fontId, {
+                  extraStyle: { flex: 1, fontSize: 15, color: draft.eventDescription ? TEXT : SUB, textAlign: "left" },
+                })}>
                   {!showDesc && draft.eventDescription
                     ? draft.eventDescription.slice(0, 55) + (draft.eventDescription.length > 55 ? "…" : "")
                     : "Agregar descripción"}
@@ -563,7 +570,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
               </div>
             </button>
             {showDesc && (
-              <div style={{ padding: "12px 16px 16px" }}>
+              <div {...eventFontProps(draft.fontId, { extraStyle: { padding: "12px 16px 16px" } })}>
                 <textarea
                   value={draft.eventDescription || ""}
                   onChange={e => up("eventDescription", e.target.value)}

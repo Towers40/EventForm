@@ -90,6 +90,20 @@ export function DataRow({ icon, children, color = "rgba(238,241,247,0.64)", size
   );
 }
 
+// ── Tinte del evento ────────────────────────────────────────────────────────
+// Manchas muy abiertas del color que domina la portada, fijas sobre el fondo
+// global de la app. La usan la página del evento, la inscripción y la entrada:
+// las tres son el mismo evento y tienen que sentirse igual.
+export function EventTintLayer({ tinte }) {
+  if (!tinte) return null;
+  return (
+    <div aria-hidden="true" style={{
+      position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none",
+      background: tinte.glow,
+    }} />
+  );
+}
+
 // ── Quién va ────────────────────────────────────────────────────────────────
 // Fila de caras superpuestas + "+N" con el resto. Responde de un vistazo a la
 // única pregunta que decide si vas a un evento: ¿quién más va y cuántos son?

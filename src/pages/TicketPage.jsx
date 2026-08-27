@@ -3,6 +3,9 @@ import { useParams } from "react-router-dom";
 import { api, apiEnabled } from "../lib/api.js";
 import PendingQr, { PendingNotice } from "../components/PendingQr.jsx";
 import { BRAND_NAME, TapInMark } from "../lib/brand.jsx";
+import { loadEventFont, eventFontProps } from "../lib/fonts.js";
+import { eventTint } from "../lib/dominantColor.js";
+import { EventTintLayer } from "../components/ui.jsx";
 import "../styles/typeform.css";
 
 const DAYS_ES   = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
@@ -43,13 +46,20 @@ export default function TicketPage() {
   const ev = ticket?.event;
   const approved = ticket?.approved !== false;
 
+  useEffect(() => { loadEventFont(ev?.fontId); }, [ev?.fontId]);
+
   return (
     <div className="tf-screen" style={{ display: "block", overflowY: "auto", minHeight: "100dvh" }}>
-      <div style={{ maxWidth: 460, margin: "0 auto", padding: "32px 16px 60px" }}>
+      <EventTintLayer tinte={eventTint(ev?.themeColor)} />
+      <div style={{ maxWidth: 460, margin: "0 auto", padding: "32px 16px 60px", position: "relative", zIndex: 1 }}>
+        {/* La marca TapIn queda FUERA de la letra del evento: es de la app. */}
         <div style={{ textAlign: "center", marginBottom: 22 }}>
           <TapInMark size={20} color="#4ade80" />
           <span style={{ color: "#eef1f7", fontWeight: 800, fontSize: 17, marginLeft: 8 }}>{BRAND_NAME}</span>
         </div>
+
+        {/* De aquí abajo es el evento: su nombre, su fecha y su entrada. */}
+        <div {...eventFontProps(ev?.fontId)}>
 
         {ev && (
           <div style={{ textAlign: "center", marginBottom: 18 }}>
@@ -84,6 +94,7 @@ export default function TicketPage() {
         {ev?.slug && (
           <a href={`/e/${ev.slug}`} className="soft-btn soft-btn-secondary" style={{ display: "block", textAlign: "center", textDecoration: "none", marginTop: 18, fontSize: 13 }}>Ver evento</a>
         )}
+        </div>
       </div>
     </div>
   );

@@ -3,6 +3,38 @@
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
+/* ─── Tipografía de UN evento ──────────────────────────────────────────────
+   La regla de arriba usa el selector universal, así que alcanza a TODOS los
+   elementos directamente: heredar la familia desde un contenedor no sirve de
+   nada, cada hijo vuelve a Inter por su cuenta. Por eso la personalización
+   necesita otra regla que también apunte a cada elemento, con más
+   especificidad (.ef-event-font * = 0,1,0 gana a * = 0,0,0).
+
+   Se aplica poniendo la clase en la raíz de la superficie del evento y el
+   valor en la variable:
+       <div className="ef-event-font" style={{ "--ef-font": fuente.family }}>
+   Todo lo de dentro —título, fecha, organizador, descripción, campos del
+   formulario y botones— pasa a esa letra. Sin la variable, Inter. */
+.ef-event-font,
+.ef-event-font *,
+.ef-event-font *::before,
+.ef-event-font *::after {
+  font-family: var(--ef-font, 'Inter', system-ui, -apple-system, sans-serif);
+}
+
+/* Vuelta a la letra de la app dentro de un evento. Va DESPUÉS para ganar el
+   desempate de especificidad con .ef-event-font *.
+
+   Se usa donde una cifra suelta ES el dato y hay que leerla sin dudar: el
+   contador de entradas es el caso claro —el "1" de Syne es una bandera que no
+   se lee como un uno, y ahí un número mal leído se paga con dinero. Donde la
+   cifra va acompañada (31 AGO, "9 personas ya tienen su lugar") no hace falta:
+   el contexto la desambigua y la personalización se mantiene. */
+.ef-app-font,
+.ef-app-font * {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
 /* ─── Tema oscuro — base de todas las vistas públicas ─────────────────────── */
 :root {
   /* Sistema TapIn: color de "Navy Refinado", forma de "Rumba", tipo de

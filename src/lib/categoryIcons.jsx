@@ -40,9 +40,16 @@ export const CAT_ICONS = {
       <circle cx="17" cy="12.5" r="1" fill={color} stroke="none"/>
     </svg>
   ),
+  // "Otro" era un pin de mapa: el MISMO dibujo que el icono de ubicación de la
+  // tarjeta, así que en una fila de datos parecía que el evento no tenía sitio.
+  // Tres puntos dentro de un círculo se leen como "lo demás" y no se confunden
+  // con nada más de la app.
   otro: (color, size = 28) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+      <circle cx="12" cy="12" r="9"/>
+      <circle cx="7.6" cy="12" r="1.05" fill={color} stroke="none"/>
+      <circle cx="12"  cy="12" r="1.05" fill={color} stroke="none"/>
+      <circle cx="16.4" cy="12" r="1.05" fill={color} stroke="none"/>
     </svg>
   ),
 };

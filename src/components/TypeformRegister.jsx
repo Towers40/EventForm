@@ -1,6 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { validateRegistrationForm } from "../lib/tickets.js";
 import { isSoldOut } from "../lib/capacity.js";
+import { loadEventFont, eventFontProps } from "../lib/fonts.js";
+import { eventTint } from "../lib/dominantColor.js";
+import { EventTintLayer } from "./ui.jsx";
 import "../styles/typeform.css";
 
 const CONSENT_PRIVACY_ID = "__consent_privacy__";
@@ -145,13 +148,19 @@ function FieldWidget({ field, value, onChange }) {
   );
 }
 
-export default function TypeformRegister({ event, onSubmit, onBack }) {
+export default function TypeformRegister({ event, tintColor, onSubmit, onBack }) {
   const [form, setForm] = useState({});
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [quantity, setQuantity] = useState(1);
 
+  // La descarga de la tipografía va en un efecto (toca el <head>, no puede
+  // pasar durante el render). Es idempotente: si ya se cargó en la página del
+  // evento, esto no hace nada.
+  useEffect(() => { loadEventFont(event?.fontId); }, [event?.fontId]);
+
   const soldOut = isSoldOut(event);
+  const tinte = eventTint(tintColor || event?.themeColor);
   // Tope de entradas por persona que fijó el anfitrión (1 si no lo configuró).
   const maxPerUser = Math.max(1, Math.min(Number(event.maxPerUser) || 1, 20));
 
@@ -186,7 +195,7 @@ export default function TypeformRegister({ event, onSubmit, onBack }) {
 
   if (soldOut) {
     return (
-      <div className="tf-screen">
+      <div {...eventFontProps(event.fontId, { extraClass: "tf-screen" })}>
         <div className="tf-body" style={{ textAlign: "center" }}>
           <h1 className="tf-question">Entradas agotadas</h1>
           <p className="tf-hint">Este evento ya no acepta más inscripciones.</p>
@@ -200,9 +209,15 @@ export default function TypeformRegister({ event, onSubmit, onBack }) {
     );
   }
 
+  // Reservar es parte del evento, no un trámite aparte: el formulario se ve
+  // con la letra que eligió quien lo organiza.
   return (
-    <div className="tf-screen" style={{ display: "block", overflowY: "auto" }}>
-      <div style={{ maxWidth: 520, margin: "0 auto", padding: "20px 16px 80px" }}>
+    <div {...eventFontProps(event.fontId, {
+      extraClass: "tf-screen",
+      extraStyle: { display: "block", overflowY: "auto" },
+    })}>
+      <EventTintLayer tinte={tinte} />
+      <div style={{ maxWidth: 520, margin: "0 auto", padding: "20px 16px 80px", position: "relative", zIndex: 1 }}>
 
         {/* Header */}
         <div style={{ marginBottom: 28 }}>
@@ -237,7 +252,10 @@ export default function TypeformRegister({ event, onSubmit, onBack }) {
                     style={{ width: 34, height: 34, borderRadius: 14, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)", color: quantity <= 1 ? "rgba(255,255,255,0.25)" : "#eef1f7", fontSize: 19, fontWeight: 700, cursor: quantity <= 1 ? "default" : "pointer", lineHeight: 1 }}>
                     −
                   </button>
-                  <span aria-live="polite" style={{ minWidth: 28, textAlign: "center", fontSize: 18, fontWeight: 800, color: "#7fb3e6" }}>{quantity}</span>
+                  {/* La cifra vuelve a Inter (ver .ef-app-font): en algunas
+                      tipografías el "1" suelto no se lee como un uno, y aquí
+                      un número mal leído son entradas de más o de menos. */}
+                  <span aria-live="polite" className="ef-app-font" style={{ minWidth: 28, textAlign: "center", fontSize: 18, fontWeight: 800, color: "#7fb3e6" }}>{quantity}</span>
                   <button type="button" aria-label="Una entrada más"
                     onClick={() => setQuantity((q) => Math.min(maxPerUser, q + 1))}
                     disabled={quantity >= maxPerUser}
