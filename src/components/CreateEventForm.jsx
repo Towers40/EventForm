@@ -233,6 +233,8 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
   const [colorPortada, setColorPortada] = useState(null);
   const [imgBusy,     setImgBusy]     = useState(false);
   const [isDragging,  setIsDragging]  = useState(false);
+  const [ajustando, setAjustando] = useState(false);   // modo encuadre (táctil)
+  const tactil = typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches;
   // Selector de color propio (el "+").
   const [colorLibre, setColorLibre] = useState(false);
   const [tonoLibre, setTonoLibre] = useState(210);
@@ -326,8 +328,31 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
     const [a, b] = [...punterosRef.current.values()];
     gestoRef.current = { modo: "zoom", dist: Math.hypot(a.x - b.x, a.y - b.y) || 1, zoom: zoomEfectivo };
   }
+  // Con el dedo, la foto solo se mueve en "modo encuadre" (se entra tocándola).
+  // Fuera de ese modo un dedo sobre la foto desplaza la página, como en
+  // cualquier otra parte: antes la foto atrapaba el gesto y, al bajar rápido
+  // por la pantalla, se movía la foto en vez de la página. Con ratón no hay
+  // ambigüedad (la rueda desplaza, el arrastre mueve), así que va directo.
+  const tactilRef = useRef(false);
+  useEffect(() => {
+    if (!ajustando) return;
+    const fuera = (ev) => {
+      if (coverBoxRef.current?.contains(ev.target) || ev.target.closest?.(".ce-zoom")) return;
+      setAjustando(false);
+    };
+    document.addEventListener("pointerdown", fuera, true);
+    return () => document.removeEventListener("pointerdown", fuera, true);
+  }, [ajustando]);
+
+  function coverClick(e) {
+    if (!draft.headerImage || !tactilRef.current || ajustando) return;
+    if (e.target.closest("button, label, input")) return;
+    setAjustando(true); // un toque (no un arrastre) entra en modo encuadre
+  }
   function coverPointerDown(e) {
+    tactilRef.current = e.pointerType === "touch";
     if (!draft.headerImage || e.target.closest("button, label, input")) return;
+    if (tactilRef.current && !ajustando) return; // el dedo desplaza la página
     try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* noop */ }
     punterosRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (punterosRef.current.size >= 2) iniciarPellizco(); else iniciarArrastre(e.clientX, e.clientY);
@@ -476,7 +501,8 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
               allá de lo que se ve nítido. Ver coverImgStyle (lib/images.js). */}
           <div
             ref={coverBoxRef}
-            style={{ position: "relative", margin: "20px 0 12px", borderRadius: 22, overflow: "hidden", aspectRatio: "1 / 1", background: draft.headerImage ? "#000" : "var(--tf-surface)", border: BORDER, cursor: draft.headerImage ? (isDragging ? "grabbing" : "grab") : "default", touchAction: draft.headerImage ? "none" : "auto", userSelect: "none" }}
+            style={{ position: "relative", margin: "20px 0 12px", borderRadius: 22, overflow: "hidden", aspectRatio: "1 / 1", background: draft.headerImage ? "#000" : "var(--tf-surface)", border: BORDER, cursor: draft.headerImage ? (isDragging ? "grabbing" : "grab") : "default", touchAction: draft.headerImage && ajustando ? "none" : "auto", userSelect: "none", WebkitTouchCallout: "none", boxShadow: ajustando ? "0 0 0 2px #fff" : "none", transition: "box-shadow .15s" }}
+            onClick={coverClick}
             onPointerDown={coverPointerDown}
             onPointerMove={coverPointerMove}
             onPointerUp={coverPointerUp}
@@ -491,8 +517,16 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
                   />
                   {!isDragging && (
                     <div style={{ position: "absolute", bottom: 58, left: "50%", transform: "translateX(-50%)", background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)", borderRadius: 22, padding: "6px 13px", fontSize: 12, color: "rgba(255,255,255,0.85)", pointerEvents: "none", whiteSpace: "nowrap" }}>
-                      ✥ Arrastra para mover{maxZoom > 1.05 ? " · pellizca para acercar" : ""}
+                      {tactil && !ajustando
+                        ? "Toca la foto para encuadrarla"
+                        : <>✥ Arrastra para mover{maxZoom > 1.05 ? " · pellizca para acercar" : ""}</>}
                     </div>
+                  )}
+                  {ajustando && (
+                    <button type="button" onClick={(e) => { e.stopPropagation(); setAjustando(false); }}
+                      style={{ position: "absolute", top: 10, left: 10, height: 34, padding: "0 16px", borderRadius: 999, border: "none", background: "#fff", color: "#000", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+                      Listo
+                    </button>
                   )}
                 </>
               : <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, color: SUB }}>
@@ -505,7 +539,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
               <input type="file" accept="image/*" hidden onChange={handleImage} ref={imgRef} />
             </label>
             {draft.headerImage && (
-              <button type="button" className="ef-hover-fill" onClick={() => { setColorPortada(null); setNatSize(null); setDraft(p => ({ ...p, headerImage: "", imagePos: { x: 50, y: 50 }, imageZoom: 1, ...(p.themeColorManual ? {} : { themeColor: null }) })); }} style={{ position: "absolute", top: 10, right: 10, background: "rgba(0,0,0,0.55)", border: "none", borderRadius: 22, padding: "5px 11px", color: "#fff", fontSize: 12, cursor: "pointer" }}>Quitar</button>
+              <button type="button" className="ef-hover-fill" onClick={() => { setAjustando(false); setColorPortada(null); setNatSize(null); setDraft(p => ({ ...p, headerImage: "", imagePos: { x: 50, y: 50 }, imageZoom: 1, ...(p.themeColorManual ? {} : { themeColor: null }) })); }} style={{ position: "absolute", top: 10, right: 10, background: "rgba(0,0,0,0.55)", border: "none", borderRadius: 22, padding: "5px 11px", color: "#fff", fontSize: 12, cursor: "pointer" }}>Quitar</button>
             )}
           </div>
 

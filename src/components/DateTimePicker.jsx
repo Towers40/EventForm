@@ -195,11 +195,11 @@ export default function DateTimePicker({ date, time, onChange, minDate, minTime,
       )}
 
       {/* Trigger buttons */}
-      <div ref={wrapRef} style={{ display: "flex", gap: 10 }}>
+      <div ref={wrapRef} style={{ display: "flex", gap: 10, minWidth: 0 }}>
         <button
           type="button"
           onClick={(e) => openPicker(e.currentTarget)}
-          style={{ ...triggerStyle(!!date), flex: 1 }}
+          style={{ ...triggerStyle(!!date), flex: "1 1 0", overflow: "hidden" }}
         >
           <span style={{ fontSize: 15, fontWeight: 500, color: date ? "#ffffff" : "var(--tf-faint)", whiteSpace: "nowrap" }}>
             {dateFmt || "Fecha"}
@@ -210,7 +210,7 @@ export default function DateTimePicker({ date, time, onChange, minDate, minTime,
         <button
           type="button"
           onClick={(e) => openPicker(e.currentTarget)}
-          style={{ ...triggerStyle(!!time), width: 116 }}
+          style={{ ...triggerStyle(!!time), flex: "0 1 116px" }}
         >
           <span style={{ fontSize: 15, fontWeight: 500, color: time ? "#ffffff" : "var(--tf-faint)", whiteSpace: "nowrap" }}>
             {timeFmt || "Hora"}

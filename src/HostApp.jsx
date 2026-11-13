@@ -1203,9 +1203,10 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
             <Chevron open={showSettings} />
           </button>
           {showSettings && (
-            <div style={{ padding: "6px 20px 22px", display: "grid", gap: 20 }}>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16 }}>
-                <div>
+            <div style={{ padding: "6px 20px 22px", display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 20 }}>
+              {/* Una columna siempre: Inicio (día + hora) en una fila y Fin en otra. */}
+              <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 16 }}>
+                <div style={{ minWidth: 0 }}>
                   <DateTimePicker
                     label="Inicio"
                     date={draft.startDate}
@@ -1218,7 +1219,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
                     }}
                   />
                 </div>
-                <div>
+                <div style={{ minWidth: 0 }}>
                   <DateTimePicker
                     label="Fin"
                     date={draft.endDate}
