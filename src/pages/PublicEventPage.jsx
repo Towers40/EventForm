@@ -411,22 +411,25 @@ export default function PublicEventPage() {
           cuenta del evento—. Los datos de servicio (ubicación, organizador,
           entradas) van en la letra de la app: son de TapIn y tienen que leerse
           igual en todos los eventos. */}
-      <div style={{ maxWidth: 520, margin: "0 auto", position: "relative", zIndex: 1 }}>
+      {/* Móvil: una columna de 520 px. Ordenador (desktop.css): portada fija
+          a la izquierda y la información a la derecha. */}
+      <div className="pe-wrap" style={{ position: "relative", zIndex: 1 }}>
 
         {/* ── Portada: cuadrada, con margen y esquinas suavizadas ── */}
-        <div style={{ paddingTop: 68 }}>
+        <div className="pe-cover-col">
           <EventCover src={event.headerImage} alt={event.title} pos={event.imagePos} zoom={event.imageZoom} />
         </div>
 
         {/* ── Content ── */}
-        <div style={{ padding: `24px ${COVER_PAD}px 0` }}>
+        <div className="pe-content" style={{ padding: `24px ${COVER_PAD}px 0` }}>
 
           {/* Nombre del evento: la pieza con la letra elegida. El cuerpo y el
               peso se ajustan a ella —una display necesita menos cuerpo que una
               de texto para ocupar lo mismo—. */}
           <h1 {...eventFontProps(event.fontId, {
             extraStyle: {
-              fontSize: 32 * fuente.headingScale, fontWeight: fuente.headingWeight,
+              // --pe-k agranda el título en ordenador (desktop.css).
+              fontSize: `calc(var(--pe-k, 1) * ${32 * fuente.headingScale}px)`, fontWeight: fuente.headingWeight,
               color: TEXT, margin: "0 0 10px", lineHeight: 1.15,
               letterSpacing: fuente.headingSpacing,
             },

@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { getCapacityMax } from "../lib/capacity.js";
 import { CategoryIcon } from "../lib/categoryIcons.jsx";
+import { useIsDesktop } from "../lib/useMediaQuery.js";
 import "../styles/typeform.css";
 import { coverImgStyle } from "../lib/images.js";
 
@@ -131,7 +132,7 @@ function AccionChica({ children, onClick, icono }) {
 }
 
 /** Inscripciones agrupadas por día (o semana) en la ventana elegida. */
-function GraficoInscripciones({ regs, rango }) {
+function GraficoInscripciones({ regs, rango, alto = 110 }) {
   const { cubos, total, previo } = useMemo(() => {
     const finHoy = new Date(); finHoy.setHours(23, 59, 59, 999);
     const dias = rango;
@@ -170,7 +171,7 @@ function GraficoInscripciones({ regs, rango }) {
           </span>
         )}
       </div>
-      <div style={{ display: "flex", alignItems: "flex-end", gap: cubos.length > 20 ? 2 : 5, height: 110 }}
+      <div style={{ display: "flex", alignItems: "flex-end", gap: cubos.length > 20 ? 2 : 5, height: alto }}
         role="img" aria-label={`${total} inscripciones en los últimos ${rango} días`}>
         {cubos.map((c, i) => (
           <div key={i} title={`${etiqueta(c.desde)}: ${c.n}`}
@@ -195,6 +196,7 @@ export default function DashboardView({ events = [], onNew, onOpen, onValidate, 
   const [periodo, setPeriodo] = useState("todos");     // proximos | pasados | todos
   const [eventoId, setEventoId] = useState("");         // "" = todos
   const [rango, setRango] = useState(30);               // días del gráfico
+  const escritorio = useIsDesktop();
   const hoy = hoyISO();
 
   // Eventos dentro del periodo (sin borradores).
@@ -246,7 +248,7 @@ export default function DashboardView({ events = [], onNew, onOpen, onValidate, 
   // ── Vacío ──
   if (!events.filter((e) => !e.isDraft).length) {
     return (
-      <div style={{ maxWidth: 760, margin: "0 auto" }}>
+      <div className="dash">
         <h1 style={{ fontSize: 34, fontWeight: 600, letterSpacing: "-0.03em", margin: "8px 0 8px" }}>Dashboard</h1>
         <div className="panel-card" style={{ padding: "40px 24px", textAlign: "center", marginTop: 20 }}>
           <p style={{ fontSize: 17, fontWeight: 600, margin: "0 0 6px" }}>Aún no hay datos</p>
@@ -262,68 +264,7 @@ export default function DashboardView({ events = [], onNew, onOpen, onValidate, 
   const asistencia = pct(m.checkins, total);
   const diasProx = proximo ? diasHasta(fechaDe(proximo)) : null;
 
-  return (
-    <div style={{ maxWidth: 760, margin: "0 auto" }}>
-      <h1 style={{ fontSize: 34, fontWeight: 600, letterSpacing: "-0.03em", margin: "8px 0 6px" }}>Dashboard</h1>
-      <p style={{ fontSize: 15, color: SUB, margin: "0 0 18px" }}>Lo importante de tus eventos, de un vistazo.</p>
-
-      {/* ── Filtros: gobiernan todo lo de abajo ── */}
-      <div style={{ display: "flex", gap: 8, overflowX: "auto", marginBottom: 10, paddingBottom: 2 }}>
-        {[["todos", "Todos"], ["proximos", "Próximos"], ["pasados", "Pasados"]].map(([k, l]) => (
-          <Pildora key={k} activa={periodo === k} onClick={() => setPeriodo(k)}>{l}</Pildora>
-        ))}
-      </div>
-      <label style={{ position: "relative", display: "block", marginBottom: 18 }}>
-        <span className="sr-only" style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)" }}>Evento</span>
-        <select value={elegido ? elegido.id : ""} onChange={(e) => setEventoId(e.target.value)}
-          style={{
-            width: "100%", height: 48, padding: "0 44px 0 16px", borderRadius: 14, border: "none",
-            background: "var(--tf-field)", color: TEXT, fontSize: 15.5, fontWeight: 500,
-            appearance: "none", WebkitAppearance: "none", cursor: "pointer",
-          }}>
-          <option value="">Todos los eventos ({enPeriodo.length})</option>
-          {enPeriodo.map((e) => (
-            <option key={e.id} value={e.id}>{e.title || "Sin título"} · {fechaCorta(fechaDe(e))}</option>
-          ))}
-        </select>
-        <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round"
-          style={{ position: "absolute", right: 16, top: 15, pointerEvents: "none" }} aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
-      </label>
-
-      {/* ── 1. Lo que requiere acción ── */}
-      {m.totalPendientes > 0 && (
-        <button type="button" className="ef-hover-fill"
-          onClick={() => onOpen?.(m.pendientes[0].ev.id, "pendientes")}
-          style={{
-            width: "100%", display: "flex", alignItems: "center", gap: 12, textAlign: "left",
-            padding: "14px 16px", marginBottom: 12, border: "none", borderRadius: 18, cursor: "pointer",
-            background: "rgba(251,191,36,0.14)", color: "#fbbf24",
-          }}>
-          <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
-          <span style={{ flex: 1, fontSize: 14.5, fontWeight: 600 }}>
-            {m.totalPendientes} {m.totalPendientes === 1 ? "solicitud por aprobar" : "solicitudes por aprobar"}
-            <span style={{ display: "block", fontSize: 12.5, fontWeight: 400, opacity: 0.85, marginTop: 2 }}>
-              {m.pendientes.length === 1 ? m.pendientes[0].ev.title : `En ${m.pendientes.length} eventos`} · su QR no funciona hasta que apruebes
-            </span>
-          </span>
-          <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="m9 18 6-6-6-6" /></svg>
-        </button>
-      )}
-
-      {/* ── 2. Cifras clave ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10, marginBottom: 12 }}>
-        <Kpi valor={total} etiqueta="Inscritos"
-          nota={m.nuevasSemana > 0 ? `+${m.nuevasSemana} esta semana` : "sin nuevas esta semana"}
-          notaColor={m.nuevasSemana > 0 ? "#6ee7b7" : null} />
-        <Kpi valor={asistencia != null ? `${asistencia}%` : "—"} etiqueta="Asistencia"
-          nota={`${m.checkins} de ${total} entraron`} />
-        <Kpi valor={ocupacion != null ? `${ocupacion}%` : "—"} etiqueta="Ocupación"
-          nota={m.aforo ? `${m.regsConAforo} de ${m.aforo} cupos` : "sin aforo definido"} />
-        <Kpi valor={elegido ? (esProximo(elegido, hoy) ? enDias(diasHasta(fechaDe(elegido))) : "Pasado") : alcance.length}
-          etiqueta={elegido ? "Estado" : "Eventos"}
-          nota={elegido ? fechaCorta(fechaDe(elegido)) : `${m.proximos} ${m.proximos === 1 ? "próximo" : "próximos"}`} />
-      </div>
-
+  const bloqueGrafico = (<>
       {/* ── 3. Evolución ── */}
       <Seccion titulo="Inscripciones"
         accion={
@@ -337,9 +278,11 @@ export default function DashboardView({ events = [], onNew, onOpen, onValidate, 
             ))}
           </div>
         }>
-        <GraficoInscripciones regs={m.regs} rango={rango} />
+        <GraficoInscripciones regs={m.regs} rango={rango} alto={escritorio ? 190 : 110} />
       </Seccion>
 
+  </>);
+  const bloqueProximo = (<>
       {/* ── 4. Próximo evento ── */}
       {proximo && (() => {
         const n = (proximo.registrations || []).length;
@@ -372,6 +315,8 @@ export default function DashboardView({ events = [], onNew, onOpen, onValidate, 
         );
       })()}
 
+  </>);
+  const bloquePublico = (<>
       {/* Reparto por género: solo si algún formulario lo pregunta */}
       {genero.total > 0 && (
         <Seccion titulo="Público">
@@ -393,6 +338,8 @@ export default function DashboardView({ events = [], onNew, onOpen, onValidate, 
         </Seccion>
       )}
 
+  </>);
+  const bloqueRanking = (<>
       {/* ── 5. Ranking (solo con varios eventos en el filtro) ── */}
       {!elegido && ranking.length > 1 && (
         <Seccion titulo="Tus eventos" accion={<span style={{ fontSize: 12.5, color: MUTED }}>por inscritos</span>}>
@@ -425,6 +372,88 @@ export default function DashboardView({ events = [], onNew, onOpen, onValidate, 
             })}
           </div>
         </Seccion>
+      )}
+
+  </>);
+
+  return (
+    <div className="dash">
+      <div className="dash-head">
+      <div>
+        <h1 style={{ fontSize: 34, fontWeight: 600, letterSpacing: "-0.03em", margin: "8px 0 6px" }}>Dashboard</h1>
+        <p style={{ fontSize: 15, color: SUB, margin: "0 0 18px" }}>Lo importante de tus eventos, de un vistazo.</p>
+      </div>
+
+      {/* ── Filtros: gobiernan todo lo de abajo ── */}
+      <div className="dash-filtros">
+      <div style={{ display: "flex", gap: 8, overflowX: "auto", marginBottom: 10, paddingBottom: 2 }}>
+        {[["todos", "Todos"], ["proximos", "Próximos"], ["pasados", "Pasados"]].map(([k, l]) => (
+          <Pildora key={k} activa={periodo === k} onClick={() => setPeriodo(k)}>{l}</Pildora>
+        ))}
+      </div>
+      <label className="dash-select" style={{ position: "relative", display: "block", marginBottom: 18 }}>
+        <span className="sr-only" style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)" }}>Evento</span>
+        <select value={elegido ? elegido.id : ""} onChange={(e) => setEventoId(e.target.value)}
+          style={{
+            width: "100%", height: 48, padding: "0 44px 0 16px", borderRadius: 14, border: "none",
+            background: "var(--tf-field)", color: TEXT, fontSize: 15.5, fontWeight: 500,
+            appearance: "none", WebkitAppearance: "none", cursor: "pointer",
+          }}>
+          <option value="">Todos los eventos ({enPeriodo.length})</option>
+          {enPeriodo.map((e) => (
+            <option key={e.id} value={e.id}>{e.title || "Sin título"} · {fechaCorta(fechaDe(e))}</option>
+          ))}
+        </select>
+        <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round"
+          style={{ position: "absolute", right: 16, top: 15, pointerEvents: "none" }} aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+      </label>
+      </div>
+      </div>
+
+      {/* ── 1. Lo que requiere acción ── */}
+      {m.totalPendientes > 0 && (
+        <button type="button" className="ef-hover-fill"
+          onClick={() => onOpen?.(m.pendientes[0].ev.id, "pendientes")}
+          style={{
+            width: "100%", display: "flex", alignItems: "center", gap: 12, textAlign: "left",
+            padding: "14px 16px", marginBottom: 12, border: "none", borderRadius: 18, cursor: "pointer",
+            background: "rgba(251,191,36,0.14)", color: "#fbbf24",
+          }}>
+          <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
+          <span style={{ flex: 1, fontSize: 14.5, fontWeight: 600 }}>
+            {m.totalPendientes} {m.totalPendientes === 1 ? "solicitud por aprobar" : "solicitudes por aprobar"}
+            <span style={{ display: "block", fontSize: 12.5, fontWeight: 400, opacity: 0.85, marginTop: 2 }}>
+              {m.pendientes.length === 1 ? m.pendientes[0].ev.title : `En ${m.pendientes.length} eventos`} · su QR no funciona hasta que apruebes
+            </span>
+          </span>
+          <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="m9 18 6-6-6-6" /></svg>
+        </button>
+      )}
+
+      {/* ── 2. Cifras clave ── */}
+      <div className="dash-kpis">
+        <Kpi valor={total} etiqueta="Inscritos"
+          nota={m.nuevasSemana > 0 ? `+${m.nuevasSemana} esta semana` : "sin nuevas esta semana"}
+          notaColor={m.nuevasSemana > 0 ? "#6ee7b7" : null} />
+        <Kpi valor={asistencia != null ? `${asistencia}%` : "—"} etiqueta="Asistencia"
+          nota={`${m.checkins} de ${total} entraron`} />
+        <Kpi valor={ocupacion != null ? `${ocupacion}%` : "—"} etiqueta="Ocupación"
+          nota={m.aforo ? `${m.regsConAforo} de ${m.aforo} cupos` : "sin aforo definido"} />
+        <Kpi valor={elegido ? (esProximo(elegido, hoy) ? enDias(diasHasta(fechaDe(elegido))) : "Pasado") : alcance.length}
+          etiqueta={elegido ? "Estado" : "Eventos"}
+          nota={elegido ? fechaCorta(fechaDe(elegido)) : `${m.proximos} ${m.proximos === 1 ? "próximo" : "próximos"}`} />
+      </div>
+
+      {/* Móvil: una columna (gráfico, próximo, público, ranking).
+          Ordenador: dos columnas — lo que se analiza a la izquierda y lo que
+          se hace (próximo evento, público) a la derecha. */}
+      {escritorio ? (
+        <div className="dash-cols">
+          <div>{bloqueGrafico}{bloqueRanking}</div>
+          <div>{bloqueProximo}{bloquePublico}</div>
+        </div>
+      ) : (
+        <>{bloqueGrafico}{bloqueProximo}{bloquePublico}{bloqueRanking}</>
       )}
 
       {elegido && (

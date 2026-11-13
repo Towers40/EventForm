@@ -162,7 +162,7 @@ export default function MisTicketsView() {
   const lista    = tab === "proximos" ? proximos : pasados;
 
   return (
-    <div style={{ maxWidth: 760, margin: "0 auto" }}>
+    <div className="tickets">
       {/* Inicio ya vive en el encabezado (icono de casa en móvil, texto en escritorio). */}
       <h1 style={{ fontSize: 34, fontWeight: 600, letterSpacing: "-0.03em", margin: "8px 0 18px", color: "#ffffff" }}>Mis tickets</h1>
 
@@ -211,7 +211,7 @@ export default function MisTicketsView() {
           <a href="/discover" className="soft-btn soft-btn-primary" style={{ marginTop: 20, textDecoration: "none" }}>Descubrir eventos</a>
         </div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div className="tickets-lista">
           {lista.map((grupo) => {
             const { key, slug, event, items } = grupo;
             const past = isPast(event);

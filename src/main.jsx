@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import './styles/typeform.css'
 import './styles/mobile.css'
+import './styles/desktop.css'
 import AppRouter from './AppRouter.jsx'
 import { initScrollTint } from './lib/scrollTint.js'
 

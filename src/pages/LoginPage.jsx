@@ -3,6 +3,8 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { api, apiEnabled } from "../lib/api.js";
 import "../styles/typeform.css";
+import PosterMarquee from "../components/PosterMarquee.jsx";
+import { useIsDesktop } from "../lib/useMediaQuery.js";
 
 // Si se llegó al login desde una página de evento que exige cuenta (los que
 // requieren aprobación), se vuelve allí tras entrar en vez de ir a /app.
@@ -17,6 +19,7 @@ function consumeReturnTo() {
 
 // mode: login | forgot | reset
 export default function LoginPage() {
+  const escritorio = useIsDesktop();
   const { login, loginWithToken } = useAuth();
   const nav = useNavigate();
   const [mode, setMode] = useState("login");
@@ -96,8 +99,21 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="tf-screen">
-      <div className="tf-body">
+    <div className="tf-screen login-split">
+      {/* Ordenador: mitad izquierda con el muestrario de pósters y el mensaje
+          de marca; el formulario queda a la derecha. En móvil no se pinta. */}
+      {escritorio && (
+        <aside className="login-arte" aria-hidden="true">
+          <PosterMarquee />
+          <div className="login-arte-texto">
+            <p style={{ margin: 0, fontSize: 13, letterSpacing: "0.14em", color: "rgba(229,238,255,0.7)" }}>TAPIN COLOMBIA</p>
+            <p style={{ margin: "10px 0 0", fontSize: 40, fontWeight: 600, letterSpacing: "-0.03em", lineHeight: 1.08, color: "#fff" }}>
+              Crea, llena y controla<br />la entrada de tus eventos.
+            </p>
+          </div>
+        </aside>
+      )}
+      <div className="tf-body login-form">
 
         {/* ── LOGIN ── */}
         {mode === "login" && (

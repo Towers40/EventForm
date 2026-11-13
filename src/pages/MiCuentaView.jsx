@@ -137,9 +137,14 @@ export default function MiCuentaView() {
   const handleMigrateCovers = migrar(api.migrateEventImages, "portadas");
 
   return (
-    <div style={{ maxWidth: 560, margin: "0 auto" }}>
+    <div className="cuenta">
       <h1 style={{ fontSize: 34, fontWeight: 600, letterSpacing: "-0.03em", color: "#ffffff", margin: "8px 0 22px" }}>Mi cuenta</h1>
 
+      {/* Ordenador: dos columnas — quién eres (foto e información) a la
+          izquierda; inscripciones, seguridad y sesión a la derecha. En móvil
+          se apilan en el mismo orden de siempre. */}
+      <div className="cuenta-cols">
+      <div className="cuenta-col">
       {/* Foto de perfil */}
       <div className="panel-card" style={{ marginBottom: 20 }}>
         <div className="panel-card-header">
@@ -199,6 +204,8 @@ export default function MiCuentaView() {
         </form>
       </div>
 
+      </div>
+      <div className="cuenta-col">
       {/* Datos para inscribirse con un clic */}
       <DatosInscripcion user={user} token={token} patchUser={patchUser} />
 
@@ -303,6 +310,9 @@ export default function MiCuentaView() {
             Eliminar cuenta
           </button>
         </div>
+      </div>
+
+      </div>
       </div>
 
       {/* Modal de confirmación */}

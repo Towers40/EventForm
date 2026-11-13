@@ -771,7 +771,9 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
         <ShareEventModal event={shareEv} onClose={() => setShareEv(null)} />
       )}
 
-      <main className={`app-main${["mis_eventos", "discover"].includes(view) ? " app-main-wide" : ""}`}>
+      {/* `app-main--<vista>` deja a desktop.css dar a cada pantalla su ancho y
+          sus columnas en ordenador; en móvil no cambia nada. */}
+      <main className={`app-main app-main--${view}${["mis_eventos", "discover"].includes(view) ? " app-main-wide" : ""}`}>
         {view === "inicio" && (
           <InicioView events={events} onNew={startNew} onGoTo={(v) => go(v)} />
         )}
@@ -870,7 +872,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
       </main>
 
       {view !== "create_wizard" && (
-        <footer style={{ background: "transparent", borderTop: "1px solid rgba(255,255,255,0.07)", padding: 20, textAlign: "center", fontSize: 12, color: "rgba(229,238,255,0.3)", marginTop: 48, paddingBottom: 110 }}>
+        <footer className="ef-footer" style={{ background: "transparent", borderTop: "1px solid rgba(255,255,255,0.07)", padding: 20, textAlign: "center", fontSize: 12, color: "rgba(229,238,255,0.3)", marginTop: 48, paddingBottom: 110 }}>
           {BRAND_NAME} Colombia © 2026
           {/* Versión del build. Si aquí pone "preview", estás en una URL
               congelada en un commit viejo y no verás los últimos cambios. */}
@@ -882,7 +884,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
 
       {/* ── BARRA INFERIOR LIQUID GLASS ── */}
       {view !== "create_wizard" && (
-        <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 60, display: "flex", justifyContent: "center", padding: "0 12px 14px", pointerEvents: "none" }}>
+        <div className="ef-dock-wrap" style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 60, display: "flex", justifyContent: "center", padding: "0 12px 14px", pointerEvents: "none" }}>
           <div className="ef-dock" style={{
             pointerEvents: "auto",
             display: "flex", alignItems: "stretch", gap: 4,

@@ -531,7 +531,9 @@ export default function OnboardingFlow({ onDraftReady }) {
     phase === 0 ? 0 : phase >= 7 ? 95 : Math.round((phase / 6) * 85);
 
   return (
-    <div className="tf-screen">
+    // overflow-x: clip — el halo de la bienvenida sobresale a los lados y en
+    // tablet (768 px) creaba 8 px de desplazamiento horizontal.
+    <div className="tf-screen" style={{ overflowX: "clip" }}>
       {/* Muestrario en movimiento detrás de la bienvenida. Va aquí y no dentro
           de .tf-body porque la animación de entrada de ese contenedor usa
           transform, y un transform en un ancestro anula el position:fixed. */}

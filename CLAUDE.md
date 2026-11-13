@@ -49,6 +49,14 @@ Instrucciones de arquitectura, stack y estilo para el asistente de IA.
 * **Forma:** tarjetas radio 24, botones 52 px radio 14 (no píldora), campos 56 px
   radio 16. Clases: `.soft-btn-primary` (CTA), `.soft-btn-secondary` (contorno
   blanco), `.soft-btn-ghost` (superficie gris), `.tf-input-line`, `.panel-card`.
+* **Móvil vs. ordenador:** mobile-first. Desde 1024 px (`src/styles/desktop.css`
+  + `useIsDesktop()` de `src/lib/useMediaQuery.js`) cada pantalla usa columnas:
+  Inicio (hero partido, pasos en 4 columnas), Dashboard (KPIs en fila, análisis
+  a la izquierda y acciones a la derecha), Crear evento y página pública
+  (portada fija a la izquierda), Mi cuenta (2 columnas), Mis tickets (rejilla),
+  Login (panel de pósters). Desde 940 px se oculta la barra inferior (la cubre
+  el menú superior). `<main>` lleva `app-main--<vista>` para dar anchos por
+  pantalla. Al tocar estilos móviles, no romper las bases de `desktop.css`.
 * **Tokens en `:root` de `src/styles/typeform.css`** (`--tf-*`, `--r-*`, `--font`)
   y espejo en `src/lib/ds.jsx` (objeto `DS`). En estilos inline usar
   `var(--tf-…)` en vez de copiar valores. CSS global solo en `typeform.css`,

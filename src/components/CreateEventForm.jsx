@@ -438,6 +438,15 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
         .ce-bg { min-height: 100dvh; }
         .ce-scroll { max-width: 540px; margin: 0 auto; padding: 0 16px 100px; position: relative; z-index: 1; }
         .ce-header-inner { max-width: 540px; margin: 0 auto; }
+        /* Ordenador: dos columnas. La portada se queda a la vista (sticky)
+           mientras se rellena el formulario de la derecha. */
+        @media (min-width: 1024px) {
+          .ce-scroll { max-width: 1080px; padding: 0 32px 60px; }
+          .ce-grid { display: grid; grid-template-columns: minmax(0, 440px) minmax(0, 1fr); gap: 40px; align-items: start; }
+          .ce-col-media { position: sticky; top: 84px; }
+          .ce-col-media > div:first-child { margin-top: 20px; }
+          .ce-col-form { padding-top: 20px; }
+        }
         @media (min-width: 768px) { .ce-scroll { padding-bottom: 60px; } }
       `}</style>
 
@@ -455,6 +464,10 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
             {!inApp && <IconButton title="Volver" tone="soft" onClick={onCancel}><IcoBack /></IconButton>}
             <h1 style={{ margin: 0, fontSize: 28, fontWeight: 600, letterSpacing: "-0.03em", color: TEXT }}>{isEditing ? "Editar evento" : "Crear evento"}</h1>
           </div>
+          {/* Ordenador: portada fija a la izquierda, formulario a la derecha.
+              Móvil: todo en una columna, como siempre (ver .ce-grid). */}
+          <div className="ce-grid">
+          <div className="ce-col-media">
           {/* ── Portada ──
               Con foto: se arrastra en cualquier dirección y se acerca con dos
               dedos (o rueda/trackpad, o el deslizador de abajo). El tope del
@@ -506,6 +519,8 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
             </div>
           )}
 
+          </div>
+          <div className="ce-col-form">
           {/* ── Nombre del evento ──
               La tipografía se elige AQUÍ, en el propio campo del nombre: es
               una decisión sobre el nombre, no un ajuste más del final. El
@@ -882,6 +897,8 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
           <button type="button" className="soft-btn soft-btn-primary" onClick={handleSubmit} style={{ width: "100%", marginTop: 20 }}>
             Continuar
           </button>
+          </div>
+          </div>
         </div>
       </div>
 
