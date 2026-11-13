@@ -48,6 +48,7 @@ import {
 } from "./payments/orders.js";
 
 const app = express();
+app.disable("x-powered-by");
 const PORT = process.env.PORT || 3001;
 const APP_URL = process.env.APP_URL || "http://localhost:5173";
 
@@ -96,7 +97,59 @@ app.use(express.json({
 // sin caracteres que compliquen el parseo del QR.
 const nano = customAlphabet("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", 10);
 function uid() { return nano(); }
-function gen4() { return String(Math.floor(1000 + Math.random() * 9000)); }
+// Códigos de verificación y de recuperación: 6 cifras con generador
+// criptográfico. Con 4 cifras (9.000 combinaciones) y sin tope de intentos, un
+// código de recuperación se adivinaba por fuerza bruta en minutos.
+const genCode = customAlphabet("0123456789", 6);
+
+// En producción (Vercel) NUNCA se auto-verifica una cuenta ni se devuelve un
+// código en la respuesta: si el correo falla, se dice que falló. Hacerlo
+// permitía registrar el correo de otra persona (y ver sus entradas en "Mis
+// tickets") o resetear su contraseña sin acceso a su buzón. En local, sin SMTP,
+// se mantiene el atajo para poder desarrollar.
+const IS_PROD = Boolean(process.env.VERCEL) || process.env.NODE_ENV === "production";
+
+// Límite de intentos por cuenta, guardado en la base (en serverless la memoria
+// no se comparte entre instancias, así que un contador en RAM no serviría).
+const CODE_MAX_FAILS = 8;          // códigos (verificación + recuperación)
+const LOGIN_MAX_FAILS = 10;        // contraseña
+const FAIL_WINDOW_MS = 30 * 60 * 1000;
+const CODE_TTL_MS = 15 * 60 * 1000;
+const CODE_RESEND_COOLDOWN_MS = 30 * 1000;
+
+/** ¿La cuenta está bloqueada por demasiados fallos de `kind` ("code"|"login")? */
+function isLocked(row, kind) {
+  const fails = Number(row?.[`${kind}_fails`] || 0);
+  const since = Number(row?.[`${kind}_fail_window`] || 0);
+  const max = kind === "login" ? LOGIN_MAX_FAILS : CODE_MAX_FAILS;
+  return fails >= max && Date.now() - since < FAIL_WINDOW_MS;
+}
+
+async function registerFail(row, kind) {
+  try {
+  const since = Number(row?.[`${kind}_fail_window`] || 0);
+  const fresh = Date.now() - since >= FAIL_WINDOW_MS;
+  // `kind` es siempre un literal interno ("code" | "login"), nunca entrada del usuario.
+  await db.execute(fresh
+    ? { sql: `UPDATE users SET ${kind}_fails = 1, ${kind}_fail_window = ? WHERE id = ?`, args: [Date.now(), row.id] }
+    : { sql: `UPDATE users SET ${kind}_fails = ${kind}_fails + 1 WHERE id = ?`, args: [row.id] });
+  } catch (e) { console.error("[intentos] no se pudo registrar:", e.message); }
+}
+
+async function clearFails(row, kind) {
+  if (!Number(row?.[`${kind}_fails`] || 0)) return;
+  try {
+    await db.execute({ sql: `UPDATE users SET ${kind}_fails = 0, ${kind}_fail_window = NULL WHERE id = ?`, args: [row.id] });
+  } catch (e) { console.error("[intentos] no se pudo limpiar:", e.message); }
+}
+
+const TOO_MANY = "Demasiados intentos. Espera unos minutos e inténtalo de nuevo.";
+
+/** 500 sin filtrar detalles internos (mensajes de SQL, rutas) en producción. */
+function serverError(res, e, tag = "") {
+  console.error(`[500]${tag ? " " + tag : ""}`, e?.message || e);
+  return res.status(500).json({ error: IS_PROD ? "Error del servidor. Intenta de nuevo." : (e?.message || "Error") });
+}
 
 function uniqueSlugBase(title) {
   return slugify(title) || "evento";
@@ -217,10 +270,16 @@ app.post("/api/auth/register", requireDb, async (req, res) => {
       });
     }
 
-    // Try to send verification email
+    // Enviar el código de verificación.
     if (emailEnabled) {
-      const code = gen4();
-      const expires = Date.now() + 15 * 60 * 1000;
+      // Re-registro inmediato de una cuenta sin verificar: no reenviar dentro
+      // del enfriamiento (evita usar el registro para bombardear un buzón).
+      const issuedAt = Number(existingUser?.verify_code_expires || 0) - CODE_TTL_MS;
+      if (existingUser?.verify_code && Date.now() - issuedAt < CODE_RESEND_COOLDOWN_MS) {
+        return res.json({ pending: true, email: cleanEmail });
+      }
+      const code = genCode();
+      const expires = Date.now() + CODE_TTL_MS;
       await db.execute({
         sql: "UPDATE users SET verify_code = ?, verify_code_expires = ? WHERE id = ?",
         args: [code, expires, userId],
@@ -230,14 +289,18 @@ app.post("/api/auth/register", requireDb, async (req, res) => {
       if (sent) {
         return res.json({ pending: true, email: cleanEmail });
       }
-      // Email failed → fall through to auto-verify below
+      if (IS_PROD) {
+        return res.status(502).json({ error: "email_failed", message: "No pudimos enviarte el código. Intenta de nuevo en unos minutos." });
+      }
+    } else if (IS_PROD) {
+      return res.status(503).json({ error: "email_disabled", message: "El registro no está disponible en este momento." });
     }
 
-    // No email configured or email failed → auto-verify and log in directly
+    // Solo en desarrollo local (sin correo): auto-verifica y entra directo.
     await db.execute({ sql: "UPDATE users SET email_verified = 1, verify_code = NULL, verify_code_expires = NULL WHERE id = ?", args: [userId] });
     const { rows } = await db.execute({ sql: "SELECT * FROM users WHERE id = ?", args: [userId] });
     res.json({ token: signToken(rowToUser(rows[0])), user: rowToUser(rows[0]) });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { serverError(res, e); }
 });
 
 app.post("/api/auth/verify-code", requireDb, async (req, res) => {
@@ -246,16 +309,23 @@ app.post("/api/auth/verify-code", requireDb, async (req, res) => {
     if (!email || !code) return res.status(400).json({ error: "Email y código requeridos" });
     const { rows } = await db.execute({ sql: "SELECT * FROM users WHERE email = ?", args: [email.trim().toLowerCase()] });
     const row = rows[0];
-    if (!row) return res.status(404).json({ error: "Usuario no encontrado" });
-    if (row.email_verified) { const u = rowToUser(row); return res.json({ token: signToken(u), user: u }); }
-    if (row.verify_code !== String(code).trim()) return res.status(400).json({ error: "Código incorrecto" });
+    if (!row) return res.status(400).json({ error: "Código incorrecto" });
+    // Una cuenta ya verificada NO devuelve sesión aquí: antes bastaba con
+    // conocer el correo de alguien para obtener su token sin código alguno.
+    if (row.email_verified) return res.status(409).json({ error: "already_verified", message: "Esta cuenta ya está verificada. Inicia sesión." });
+    if (isLocked(row, "code")) return res.status(429).json({ error: "too_many", message: TOO_MANY });
+    if (!row.verify_code || row.verify_code !== String(code).trim()) {
+      await registerFail(row, "code");
+      return res.status(400).json({ error: "Código incorrecto" });
+    }
     if (row.verify_code_expires && Date.now() > row.verify_code_expires)
       return res.status(400).json({ error: "El código expiró. Solicita uno nuevo." });
     await db.execute({ sql: "UPDATE users SET email_verified = 1, verify_code = NULL, verify_code_expires = NULL WHERE id = ?", args: [row.id] });
+    await clearFails(row, "code");
     const { rows: updated } = await db.execute({ sql: "SELECT * FROM users WHERE id = ?", args: [row.id] });
     const u = rowToUser(updated[0]);
     res.json({ token: signToken(u), user: u });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { serverError(res, e); }
 });
 
 app.post("/api/auth/resend-code", requireDb, async (req, res) => {
@@ -263,28 +333,30 @@ app.post("/api/auth/resend-code", requireDb, async (req, res) => {
     const { email } = req.body || {};
     const { rows } = await db.execute({ sql: "SELECT * FROM users WHERE email = ?", args: [email?.trim().toLowerCase()] });
     const row = rows[0];
-    if (!row) return res.status(404).json({ error: "Usuario no encontrado" });
-    if (row.email_verified) { const u = rowToUser(row); return res.json({ ok: true, token: signToken(u), user: u }); }
+    // Misma respuesta exista o no la cuenta: no revela qué correos están dados de alta.
+    if (!row) return res.json({ ok: true });
+    // Ya verificada → que inicie sesión. Antes devolvía un token sin código.
+    if (row.email_verified) return res.json({ ok: true, alreadyVerified: true });
     if (!emailEnabled) {
-      // No email configured → auto-verify
+      if (IS_PROD) return res.status(503).json({ error: "email_disabled", message: "No pudimos enviar el código." });
+      // Solo en desarrollo local: auto-verifica.
       await db.execute({ sql: "UPDATE users SET email_verified = 1, verify_code = NULL WHERE id = ?", args: [row.id] });
       const { rows: updated } = await db.execute({ sql: "SELECT * FROM users WHERE id = ?", args: [row.id] });
       const u = rowToUser(updated[0]);
       return res.json({ ok: true, token: signToken(u), user: u });
     }
-    const code = gen4(); const expires = Date.now() + 15 * 60 * 1000;
+    // Enfriamiento: evita bombardear el buzón de alguien con reenvíos.
+    const issuedAt = Number(row.verify_code_expires || 0) - CODE_TTL_MS;
+    if (row.verify_code && Date.now() - issuedAt < CODE_RESEND_COOLDOWN_MS) return res.json({ ok: true });
+    const code = genCode(); const expires = Date.now() + CODE_TTL_MS;
     await db.execute({ sql: "UPDATE users SET verify_code = ?, verify_code_expires = ? WHERE id = ?", args: [code, expires, row.id] });
-    let sent = false;
-    try { await sendVerificationCode(row.email, row.name, code); sent = true; } catch {}
-    if (!sent) {
-      // Email failed → auto-verify
-      await db.execute({ sql: "UPDATE users SET email_verified = 1, verify_code = NULL WHERE id = ?", args: [row.id] });
-      const { rows: updated } = await db.execute({ sql: "SELECT * FROM users WHERE id = ?", args: [row.id] });
-      const u = rowToUser(updated[0]);
-      return res.json({ ok: true, token: signToken(u), user: u });
+    try { await sendVerificationCode(row.email, row.name, code); }
+    catch (e) {
+      console.error("Email send failed:", e.message);
+      return res.status(502).json({ error: "email_failed", message: "No pudimos enviarte el código. Intenta de nuevo en unos minutos." });
     }
     res.json({ ok: true });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { serverError(res, e, "resend-code"); }
 });
 
 app.post("/api/auth/login", requireDb, async (req, res) => {
@@ -292,11 +364,15 @@ app.post("/api/auth/login", requireDb, async (req, res) => {
     const { email, password } = req.body || {};
     const { rows } = await db.execute({ sql: "SELECT * FROM users WHERE email = ?", args: [email?.trim().toLowerCase()] });
     const row = rows[0];
-    if (!row || !(await verifyPassword(password, row.password_hash)))
+    if (row && isLocked(row, "login")) return res.status(429).json({ error: "too_many", message: TOO_MANY });
+    if (!row || !password || !(await verifyPassword(password, row.password_hash))) {
+      if (row) await registerFail(row, "login");
       return res.status(401).json({ error: "Credenciales incorrectas" });
+    }
+    await clearFails(row, "login");
     const u = rowToUser(row);
     res.json({ token: signToken(u), user: u });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { serverError(res, e, "login"); }
 });
 
 app.post("/api/auth/forgot-password", requireDb, async (req, res) => {
@@ -305,21 +381,26 @@ app.post("/api/auth/forgot-password", requireDb, async (req, res) => {
     const { rows } = await db.execute({ sql: "SELECT * FROM users WHERE email = ?", args: [email?.trim().toLowerCase()] });
     const row = rows[0];
     if (row) {
-      const code = gen4(); const expires = Date.now() + 15 * 60 * 1000;
+      // Enfriamiento entre envíos (mismo motivo que en resend-code).
+      const issuedAt = Number(row.reset_code_expires || 0) - CODE_TTL_MS;
+      if (row.reset_code && Date.now() - issuedAt < CODE_RESEND_COOLDOWN_MS) return res.json({ ok: true });
+      const code = genCode(); const expires = Date.now() + CODE_TTL_MS;
       await db.execute({ sql: "UPDATE users SET reset_code = ?, reset_code_expires = ? WHERE id = ?", args: [code, expires, row.id] });
       if (emailEnabled) {
         try { await sendPasswordResetCode(row.email, row.name, code); } catch (e) {
           console.error("Email send failed:", e.message);
-          // Return code directly so user can still reset even if email fails
+          // El código JAMÁS viaja en la respuesta en producción: quien pidiera
+          // el reseteo de una cuenta ajena se quedaría con ella.
+          if (IS_PROD) return res.status(502).json({ error: "email_failed", message: "No pudimos enviar el código. Intenta de nuevo en unos minutos." });
           return res.json({ ok: true, code });
         }
-      } else {
-        // No email configured — return code directly in response
+      } else if (!IS_PROD) {
+        // Solo en desarrollo local, sin correo configurado.
         return res.json({ ok: true, code });
       }
     }
     res.json({ ok: true });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { serverError(res, e, "forgot-password"); }
 });
 
 app.post("/api/auth/reset-password", requireDb, async (req, res) => {
@@ -330,16 +411,23 @@ app.post("/api/auth/reset-password", requireDb, async (req, res) => {
       return res.status(400).json({ error: "La contraseña debe tener al menos 8 caracteres y una mayúscula" });
     const { rows } = await db.execute({ sql: "SELECT * FROM users WHERE email = ?", args: [email.trim().toLowerCase()] });
     const row = rows[0];
-    if (!row) return res.status(404).json({ error: "Usuario no encontrado" });
-    if (row.reset_code !== String(code).trim()) return res.status(400).json({ error: "Código incorrecto" });
+    if (!row) return res.status(400).json({ error: "Código incorrecto" });
+    if (isLocked(row, "code")) return res.status(429).json({ error: "too_many", message: TOO_MANY });
+    if (!row.reset_code || row.reset_code !== String(code).trim()) {
+      await registerFail(row, "code");
+      return res.status(400).json({ error: "Código incorrecto" });
+    }
     if (row.reset_code_expires && Date.now() > row.reset_code_expires)
       return res.status(400).json({ error: "El código expiró" });
     const hash = await hashPassword(newPassword);
+    // Recuperar la contraseña también desbloquea el inicio de sesión.
     await db.execute({ sql: "UPDATE users SET password_hash = ?, reset_code = NULL, reset_code_expires = NULL WHERE id = ?", args: [hash, row.id] });
+    await clearFails(row, "code");
+    await clearFails(row, "login");
     const { rows: updated } = await db.execute({ sql: "SELECT * FROM users WHERE id = ?", args: [row.id] });
     const u = rowToUser(updated[0]);
     res.json({ token: signToken(u), user: u });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { serverError(res, e); }
 });
 
 app.get("/api/auth/me", requireDb, authMiddleware, async (req, res) => {
@@ -347,7 +435,7 @@ app.get("/api/auth/me", requireDb, authMiddleware, async (req, res) => {
     const { rows } = await db.execute({ sql: "SELECT * FROM users WHERE id = ?", args: [req.user.sub] });
     if (!rows[0]) return res.status(404).json({ error: "Usuario no encontrado" });
     res.json({ user: rowToUser(rows[0]) });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { serverError(res, e); }
 });
 
 // Cruza el email del usuario autenticado con las inscripciones (entradas).
@@ -408,7 +496,7 @@ app.get("/api/auth/my-tickets", requireDb, authMiddleware, async (req, res) => {
       });
     }
     res.json({ tickets });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { serverError(res, e); }
 });
 
 app.patch("/api/auth/me", requireDb, authMiddleware, async (req, res) => {
@@ -431,7 +519,7 @@ app.patch("/api/auth/me", requireDb, authMiddleware, async (req, res) => {
     }
     const { rows } = await db.execute({ sql: "SELECT * FROM users WHERE id = ?", args: [req.user.sub] });
     res.json({ user: rowToUser(rows[0]) });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { serverError(res, e); }
 });
 
 app.post("/api/auth/change-password", requireDb, authMiddleware, async (req, res) => {
@@ -447,27 +535,21 @@ app.post("/api/auth/change-password", requireDb, authMiddleware, async (req, res
     const hash = await hashPassword(newPassword);
     await db.execute({ sql: "UPDATE users SET password_hash = ? WHERE id = ?", args: [hash, req.user.sub] });
     res.json({ ok: true });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { serverError(res, e); }
 });
 
 app.delete("/api/auth/me", requireDb, authMiddleware, async (req, res) => {
   try {
     const userId = req.user.sub;
-    // Obtener todos los eventos del usuario
-    const { rows: events } = await db.execute({ sql: "SELECT id FROM events WHERE host_id = ?", args: [userId] });
-    const eventIds = events.map(e => e.id);
-    // Eliminar todas las registraciones de esos eventos
-    if (eventIds.length > 0) {
-      for (const eventId of eventIds) {
-        await db.execute({ sql: "DELETE FROM registrations WHERE event_id = ?", args: [eventId] });
-      }
-      // Eliminar todos los eventos
-      await db.execute({ sql: "DELETE FROM events WHERE host_id = ?", args: [userId] });
-    }
-    // Eliminar al usuario
-    await db.execute({ sql: "DELETE FROM users WHERE id = ?", args: [userId] });
+    // Un solo batch atómico: o se borra todo o nada (antes era un DELETE por
+    // evento, en serie, y un fallo a mitad dejaba la cuenta a medio borrar).
+    await db.batch([
+      { sql: "DELETE FROM registrations WHERE event_id IN (SELECT id FROM events WHERE host_id = ?)", args: [userId] },
+      { sql: "DELETE FROM events WHERE host_id = ?", args: [userId] },
+      { sql: "DELETE FROM users WHERE id = ?", args: [userId] },
+    ], "write");
     res.json({ ok: true });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { serverError(res, e); }
 });
 
 // Legacy email link verification
@@ -479,7 +561,7 @@ app.get("/api/auth/verify-email/:token", requireDb, async (req, res) => {
     const { rows: updated } = await db.execute({ sql: "SELECT * FROM users WHERE id = ?", args: [rows[0].id] });
     const u = rowToUser(updated[0]);
     res.json({ token: signToken(u), user: u });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { serverError(res, e); }
 });
 
 // ─── Público ───────────────────────────────────────────────────────────────
@@ -529,7 +611,7 @@ app.get("/api/public/events/:slug", requireDb, async (req, res) => {
     // reflejarse pronto, pero sin caché era 1 función + 4 consultas por visita.
     setCache(res, { cdn: 15, swr: 60 });
     res.json({ event: ev });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { serverError(res, e); }
 });
 
 app.patch("/api/public/registrations/:ticketId/cancel", requireDb, async (req, res) => {
@@ -539,7 +621,7 @@ app.patch("/api/public/registrations/:ticketId/cancel", requireDb, async (req, r
     if (rows[0].cancelled) return res.json({ ok: true, already: true });
     await db.execute({ sql: "UPDATE registrations SET cancelled = 1 WHERE ticket_id = ?", args: [req.params.ticketId] });
     res.json({ ok: true });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { serverError(res, e); }
 });
 
 // Información pública de una entrada por su ticket_id (para la página /t/:id).
@@ -580,7 +662,7 @@ app.get("/api/public/tickets/:ticketId", requireDb, async (req, res) => {
         },
       },
     });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { serverError(res, e); }
 });
 
 // La capacidad máxima ahora vive en ./capacity.js (la comparten las rutas y la
@@ -725,7 +807,7 @@ app.post("/api/public/events/:slug/register", requireDb, optionalAuth, async (re
       registrations,
       event: { id: ev.id, title: ev.title, slug: ev.slug },
     });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { serverError(res, e); }
 });
 
 // ─── Pagos ─────────────────────────────────────────────────────────────────
@@ -744,7 +826,7 @@ app.get("/api/public/events/:slug/quote", requireDb, async (req, res) => {
     const q = computeOrder({ unitPrice: Number(ev.price), quantity: qty });
     // El comprador no tiene por qué ver el reparto interno.
     res.json({ free: false, quantity: q.quantity, unitPrice: q.unitPrice, subtotal: q.subtotal, serviceFee: q.serviceFee, total: q.total, currency: "COP" });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { serverError(res, e); }
 });
 
 // Inicia el cobro: reserva los cupos y devuelve la URL del checkout.
@@ -814,7 +896,7 @@ app.get("/api/public/orders/:id", requireDb, async (req, res) => {
           : [],
       },
     });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { serverError(res, e); }
 });
 
 // Webhook de la pasarela. Es la ÚNICA vía por la que una entrada pasa a válida:
@@ -967,7 +1049,7 @@ app.get("/api/events", requireDb, authMiddleware, async (req, res) => {
       }
     }
     res.json({ events });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { serverError(res, e); }
 });
 
 app.post("/api/events", requireDb, authMiddleware, requireRole("host", "super_admin"), async (req, res) => {
@@ -995,7 +1077,9 @@ app.post("/api/events", requireDb, authMiddleware, requireRole("host", "super_ad
     const slug = await uniqueSlug(payload.slug || payload.title, id);
     const hostId = req.user.role === "super_admin" && payload.hostId ? payload.hostId : req.user.sub;
     const now = Date.now();
-    const data = { ...payload, id, slug, registrations: payload.registrations || [] };
+    // Las inscripciones viven en su tabla; copiarlas al payload solo lo engorda.
+    const data = { ...payload, id, slug };
+    delete data.registrations;
     
     // Ejecutar INSERT
     await db.execute({
@@ -1047,8 +1131,11 @@ app.put("/api/events/:id", requireDb, authMiddleware, async (req, res) => {
     const slug = payload.slug && payload.slug !== row.slug
       ? await uniqueSlug(payload.slug, row.id)
       : row.slug;
-    const regs = await getRegsForEvent(row.id);
-    const data = { ...JSON.parse(row.payload), ...payload, id: row.id, slug, registrations: regs };
+    // Antes se copiaban TODAS las inscripciones (con correos y respuestas) al
+    // payload del evento en cada edición: duplicaba datos personales y hacía
+    // crecer el payload que se lee en cada visita. Viven solo en su tabla.
+    const data = { ...JSON.parse(row.payload), ...payload, id: row.id, slug };
+    delete data.registrations;
     
     await db.execute({
       sql: `UPDATE events SET slug = ?, payload = ?, manual_sold_out = ?, visibility = ?, category = ?, is_paid = ?, price = ?, updated_at = ? WHERE id = ?`,
@@ -1077,7 +1164,7 @@ app.patch("/api/events/:id/sold-out", requireDb, authMiddleware, async (req, res
     const ev = await attachRegs(parseEvent(rows[0]));
     ev.manualSoldOut = Boolean(v);
     res.json({ event: ev });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { serverError(res, e); }
 });
 
 app.delete("/api/events/:id", requireDb, authMiddleware, async (req, res) => {
@@ -1086,9 +1173,14 @@ app.delete("/api/events/:id", requireDb, authMiddleware, async (req, res) => {
     const row = existing[0];
     if (!row) return res.status(404).json({ error: "No encontrado" });
     if (req.user.role !== "super_admin" && row.host_id !== req.user.sub) return res.status(403).json({ error: "Sin permiso" });
-    await db.execute({ sql: "DELETE FROM events WHERE id = ?", args: [req.params.id] });
+    // SQLite no aplica el ON DELETE CASCADE sin `PRAGMA foreign_keys`, así que
+    // las inscripciones quedaban huérfanas. Se borran en el mismo batch.
+    await db.batch([
+      { sql: "DELETE FROM registrations WHERE event_id = ?", args: [req.params.id] },
+      { sql: "DELETE FROM events WHERE id = ?", args: [req.params.id] },
+    ], "write");
     res.json({ ok: true });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { serverError(res, e); }
 });
 
 app.post("/api/events/:id/check-in", requireDb, authMiddleware, async (req, res) => {
@@ -1113,7 +1205,7 @@ app.post("/api/events/:id/check-in", requireDb, authMiddleware, async (req, res)
     const checkedInAt = Date.now();
     await db.execute({ sql: "UPDATE registrations SET used = 1, checked_in_at = ? WHERE id = ?", args: [checkedInAt, regRow.id] });
     res.json({ status: "ok", reg: { id: regRow.ticket_id, data: JSON.parse(regRow.payload), checkedInAt } });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { serverError(res, e); }
 });
 
 // Aprobar / revocar VARIAS inscripciones de una vez (normalmente todas las de
@@ -1165,7 +1257,7 @@ app.patch("/api/events/:id/registrations/approval", requireDb, authMiddleware, a
       }
     }
     res.json({ ok: true, updated: ids.length, changed: nuevas.length, approved: Boolean(approved) });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { serverError(res, e); }
 });
 
 // Aprobar / revocar una inscripción de un evento con "Requerir aprobación".
@@ -1204,7 +1296,7 @@ app.patch("/api/events/:id/registrations/:ticketId/approval", requireDb, authMid
       }
     }
     res.json({ ok: true, ticketId, approved: Boolean(approved) });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { serverError(res, e); }
 });
 
 app.get("/api/admin/overview", requireDb, authMiddleware, requireRole("super_admin"), async (req, res) => {
@@ -1219,7 +1311,7 @@ app.get("/api/admin/overview", requireDb, authMiddleware, requireRole("super_adm
       latestUsers: latestUsers.map(u => ({ id: u.id, email: u.email, name: u.name, role: u.role, createdAt: u.created_at })),
       latestEvents: latestEvents.map(e => ({ id: e.id, slug: e.slug, hostId: e.host_id, createdAt: e.created_at })),
     });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { serverError(res, e); }
 });
 
 // Migra los avatares antiguos en base64 a URLs de Cloudinary. Se ejecuta en el
@@ -1230,7 +1322,7 @@ app.post("/api/admin/migrate-event-images", requireDb, authMiddleware, requireOw
     const resultado = await migrateBase64EventImages({ apply: req.body?.apply !== false });
     if (resultado.error) return res.status(400).json(resultado);
     res.json(resultado);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { serverError(res, e); }
 });
 
 app.post("/api/admin/migrate-avatars", requireDb, authMiddleware, requireOwner, async (req, res) => {
@@ -1240,14 +1332,17 @@ app.post("/api/admin/migrate-avatars", requireDb, authMiddleware, requireOwner, 
       return res.status(400).json({ error: "Cloudinary no está configurado en el servidor (CLOUDINARY_CLOUD_NAME / CLOUDINARY_UPLOAD_PRESET)." });
     }
     res.json(result);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { serverError(res, e); }
 });
 
 // ─── Discover (público) ────────────────────────────────────────────────────
 app.get("/api/public/events", requireDb, async (req, res) => {
   try {
-    const { q, category, city, sort, page = 1, limit = 12 } = req.query;
-    const offset = (Number(page) - 1) * Number(limit);
+    const { q, category, city, sort } = req.query;
+    // Acotados: un `limit=100000` obligaba a leer y serializar toda la tabla.
+    const limit = Math.min(Math.max(Math.floor(Number(req.query.limit) || 12), 1), 48);
+    const page = Math.max(Math.floor(Number(req.query.page) || 1), 1);
+    const offset = (page - 1) * limit;
     const today = new Date().toISOString().split("T")[0];
 
     const conditions = [
@@ -1347,7 +1442,7 @@ app.get("/api/public/events", requireDb, async (req, res) => {
               ? "attendees DESC, COALESCE(json_extract(payload, '$.startDate'), '9999-99-99') ASC"
               : "COALESCE(json_extract(payload, '$.startDate'), '9999-99-99') ASC"}
             LIMIT ? OFFSET ?`,
-        args: [...args, Number(limit), offset],
+        args: [...args, limit, offset],
       },
     ], "read");
 
@@ -1380,8 +1475,8 @@ app.get("/api/public/events", requireDb, async (req, res) => {
     // 30 s: suficiente para que una edición salga pronto en Descubrir y para
     // que el listado no golpee la base en cada visita.
     setCache(res, { cdn: 30, swr: 120 });
-    res.json({ events, total, page: Number(page), limit: Number(limit) });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+    res.json({ events, total, page, limit });
+  } catch (e) { serverError(res, e); }
 });
 
 // Ciudades con eventos próximos, para poder agrupar por lugar en Descubrir.
@@ -1400,7 +1495,7 @@ app.get("/api/public/cities", requireDb, async (req, res) => {
     });
     setCache(res, { cdn: 120, swr: 300 });
     res.json({ cities: rows.map(r => ({ name: r.city, count: Number(r.count) })) });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { serverError(res, e); }
 });
 
 app.get("/api/public/categories", requireDb, async (req, res) => {
@@ -1418,7 +1513,7 @@ app.get("/api/public/categories", requireDb, async (req, res) => {
     });
     setCache(res, { cdn: 120, swr: 300 });
     res.json({ categories: rows.map(r => ({ slug: r.category, count: Number(r.count) })) });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { serverError(res, e); }
 });
 
 // Perfil público de un organizador: quién es y todo lo que ha hecho o va a
@@ -1527,7 +1622,7 @@ app.get("/api/public/hosts/:id", requireDb, async (req, res) => {
       upcoming: proximos,
       past: pasados,
     });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { serverError(res, e); }
 });
 
 app.get("/api/health", (_, res) => {

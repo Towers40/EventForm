@@ -155,6 +155,12 @@ export async function initDb() {
     ["users", "payout_provider",   "TEXT"],
     ["users", "payout_account_id", "TEXT"],
     ["users", "payout_status",     "TEXT NOT NULL DEFAULT 'none'"], // none | pending | verified
+    // Límite de intentos (fuerza bruta de códigos y contraseñas). Viven en la
+    // base porque en serverless cada instancia tiene su propia memoria.
+    ["users", "code_fails",        "INTEGER NOT NULL DEFAULT 0"],
+    ["users", "code_fail_window",  "INTEGER"],
+    ["users", "login_fails",       "INTEGER NOT NULL DEFAULT 0"],
+    ["users", "login_fail_window", "INTEGER"],
   ];
   const tablas = [...new Set(migrations.map(m => m[0]))];
   const columnas = {};

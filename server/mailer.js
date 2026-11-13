@@ -83,7 +83,7 @@ export async function sendVerificationCode(email, name, code) {
       </p>
       <div style="text-align:center;margin:32px 0">
         <div style="display:inline-block;background:#f0f6fc;border:2px solid #0d3b66;border-radius:12px;padding:20px 40px">
-          <span style="font-size:40px;font-weight:900;letter-spacing:12px;color:#0d3b66">${code}</span>
+          <span style="font-size:36px;font-weight:800;letter-spacing:8px;color:#0d3b66">${code}</span>
         </div>
         <p style="color:#718096;font-size:13px;margin:16px 0 0">Válido por 15 minutos</p>
       </div>
@@ -204,7 +204,7 @@ export async function sendPasswordResetCode(email, name, code) {
       </p>
       <div style="text-align:center;margin:32px 0">
         <div style="display:inline-block;background:#f0f6fc;border:2px solid #0d3b66;border-radius:12px;padding:20px 40px">
-          <span style="font-size:40px;font-weight:900;letter-spacing:12px;color:#0d3b66">${code}</span>
+          <span style="font-size:36px;font-weight:800;letter-spacing:8px;color:#0d3b66">${code}</span>
         </div>
         <p style="color:#718096;font-size:13px;margin:16px 0 0">Válido por 15 minutos</p>
       </div>
