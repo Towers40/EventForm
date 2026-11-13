@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import TypeformRegister from "../components/TypeformRegister.jsx";
-import ConfirmTicket from "../components/ConfirmTicket.jsx";
+import TicketWallet from "../components/TicketWallet.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { api, apiEnabled } from "../lib/api.js";
 import { loadEvents } from "../lib/storage.js";
@@ -146,8 +146,8 @@ export default function PublicEventPage() {
   // el parpadeo en móvil, donde la entrada se resuelve por API, no localStorage).
   const [regLoading, setRegLoading] = useState(true);
   const [phase, setPhase]          = useState("event");
+  const [ticketNuevo, setTicketNuevo] = useState(false); // recién inscrito
   const [err, setErr]              = useState("");
-  const [cancelling, setCancelling] = useState(false);
   const [refreshTick, setRefreshTick] = useState(0); // fuerza recarga del estado
   // Color de la portada para eventos publicados ANTES de que existiera esta
   // personalización: no lo traen guardado, así que se calcula aquí una vez.
@@ -291,23 +291,32 @@ export default function PublicEventPage() {
       // poder pintarlas todas sin volver a pedirlas.
       const all = registrations?.length ? registrations : [registration];
       localStorage.setItem(`ef_ticket_${slug}`, JSON.stringify({ ...registration, _event: snap, _all: all }));
-      setReg(registration); setRegs(all); setPhase("ticket"); return;
+      setReg(registration); setRegs(all); setTicketNuevo(true); setPhase("ticket"); return;
     }
     const ev   = loadEvents().find(e => e.slug === slug);
     const ticket = { id: "TICKET-" + Math.random().toString(36).slice(2, 10).toUpperCase(), eventId: ev.id, data: payload.form, ts: Date.now(), used: false };
     localStorage.setItem(`ef_ticket_${slug}`, JSON.stringify(ticket));
-    setReg(ticket); setPhase("ticket");
+    setReg(ticket); setTicketNuevo(true); setPhase("ticket");
   };
 
-  const handleCancel = async () => {
-    if (!reg?.id) return;
-    setCancelling(true);
-    try {
-      if (apiEnabled) await api.cancelRegistration(reg.id);
-      localStorage.removeItem(`ef_ticket_${slug}`);
-      setReg(null); setPhase("event");
-    } catch (e) { alert("No se pudo cancelar: " + e.message); }
-    finally { setCancelling(false); }
+  // Cancela UNA entrada (con varias, las demás siguen activas).
+  const handleCancel = async (id = reg?.id) => {
+    if (!id) return;
+    {
+      if (apiEnabled) await api.cancelRegistration(id);
+      const quedan = (regs?.length ? regs : (reg ? [reg] : [])).filter((r) => r.id !== id);
+      const key = `ef_ticket_${slug}`;
+      if (!quedan.length) {
+        localStorage.removeItem(key);
+        setReg(null); setRegs(null); setPhase("event");
+      } else {
+        try {
+          const prev = JSON.parse(localStorage.getItem(key) || "{}");
+          localStorage.setItem(key, JSON.stringify({ ...prev, ...quedan[0], _all: quedan }));
+        } catch { /* la caché es opcional */ }
+        setReg(quedan[0]); setRegs(quedan);
+      }
+    }
   };
 
   const BG   = "transparent"; // fondo global en body (typeform.css)
@@ -360,9 +369,14 @@ export default function PublicEventPage() {
   );
 
   if (phase === "ticket") return (
-    <ConfirmTicket ev={event} reg={reg} regs={regs} standalone tintColor={colorEvento}
-      onCancel={handleCancel} cancelling={cancelling}
-      onBack={() => { if (window.history.length > 1) window.history.back(); else window.location.href = "/app"; }} />
+    // La misma entrada a pantalla completa que en "Mis tickets".
+    <TicketWallet
+      grupo={{ slug, event: { ...event, themeColor: colorEvento || event.themeColor }, items: regs?.length ? regs : (reg ? [reg] : []) }}
+      token={token}
+      nota={ticketNuevo ? "Inscripción confirmada" : undefined}
+      onClose={() => setPhase("event")}
+      onVerEvento={() => setPhase("event")}
+      onCancelConfirmed={handleCancel} />
   );
 
   // Personalización del evento: el color que domina su portada y la

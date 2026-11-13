@@ -7,6 +7,7 @@ import { getNavigationLinks } from "../lib/navigation.js";
 import { addToCalendar, downloadTicketPdf, fechaLarga, hora12, lugarDe } from "../lib/ticketExport.js";
 import { publicBaseUrl } from "../lib/platform.js";
 import { qrUrlFor } from "./PendingQr.jsx";
+import { useIsDesktop } from "../lib/useMediaQuery.js";
 
 // ─── Ticket electrónico a pantalla completa ─────────────────────────────────
 //
@@ -17,6 +18,18 @@ import { qrUrlFor } from "./PendingQr.jsx";
 //   · Cancelar entrada (evento gratuito) o Revender (entrada pagada)
 //   · Más: calendario, cómo llegar, PDF y contactar al organizador
 // Con varias entradas del mismo evento, se pasan deslizando a los lados.
+//
+// Es LA vista de entrada de toda la app: Mis tickets, la página del evento
+// ("Ver mi entrada" y al terminar de inscribirse) y el enlace público /t/:id.
+// En ordenador (≥1024 px) pasa a dos columnas: la boleta a la izquierda y, a
+// la derecha, los datos del evento con las mismas tres acciones.
+//
+// Props opcionales:
+//   · onClose            sin él no hay botón de cerrar (página /t/:id)
+//   · onVerEvento        qué hace "Ver evento" (por defecto, ir a /e/slug)
+//   · onCancel(id)       el que llama confirma la cancelación
+//   · onCancelConfirmed  la confirmación la pide esta vista y luego llama
+//   · nota               línea de estado ("Inscripción confirmada")
 
 const ico = (d, s = 24) => (
   <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d}</svg>
@@ -29,6 +42,7 @@ const I = {
   calendario: ico(<><rect x="3" y="4.5" width="18" height="16" rx="3" /><path d="M3 9.5h18M8 2.5v4M16 2.5v4M12 13v4M10 15h4" /></>, 20),
   ruta: ico(<path d="m3 11 19-8-8 19-2-9-9-2z" />, 20),
   pdf: ico(<><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5M12 11v6M9.5 14.5 12 17l2.5-2.5" /></>, 20),
+  compartir: ico(<><path d="M21.5 2.5 10.8 13.2" /><path d="M21.5 2.5 14.8 21.5l-4-8.3-8.3-4z" /></>, 20),
   correo: ico(<><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" /></>, 20),
 };
 
@@ -44,8 +58,10 @@ function Accion({ icono, etiqueta, onClick, tono }) {
   );
 }
 
-export default function TicketWallet({ grupo, token, onClose, onCancel, onResaleChange }) {
+export default function TicketWallet({ grupo, token, onClose, onCancel, onCancelConfirmed, onVerEvento, onResaleChange, nota }) {
   const nav = useNavigate();
+  const escritorio = useIsDesktop();
+  const [confirmar, setConfirmar] = useState(null);
   const { slug, items } = grupo;
   const [detalle, setDetalle] = useState(null);   // evento completo (organizador, mapa…)
   const [idx, setIdx] = useState(0);
@@ -72,7 +88,7 @@ export default function TicketWallet({ grupo, token, onClose, onCancel, onResale
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    const tecla = (e) => { if (e.key === "Escape") onClose(); };
+    const tecla = (e) => { if (e.key === "Escape") onClose?.(); };
     window.addEventListener("keydown", tecla);
     return () => { document.body.style.overflow = prev; window.removeEventListener("keydown", tecla); };
   }, [onClose]);
@@ -100,11 +116,25 @@ export default function TicketWallet({ grupo, token, onClose, onCancel, onResale
     window.open(url, "_blank", "noopener");
   };
 
+  // Comparte el enlace de ESTA entrada (/t/:id): quien lo abre ve el QR.
+  const compartirTicket = async () => {
+    const url = `${publicBaseUrl()}/t/${actual.id}`;
+    const datos = { url, title: `Entrada: ${ev.title || "evento"}`, text: `Mi entrada para ${ev.title || "el evento"}` };
+    if (navigator.share) {
+      try { await navigator.share(datos); return; }
+      catch (e) { if (e?.name === "AbortError") return; /* si no se puede, se copia */ }
+    }
+    try { await navigator.clipboard.writeText(url); avisar("Enlace de la entrada copiado."); }
+    catch { window.prompt("Copia el enlace de la entrada:", url); }
+  };
+
   const opciones = [
     { key: "cal", icono: I.calendario, titulo: "Añadir al calendario", sub: "Con fecha, hora y lugar ya puestos",
       visible: Boolean(ev.startDate || ev.date),
       run: () => { if (!addToCalendar(ev, actual.id, urlEvento)) avisar("Este evento aún no tiene fecha."); } },
     { key: "ruta", icono: I.ruta, titulo: "Cómo llegar", sub: lugarDe(ev) || "", visible: Boolean(lugarDe(ev) || ev.lat != null), run: comoLlegar },
+    { key: "share", icono: I.compartir, titulo: "Compartir ticket", sub: "Envía el enlace con el QR de esta entrada",
+      visible: actual?.approved !== false, run: compartirTicket },
     { key: "pdf", icono: I.pdf, titulo: busy === "pdf" ? "Generando PDF…" : "Descargar PDF", sub: "Tu entrada con el QR, para guardar o imprimir",
       visible: actual?.approved !== false,
       run: async () => {
@@ -131,12 +161,17 @@ export default function TicketWallet({ grupo, token, onClose, onCancel, onResale
       {/* Tinte del evento arriba, como en su página. */}
       <div aria-hidden="true" style={{ position: "absolute", inset: "0 0 auto 0", height: 420, background: tinte ? tinte.glow : "linear-gradient(180deg, rgba(255,255,255,0.14), transparent)", pointerEvents: "none" }} />
 
-      <div style={{ position: "relative", maxWidth: 460, margin: "0 auto", padding: "calc(14px + var(--ef-top-offset, 0px) + env(safe-area-inset-top)) 18px 40px" }}>
-        <button type="button" onClick={onClose} aria-label="Cerrar entrada"
+      <div style={{ position: "relative", maxWidth: escritorio ? 1040 : 460, margin: "0 auto", padding: escritorio ? "calc(24px + var(--ef-top-offset, 0px)) 40px 48px" : "calc(14px + var(--ef-top-offset, 0px) + env(safe-area-inset-top)) 18px 40px" }}>
+        {onClose ? <button type="button" onClick={onClose} aria-label="Cerrar entrada"
           style={{ width: 46, height: 46, borderRadius: "50%", border: "none", background: "rgba(255,255,255,0.14)", color: "#fff", cursor: "pointer", display: "grid", placeItems: "center", marginBottom: 18 }}>
           <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
-        </button>
+        </button> : <div style={{ height: escritorio ? 40 : 8 }} />}
 
+        <div style={escritorio ? { display: "grid", gridTemplateColumns: "minmax(0, 420px) minmax(0, 1fr)", gap: 80, alignItems: "center" } : undefined}>
+        <div>
+        {nota && !escritorio && (
+          <p style={{ margin: "0 0 14px", textAlign: "center", fontSize: 13, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(229,238,255,0.78)" }}>{nota}</p>
+        )}
         {/* Entradas: una por pantalla, deslizables */}
         <div ref={tiraRef} onScroll={alDesplazar}
           style={{ display: "flex", overflowX: items.length > 1 ? "auto" : "hidden", scrollSnapType: "x mandatory", scrollbarWidth: "none", margin: "0 -18px", WebkitOverflowScrolling: "touch" }}>
@@ -188,31 +223,83 @@ export default function TicketWallet({ grupo, token, onClose, onCancel, onResale
           </div>
         )}
 
+        </div>
+
+        <div>
+        {/* Ordenador: los datos del evento acompañan a la boleta. */}
+        {escritorio && (
+          <div style={{ marginBottom: 36 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(229,238,255,0.56)", marginBottom: 14 }}>{nota || "Tu entrada"}</div>
+            <h2 style={{ fontSize: 42, fontWeight: 600, letterSpacing: "-0.03em", lineHeight: 1.08, margin: "0 0 24px", color: "#fff" }}>{ev.title || "Evento"}</h2>
+            {[
+              { k: "f", icono: I.calendario, t: [fechaLarga(ev.startDate || ev.date), cuando].filter(Boolean).join(" · ") },
+              { k: "l", icono: I.ruta, t: lugarDe(ev) },
+              { k: "o", icono: I.correo, t: (ev.organizerName || ev.hostName) ? `Organiza ${ev.organizerName || ev.hostName}` : "" },
+            ].filter((d) => d.t).map((d) => (
+              <div key={d.k} style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 12, color: "rgba(229,238,255,0.78)", fontSize: 17 }}>
+                <span style={{ width: 42, height: 42, borderRadius: 12, background: "rgba(255,255,255,0.1)", display: "grid", placeItems: "center", flexShrink: 0, color: "#fff" }}>{d.icono}</span>
+                <span style={{ minWidth: 0, textTransform: d.k === "f" ? "capitalize" : "none" }}>{d.t}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Acciones */}
-        <div style={{ display: "flex", justifyContent: "space-around", gap: 8, marginTop: 30 }}>
-          <Accion icono={I.ojo} etiqueta="Ver evento" onClick={() => nav(`/e/${slug}`)} />
+        <div style={{ display: "flex", justifyContent: escritorio ? "flex-start" : "space-around", gap: escritorio ? 20 : 8, marginTop: escritorio ? 0 : 30 }}>
+          <Accion icono={I.ojo} etiqueta="Ver evento" onClick={() => (onVerEvento ? onVerEvento() : nav(`/e/${slug}`))} />
           {!pasado && actual && !actual.used && (
             esPago
               ? <Accion icono={I.revender} etiqueta={busy === "resale" ? "…" : enReventa ? "Quitar reventa" : "Revender"} onClick={revender} />
-              : <Accion icono={I.cancelar} etiqueta="Cancelar" tono="#fca5a5" onClick={() => onCancel(actual.id)} />
+              : (onCancel || onCancelConfirmed) && <Accion icono={I.cancelar} etiqueta="Cancelar" tono="#fca5a5" onClick={() => (onCancelConfirmed ? setConfirmar(actual.id) : onCancel(actual.id))} />
           )}
           <Accion icono={I.mas} etiqueta="Más" onClick={() => setMenu(true)} />
         </div>
 
         {aviso && (
-          <p role="status" style={{ margin: "22px auto 0", maxWidth: 360, textAlign: "center", fontSize: 14, color: "#fff", background: "rgba(255,255,255,0.12)", borderRadius: 14, padding: "12px 14px", lineHeight: 1.4 }}>{aviso}</p>
+          <p role="status" style={{ margin: escritorio ? "26px 0 0" : "22px auto 0", maxWidth: 360, textAlign: escritorio ? "left" : "center", fontSize: 14, color: "#fff", background: "rgba(255,255,255,0.12)", borderRadius: 14, padding: "12px 14px", lineHeight: 1.4 }}>{aviso}</p>
         )}
+        </div>
+        </div>
       </div>
+
+      {/* Confirmación de cancelación (cuando la pide esta vista) */}
+      {confirmar && (
+        <div onClick={() => busy !== "cancel" && setConfirmar(null)}
+          style={{ position: "fixed", inset: 0, zIndex: 3, background: "rgba(0,0,0,0.65)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div onClick={(e) => e.stopPropagation()} role="alertdialog" aria-label="Cancelar entrada"
+            style={{ width: "100%", maxWidth: 380, background: "#1c1d21", borderRadius: 22, padding: 24, textAlign: "center", boxShadow: "0 24px 70px rgba(0,0,0,0.55)" }}>
+            <h3 style={{ fontSize: 18, fontWeight: 600, color: "#fff", margin: "0 0 8px", letterSpacing: "-0.01em" }}>
+              {items.length > 1 ? "¿Cancelar esta entrada?" : "¿Cancelar tu participación?"}
+            </h3>
+            <p style={{ fontSize: 14, color: "rgba(229,238,255,0.6)", margin: "0 0 22px", lineHeight: 1.5 }}>
+              {items.length > 1 ? "Solo se anula esta entrada; las demás siguen activas." : "Tu entrada quedará anulada y perderás tu lugar en este evento."}
+            </p>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button type="button" className="soft-btn soft-btn-ghost" style={{ flex: 1 }} disabled={busy === "cancel"} onClick={() => setConfirmar(null)}>No, volver</button>
+              <button type="button" className="soft-btn" disabled={busy === "cancel"}
+                style={{ flex: 1, background: "rgba(220,38,38,0.2)", color: "#fca5a5", border: "none" }}
+                onClick={async () => {
+                  setBusy("cancel");
+                  try { await onCancelConfirmed(confirmar); setConfirmar(null); }
+                  catch (e) { setConfirmar(null); avisar(e.message || "No se pudo cancelar."); }
+                  finally { setBusy(""); }
+                }}>
+                {busy === "cancel" ? "Cancelando…" : "Sí, cancelar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Menú "Más" */}
       {menu && (
-        <div onClick={() => setMenu(false)} style={{ position: "fixed", inset: 0, zIndex: 2, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+        <div onClick={() => setMenu(false)} style={{ position: "fixed", inset: 0, zIndex: 2, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: escritorio ? "center" : "flex-end", justifyContent: "center" }}>
           <div onClick={(e) => e.stopPropagation()} role="menu"
-            style={{ width: "100%", maxWidth: 480, background: "#1c1d21", borderRadius: "24px 24px 0 0", padding: "10px 10px calc(18px + env(safe-area-inset-bottom))" }}>
-            <div aria-hidden="true" style={{ width: 38, height: 4, borderRadius: 4, background: "rgba(255,255,255,0.25)", margin: "4px auto 10px" }} />
+            style={{ width: "100%", maxWidth: escritorio ? 440 : 480, background: "#1c1d21", borderRadius: escritorio ? 24 : "24px 24px 0 0", padding: escritorio ? "14px 12px 14px" : "10px 10px calc(18px + env(safe-area-inset-bottom))" }}>
+            <div aria-hidden="true" style={{ display: escritorio ? "none" : "block", width: 38, height: 4, borderRadius: 4, background: "rgba(255,255,255,0.25)", margin: "4px auto 10px" }} />
             {opciones.map((o) => (
               <button key={o.key} type="button" role="menuitem" className="ef-hover-fill" disabled={busy === "pdf" && o.key === "pdf"}
-                onClick={async () => { await o.run(); if (o.key !== "pdf") setMenu(false); else setMenu(false); }}
+                onClick={async () => { await o.run(); setMenu(false); }}
                 style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, textAlign: "left", padding: "13px 12px", border: "none", borderRadius: 14, background: "transparent", color: "#fff", cursor: "pointer" }}>
                 <span style={{ width: 42, height: 42, borderRadius: 12, background: "rgba(255,255,255,0.1)", display: "grid", placeItems: "center", flexShrink: 0 }}>{o.icono}</span>
                 <span style={{ minWidth: 0 }}>

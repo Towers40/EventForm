@@ -46,6 +46,11 @@ Instrucciones de arquitectura, stack y estilo para el asistente de IA.
   iOS no haga zoom) + `searchEventPlaces` (UNA consulta a Photon por búsqueda,
   sesgada a la ciudad; Photon limita a quien abusa). Lugares de referencia
   validados en `CITY_LANDMARKS` (`src/lib/colombia.js`).
+* **Entrada (ticket):** UNA sola vista, `TicketWallet.jsx` (boleta clara con
+  portada + QR, acciones Ver evento / Cancelar o Revender / "+" con calendario,
+  cómo llegar, compartir, PDF y contacto). La usan Mis tickets, la página del
+  evento ("Ver entrada" y tras inscribirse) y `/t/:id`. En ordenador va en dos
+  columnas. No crear otra vista de entrada: añadir props a esta.
 * **Forma:** tarjetas radio 24, botones 52 px radio 14 (no píldora), campos 56 px
   radio 16. Clases: `.soft-btn-primary` (CTA), `.soft-btn-secondary` (contorno
   blanco), `.soft-btn-ghost` (superficie gris), `.tf-input-line`, `.panel-card`.

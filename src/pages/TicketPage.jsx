@@ -6,6 +6,7 @@ import { BRAND_NAME, TapInMark } from "../lib/brand.jsx";
 import { loadEventFont, eventFontProps } from "../lib/fonts.js";
 import { eventTint } from "../lib/dominantColor.js";
 import { EventTintLayer } from "../components/ui.jsx";
+import TicketWallet from "../components/TicketWallet.jsx";
 import "../styles/typeform.css";
 
 const DAYS_ES   = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
@@ -47,6 +48,12 @@ export default function TicketPage() {
   const approved = ticket?.approved !== false;
 
   useEffect(() => { loadEventFont(ev?.fontId); }, [ev?.fontId]);
+
+  // Con los datos del evento, la misma entrada que en "Mis tickets". Aquí no
+  // se ofrece cancelar: el enlace es público y no identifica a su dueño.
+  if (ev?.slug && !ticket.cancelled) return (
+    <TicketWallet grupo={{ slug: ev.slug, event: ev, items: [{ id, used: Boolean(ticket.used), approved, paid: false }] }} />
+  );
 
   return (
     <div className="tf-screen" style={{ display: "block", overflowY: "auto", minHeight: "100dvh" }}>
