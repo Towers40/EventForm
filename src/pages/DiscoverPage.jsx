@@ -3,7 +3,7 @@ import { api } from "../lib/api.js";
 import { BRAND_NAME, CONTACT_EMAIL, TapInMark } from "../lib/brand.jsx";
 import { DISCOVER_CATEGORIES } from "../lib/categories.js";
 import { CAT_ICONS, CategoryIcon } from "../lib/categoryIcons.jsx";
-import EventCard, { FlameIcon } from "../components/EventCard.jsx";
+import EventCard from "../components/EventCard.jsx";
 
 /**
  * Categoría, sin recuadro de color.
@@ -57,63 +57,6 @@ const chipStyle = (activo) => ({
 });
 
 
-/**
- * Carrusel continuo e infinito.
- *
- * Se mueve píxel a píxel con requestAnimationFrame, no de tarjeta en tarjeta:
- * así no se nota el corte entre un evento y el siguiente. Para que no vuelva
- * de golpe al llegar al final, la lista se pinta DOS veces y, al pasar de la
- * primera copia, se resta su ancho. Como en ese punto el contenido es idéntico,
- * el salto es invisible y la cinta parece infinita.
- *
- * No se anima si el sistema pide reducir el movimiento.
- */
-function useMarquee(ref, activo, { velocidad = 32, esperaTrasTocar = 4000 } = {}) {
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || !activo) return;
-    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
-
-    let raf = 0;
-    let ultimo = 0;
-    let pausadoHasta = 0;
-    // Los decimales se acumulan aparte: scrollLeft redondea y, a 32 px/s con
-    // fotogramas de 16 ms, se perderían ~0,5 px por fotograma y no avanzaría.
-    let resto = 0;
-
-    const pausar = () => { pausadoHasta = Date.now() + esperaTrasTocar; };
-
-    const paso = (t) => {
-      raf = requestAnimationFrame(paso);
-      const dt = ultimo ? (t - ultimo) / 1000 : 0;
-      ultimo = t;
-      if (Date.now() < pausadoHasta || dt <= 0 || dt > 0.5) return;
-
-      const mitad = el.scrollWidth / 2; // ancho de UNA copia de la lista
-      if (mitad <= 0) return;
-      resto += velocidad * dt;
-      const entero = Math.floor(resto);
-      if (entero >= 1) {
-        resto -= entero;
-        let x = el.scrollLeft + entero;
-        if (x >= mitad) x -= mitad; // vuelta invisible
-        el.scrollLeft = x;
-      }
-    };
-
-    raf = requestAnimationFrame(paso);
-    for (const ev of ["pointerdown", "wheel", "touchstart", "mouseenter"]) {
-      el.addEventListener(ev, pausar, { passive: true });
-    }
-    return () => {
-      cancelAnimationFrame(raf);
-      for (const ev of ["pointerdown", "wheel", "touchstart", "mouseenter"]) {
-        el.removeEventListener(ev, pausar);
-      }
-    };
-  }, [ref, activo, velocidad, esperaTrasTocar]);
-}
-
 const PAGE_SIZE = 24; // por request; se cargan más con el botón "Cargar más"
 
 export default function DiscoverPage({ embedded = false }) {
@@ -129,12 +72,10 @@ export default function DiscoverPage({ embedded = false }) {
   const [cities,         setCities]         = useState([]);
   const [populares,      setPopulares]      = useState([]);
   const searchTimer = useRef(null);
-  const popRef = useRef(null);
 
   // Con algún filtro puesto, la persona ya sabe lo que busca: las secciones
   // de descubrimiento estorban y se ocultan.
   const filtrando = Boolean(search || activeCategory || activeCity);
-  useMarquee(popRef, !filtrando && populares.length > 1);
 
   // Una sola función para primera página (append=false, reemplaza) y siguientes
   // (append=true, agrega). Así el listado escala a cientos de eventos sin traer
@@ -291,17 +232,20 @@ export default function DiscoverPage({ embedded = false }) {
         {/* ── Lo más popular ── */}
         {!filtrando && populares.length > 0 && (
           <section style={{ marginBottom: 48 }}>
-            {/* Solo la llama: la sección se explica sola por su posición. */}
-            <div style={{ marginBottom: 12, color: "#fb923c", display: "flex", justifyContent: "center" }} aria-label="Eventos que se están llenando">
-              <FlameIcon size={22} />
-            </div>
             {/* Dos copias: la segunda es la que permite el bucle sin corte.
                 Se oculta a los lectores de pantalla para no leerlo dos veces. */}
-            <div className="ef-pop ef-hscroll" ref={popRef}>
-              {populares.map(ev => <EventCard key={"pop-" + ev.id} ev={ev} destacado />)}
-              {populares.length > 1 && populares.map(ev => (
-                <EventCard key={"dup-" + ev.id} ev={ev} destacado duplicado />
-              ))}
+            {/* Cinta continua, igual que la de pósters de la bienvenida: una
+                animación CSS de transform (la mueve la GPU, sin saltos) y los
+                bordes desvanecidos con una máscara. Antes avanzaba a golpes de
+                píxel con scrollLeft y las tarjetas se cortaban en seco a los
+                lados. Se pausa al tocar o pasar el cursor. */}
+            <div className={populares.length > 1 ? "ef-pop ef-pop--cinta" : "ef-pop"}>
+              <div className="ef-pop-track" style={{ animationDuration: `${Math.max(18, populares.length * 9)}s` }}>
+                {populares.map(ev => <EventCard key={"pop-" + ev.id} ev={ev} destacado />)}
+                {populares.length > 1 && populares.map(ev => (
+                  <EventCard key={"dup-" + ev.id} ev={ev} destacado duplicado />
+                ))}
+              </div>
             </div>
           </section>
         )}
@@ -472,20 +416,27 @@ export default function DiscoverPage({ embedded = false }) {
         /* La rejilla del listado (.ef-ev-grid) vive en typeform.css: la
            comparte el perfil del organizador. */
 
-        /* Destacados: cinta continua. Sin scroll-snap, que tiraría de la
-           posición y cortaría el movimiento; y con flex en vez de grid para
-           que las tarjetas mantengan su ancho y la fila pueda desbordar.
-           "safe center" centra la cinta cuando cabe entera (uno o dos
-           destacados) sin recortar el principio cuando desborda. */
-        .ef-pop {
-          display: flex; gap: 10px;
-          justify-content: safe center;
-          overflow-x: auto; padding-bottom: 4px;
-          scroll-behavior: auto;
+        /* Destacados: cinta continua (transform + máscara en los bordes). */
+        .ef-pop { overflow: hidden; }
+        .ef-pop-track { display: flex; gap: 10px; justify-content: center; }
+        .ef-pop-track > * { flex: 0 0 88%; min-width: 0; }
+        @media (min-width: 760px)  { .ef-pop-track > * { flex: 0 0 340px; } }
+        @media (min-width: 1100px) { .ef-pop-track > * { flex: 0 0 360px; } }
+        .ef-pop--cinta {
+          margin: 0 -24px;
+          -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 9%, #000 91%, transparent 100%);
+          mask-image: linear-gradient(90deg, transparent 0, #000 9%, #000 91%, transparent 100%);
         }
-        .ef-pop > * { flex: 0 0 88%; min-width: 0; }
-        @media (min-width: 760px)  { .ef-pop > * { flex: 0 0 340px; } }
-        @media (min-width: 1100px) { .ef-pop > * { flex: 0 0 360px; } }
+        .ef-pop--cinta .ef-pop-track {
+          width: max-content; justify-content: flex-start;
+          animation: ef-pop-drift linear infinite; will-change: transform;
+        }
+        .ef-pop--cinta .ef-pop-track > * { flex: 0 0 300px; }
+        @media (min-width: 760px) { .ef-pop--cinta .ef-pop-track > * { flex: 0 0 350px; } }
+        .ef-pop--cinta:hover .ef-pop-track, .ef-pop--cinta:active .ef-pop-track { animation-play-state: paused; }
+        /* -50% menos medio hueco = exactamente el ancho de UNA copia. */
+        @keyframes ef-pop-drift { from { transform: translate3d(0,0,0); } to { transform: translate3d(calc(-50% - 5px),0,0); } }
+        @media (prefers-reduced-motion: reduce) { .ef-pop--cinta .ef-pop-track { animation: none; } }
       `}</style>
     </div>
   );

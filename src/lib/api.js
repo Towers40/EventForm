@@ -91,6 +91,9 @@ export const api = {
   },
   cancelRegistration: (ticketId) =>
     request(`/api/public/registrations/${ticketId}/cancel`, { method: "PATCH" }),
+  // Poner / quitar una entrada pagada en reventa.
+  ticketResale: (token, ticketId, listed) =>
+    request(`/api/public/tickets/${ticketId}/resale`, { method: "POST", body: JSON.stringify({ listed }) }, token),
   adminOverview: (token) => request("/api/admin/overview", {}, token),
   migrateAvatars: (token) => request("/api/admin/migrate-avatars", { method: "POST" }, token),
   migrateEventImages: (token) => request("/api/admin/migrate-event-images", { method: "POST" }, token),

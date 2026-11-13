@@ -8,6 +8,7 @@ import { loadEvents } from "../lib/storage.js";
 import { isSoldOut } from "../lib/capacity.js";
 import { validateRegistrationForm } from "../lib/tickets.js";
 import { prefillFromProfile } from "../../shared/profileFields.js";
+import { eventSocials } from "../lib/socials.jsx";
 import { IconButton, IcoBack, IcoShare, IcoMail, IcoQr, EventCover, CopiedToast, AttendeeStack, EventTintLayer } from "../components/ui.jsx";
 import LocationMap from "../components/LocationMap.jsx";
 import { eventTint, dominantColorFromUrl } from "../lib/dominantColor.js";
@@ -368,6 +369,7 @@ export default function PublicEventPage() {
   // tipografía que eligió el organizador.
   const tinte     = eventTint(colorEvento);
   const fuente    = getEventFont(event.fontId);
+  const redes       = eventSocials(event);
   const soldOut     = isSoldOut(event);
   const needsAccount = Boolean(event.requireApproval) && !token;
   const startP    = parseDateParts(event.startDate);
@@ -437,20 +439,34 @@ export default function PublicEventPage() {
             {event.title}
           </h1>
 
-          {/* Organizado por — con el avatar (foto) del organizador */}
-          {event.hostName && (
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 24 }}>
-              <Avatar name={event.hostName} src={event.hostAvatar} size={26} />
-              {/* El nombre lleva a su perfil: quién es y qué más organiza. */}
-              {event.hostId ? (
-                <a href={`/o/${event.hostId}`} style={{ fontSize: 14, color: SUB, textDecoration: "none" }}>
-                  Organizado por{" "}
-                  <strong style={{ color: TEXT, fontWeight: 600, borderBottom: "1px solid rgba(229,238,255,0.35)" }}>
-                    {event.hostName}
-                  </strong>
-                </a>
-              ) : (
-                <span style={{ fontSize: 14, color: SUB }}>Organizado por <strong style={{ color: TEXT, fontWeight: 600 }}>{event.hostName}</strong></span>
+          {/* Organizador a la izquierda; a la derecha, los logos de sus redes
+              (cada uno abre su perfil). El nombre es el que escribió al crear
+              el evento o, si no puso ninguno, el de su cuenta. */}
+          {(event.organizerName || event.hostName) && (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 24 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                <Avatar name={event.organizerName || event.hostName} src={event.hostAvatar} size={26} />
+                {event.hostId ? (
+                  <a href={`/o/${event.hostId}`} style={{ fontSize: 14, color: SUB, textDecoration: "none", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    Organizado por{" "}
+                    <strong style={{ color: TEXT, fontWeight: 600, borderBottom: "1px solid rgba(229,238,255,0.35)" }}>
+                      {event.organizerName || event.hostName}
+                    </strong>
+                  </a>
+                ) : (
+                  <span style={{ fontSize: 14, color: SUB }}>Organizado por <strong style={{ color: TEXT, fontWeight: 600 }}>{event.organizerName || event.hostName}</strong></span>
+                )}
+              </div>
+              {redes.length > 0 && (
+                <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                  {redes.map((r) => (
+                    <a key={r.key} href={r.url} target="_blank" rel="noopener noreferrer" title={r.label} aria-label={`${r.label} del organizador`}
+                      className="ef-hover-fill"
+                      style={{ width: 38, height: 38, borderRadius: "50%", background: "rgba(255,255,255,0.12)", color: "#ffffff", display: "grid", placeItems: "center", textDecoration: "none" }}>
+                      {r.icon(19)}
+                    </a>
+                  ))}
+                </div>
               )}
             </div>
           )}
@@ -562,18 +578,18 @@ export default function PublicEventPage() {
               De quien se inscribió sin cuenta solo se muestra su inicial. */}
           {event.registrationCount > 0 && (
             <div style={{ marginBottom: 28, borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 24 }}>
-              <p style={{ margin: "0 0 12px", fontSize: 13, fontWeight: 600, color: SUB, textTransform: "uppercase", letterSpacing: "0.08em" }}>Quién va</p>
+              <p style={{ margin: "0 0 12px", fontSize: 13, fontWeight: 600, color: SUB, textTransform: "uppercase", letterSpacing: "0.08em" }}>Registrados</p>
               <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                 <AttendeeStack
                   personas={event.attendeePreview || []}
                   gente={event.registrationCount}
-                  size={38}
+                  size={44}
                   texto={false}
                 />
                 <span style={{ fontSize: 14, color: "rgba(229,238,255,0.8)" }}>
                   {event.registrationCount === 1
-                    ? "1 persona ya tiene su lugar"
-                    : `${event.registrationCount} personas ya tienen su lugar`}
+                    ? "1 persona registrada"
+                    : `${event.registrationCount} personas registradas`}
                 </span>
               </div>
             </div>

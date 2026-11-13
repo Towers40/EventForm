@@ -2,8 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { api, apiEnabled } from "../lib/api.js";
 import { loadEvents } from "../lib/storage.js";
 import { useAuth } from "../context/AuthContext.jsx";
-import SlideToCancel from "../components/SlideToCancel.jsx";
-import TicketCarousel from "../components/TicketCarousel.jsx";
+import TicketWallet from "../components/TicketWallet.jsx";
 import "../styles/typeform.css";
 import { coverImgStyle } from "../lib/images.js";
 
@@ -29,9 +28,8 @@ export default function MisTicketsView() {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("proximos");
+  // Evento cuyo ticket electrónico está abierto a pantalla completa.
   const [openQr, setOpenQr] = useState(null);
-  const [activeIdx, setActiveIdx] = useState({}); // entrada visible por evento
-  const [eventModal, setEventModal] = useState(null); // { slug, event, loading }
   const [confirmCancel, setConfirmCancel] = useState(null); // { id, slug }
   const [cancelling, setCancelling] = useState(false);
   const cleanupRef = useRef(null); // corta el sondeo de entradas pendientes
@@ -66,18 +64,6 @@ export default function MisTicketsView() {
     }
   };
 
-  const openEvent = async (slug, fallback) => {
-    setEventModal({ slug, event: fallback, loading: apiEnabled });
-    if (apiEnabled) {
-      try {
-        const { event } = await api.publicEvent(slug);
-        setEventModal({ slug, event, loading: false });
-      } catch {
-        setEventModal({ slug, event: fallback, loading: false });
-      }
-    }
-  };
-
   useEffect(() => {
     let stop = false;
 
@@ -93,6 +79,7 @@ export default function MisTicketsView() {
             byId.set(t.id, {
               slug: t.event?.slug, id: t.id, used: t.used,
               approved: t.approved !== false,
+              paid: Boolean(t.paid), resale: t.resale || "none",
               event: t.event || { title: "Evento", slug: t.event?.slug },
             });
           }
@@ -151,7 +138,7 @@ export default function MisTicketsView() {
     for (const t of tickets) {
       const clave = t.slug || t.event?.slug || t.id;
       if (!porEvento.has(clave)) porEvento.set(clave, { key: clave, slug: t.slug, event: t.event, items: [] });
-      porEvento.get(clave).items.push({ id: t.id, used: t.used, approved: t.approved !== false });
+      porEvento.get(clave).items.push({ id: t.id, used: t.used, approved: t.approved !== false, paid: Boolean(t.paid), resale: t.resale || "none" });
     }
     return Array.from(porEvento.values());
   })();
@@ -216,12 +203,13 @@ export default function MisTicketsView() {
             const { key, slug, event, items } = grupo;
             const past = isPast(event);
             const varias = items.length > 1;
-            const abierto = openQr === key;
-            const visible = items[Math.min(activeIdx[key] || 0, items.length - 1)] || items[0];
             const pendientes = items.filter(i => !i.approved).length;
             const usadas = items.filter(i => i.used).length;
             return (
-              <div key={key} className="panel-card" style={{ padding: 0, overflow: "hidden" }}>
+              // Toda la tarjeta abre el ticket electrónico a pantalla completa.
+              <button key={key} type="button" className="panel-card ef-hover-fill" onClick={() => setOpenQr(key)}
+                aria-label={`Abrir entrada de ${event.title || "evento"}`}
+                style={{ padding: 0, overflow: "hidden", border: "none", textAlign: "left", cursor: "pointer", color: "inherit", width: "100%", display: "block" }}>
                 <div style={{ display: "flex", gap: 14, padding: 16, alignItems: "center" }}>
                   <div style={{ width: 56, height: 56, borderRadius: 14, flexShrink: 0, overflow: "hidden", background: "rgba(52,211,153,0.18)" }}>
                     {event.headerImage && <img src={event.headerImage} alt="" style={coverImgStyle(event.imagePos, event.imageZoom)} />}
@@ -236,35 +224,12 @@ export default function MisTicketsView() {
                       {usadas > 0 && <span style={{ fontSize: 10.5, fontWeight: 700, padding: "3px 9px", borderRadius: 100, background: "rgba(52,211,153,0.2)", color: "#a7f3d0" }}>{varias ? `${usadas} usada${usadas === 1 ? "" : "s"}` : "QR usado"}</span>}
                     </div>
                   </div>
-                  <button type="button" className="ef-hover-fill" onClick={() => setOpenQr(abierto ? null : key)}
-                    style={{ flexShrink: 0, display: "inline-flex", flexDirection: "column", alignItems: "center", gap: 3, background: abierto ? "rgba(52,211,153,0.22)" : "rgba(255,255,255,0.06)", border: "1px solid rgba(52,211,153,0.3)", borderRadius: 14, padding: "8px 10px", color: "#a7f3d0", cursor: "pointer", fontSize: 11, fontWeight: 700 }}>
+                  <span aria-hidden="true" style={{ flexShrink: 0, display: "inline-flex", flexDirection: "column", alignItems: "center", gap: 3, background: "rgba(255,255,255,0.12)", borderRadius: 14, padding: "8px 10px", color: "#ffffff", fontSize: 11, fontWeight: 600 }}>
                     <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M21 21v.01M21 14v.01M14 21v.01"/></svg>
                     {varias ? `${items.length} QR` : "QR"}
-                  </button>
+                  </span>
                 </div>
-                {abierto && (
-                  <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", padding: 20, textAlign: "center", background: "rgba(0,0,0,0.2)" }}>
-                    <TicketCarousel
-                      tickets={items}
-                      eventTitle={event.title || "Evento"}
-                      qrSize={200}
-                      onIndexChange={(i) => setActiveIdx((p) => (p[key] === i ? p : { ...p, [key]: i }))}
-                    />
-                    <button type="button" onClick={() => openEvent(slug, event)} className="soft-btn soft-btn-secondary" style={{ fontSize: 15 }}>Ver evento</button>
-                    {!past && visible && (
-                      <div style={{ marginTop: 16 }}>
-                        {/* Cancela la entrada que se está viendo, no todo el grupo. */}
-                        <SlideToCancel
-                          label={varias ? `Cancelar entrada ${items.indexOf(visible) + 1}` : "Cancelar asistencia"}
-                          onComplete={() => setConfirmCancel({ id: visible.id, slug, varias })}
-                          disabled={cancelling && confirmCancel?.id === visible.id}
-                          maxWidth={varias ? 280 : 260} height={50}
-                        />
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
+              </button>
             );
           })}
         </div>
@@ -273,7 +238,7 @@ export default function MisTicketsView() {
       {/* Confirmación de cancelación */}
       {confirmCancel && (
         <div onClick={() => !cancelling && setConfirmCancel(null)}
-          style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
           <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 380, background: "var(--tf-sheet)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 22, padding: 24, textAlign: "center", boxShadow: "0 24px 70px rgba(0,0,0,0.55)" }}>
             <div style={{ width: 52, height: 52, borderRadius: "50%", background: "rgba(248,113,113,0.15)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
               <svg width={26} height={26} viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
@@ -300,37 +265,20 @@ export default function MisTicketsView() {
         </div>
       )}
 
-      {/* Modal de información del evento (X regresa al QR desplegado) */}
-      {eventModal && (
-        <div onClick={() => setEventModal(null)}
-          style={{ position: "fixed", inset: 0, zIndex: 250, background: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "6vh 16px 16px", overflowY: "auto" }}>
-          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 480, background: "var(--tf-sheet)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 22, overflow: "hidden", boxShadow: "0 24px 70px rgba(0,0,0,0.55)" }}>
-            <div style={{ position: "relative" }}>
-              {eventModal.event?.headerImage
-                ? <img src={eventModal.event.headerImage} alt="" style={{ width: "100%", aspectRatio: "16/9", objectFit: "cover", display: "block" }} />
-                : <div style={{ width: "100%", aspectRatio: "16/7", background: "linear-gradient(135deg, #1b1d21, #0e0f11)" }} />}
-              <button type="button" className="ef-hover-fill" onClick={() => setEventModal(null)} aria-label="Cerrar"
-                style={{ position: "absolute", top: 12, right: 12, width: 36, height: 36, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.25)", background: "rgba(0,0,0,0.5)", color: "#fff", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(6px)" }}>
-                <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-              </button>
-            </div>
-            <div style={{ padding: 20 }}>
-              <h2 style={{ fontSize: 20, fontWeight: 500, color: "#ffffff", margin: "0 0 10px" }}>{eventModal.event?.title || "Evento"}</h2>
-              <p style={{ fontSize: 14, color: "#a7f3d0", margin: "0 0 6px", fontWeight: 600 }}>{fmt(eventModal.event?.startDate || eventModal.event?.date)}</p>
-              {(eventModal.event?.city || eventModal.event?.location) && (
-                <p style={{ fontSize: 13.5, color: "rgba(229,238,255,0.6)", margin: "0 0 14px" }}>
-                  {[eventModal.event?.location, eventModal.event?.city].filter(Boolean).join(" — ")}
-                </p>
-              )}
-              {eventModal.loading && <p style={{ fontSize: 13, color: "rgba(229,238,255,0.5)" }}>Cargando detalles…</p>}
-              {eventModal.event?.eventDescription && (
-                <p style={{ fontSize: 14, color: "rgba(229,238,255,0.8)", lineHeight: 1.55, margin: "0 0 16px", whiteSpace: "pre-wrap" }}>{eventModal.event.eventDescription}</p>
-              )}
-              <a href={`/e/${eventModal.slug}`} className="soft-btn soft-btn-primary ef-hover-fill" style={{ display: "inline-block", textDecoration: "none", fontSize: 15 }}>Abrir página del evento</a>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Ticket electrónico a pantalla completa */}
+      {(() => {
+        const g = openQr && grupos.find((x) => x.key === openQr);
+        if (!g) return null;
+        return (
+          <TicketWallet
+            grupo={g}
+            token={token}
+            onClose={() => setOpenQr(null)}
+            onCancel={(id) => setConfirmCancel({ id, slug: g.slug, varias: g.items.length > 1 })}
+            onResaleChange={(id, estado) => setTickets((prev) => prev.map((t) => (t.id === id ? { ...t, resale: estado } : t)))}
+          />
+        );
+      })()}
     </div>
   );
 }

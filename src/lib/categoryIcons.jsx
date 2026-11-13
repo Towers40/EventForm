@@ -35,12 +35,12 @@ const rgba = (hex, a) => {
 // trazos de 2,2 px con puntas redondas y rellenos donde el contorno no basta.
 const S = (c) => ({ fill: "none", stroke: c, strokeWidth: 2.2, strokeLinecap: "round", strokeLinejoin: "round" });
 const GLYPHS = {
-  // </> — código: lo más reconocible de un meetup tech.
+  // Portátil: pantalla y base.
   tech: (c) => (
     <g {...S(c)}>
-      <path d="M8.5 7.5 4 12l4.5 4.5" />
-      <path d="M15.5 7.5 20 12l-4.5 4.5" />
-      <path d="M13.4 5.5 10.6 18.5" />
+      <rect x="5" y="5" width="14" height="10" rx="2" />
+      <path d="M2.8 18.6h18.4" />
+      <path d="M10.3 18.6h3.4" strokeWidth={3} />
     </g>
   ),
   // Matasuegras con confeti: fiesta, encuentro.
@@ -64,13 +64,14 @@ const GLYPHS = {
       <path d="M17 20.5V3.5c-2 1.4-3 4-3 7.2V13h3" />
     </g>
   ),
-  // Balón: deporte en general, no un deporte concreto.
+  // Mancuerna de gimnasio.
   deporte: (c) => (
     <g {...S(c)}>
-      <circle cx="12" cy="12" r="8.2" />
-      <path d="M3.8 12h16.4" />
-      <path d="M12 3.8c-3.2 2.4-3.2 14 0 16.4" />
-      <path d="M12 3.8c3.2 2.4 3.2 14 0 16.4" />
+      <path d="M8.2 12h7.6" />
+      <path d="M6.6 7.6v8.8" strokeWidth={3} />
+      <path d="M17.4 7.6v8.8" strokeWidth={3} />
+      <path d="M3.4 9.8v4.4" strokeWidth={2.6} />
+      <path d="M20.6 9.8v4.4" strokeWidth={2.6} />
     </g>
   ),
   // Hoja: bienestar, calma, naturaleza.

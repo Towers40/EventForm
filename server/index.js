@@ -517,6 +517,15 @@ app.get("/api/auth/my-tickets", requireDb, authMiddleware, async (req, res) => {
           imageZoom: ev.imageZoom || null,
           city: ev.city || "",
           location: ev.location || "",
+          // Para el ticket electrónico: calendario, cómo llegar y PDF.
+          startTime: ev.startTime || "",
+          endDate: ev.endDate || "",
+          endTime: ev.endTime || "",
+          address: ev.address || "",
+          lat: ev.lat ?? null,
+          lng: ev.lng ?? null,
+          isPaid: Boolean(ev.isPaid) && Number(ev.price) > 0,
+          themeColor: ev.themeColor || null,
         },
       });
     }

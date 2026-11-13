@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { isSoldOut, capacityLabel, getCapacityMax } from "../lib/capacity.js";
 import { groupRegistrations } from "../lib/tickets.js";
 import { DataRow, IcoCalendar, IcoPin } from "../components/ui.jsx";
@@ -137,7 +138,10 @@ function fmtDate(dateStr) {
 }
 
 function EventCard({ ev, onOpen, onEdit, onValidate, onDelete, onShare, onToggleSoldOut }) {
-  const [expanded, setExpanded] = useState(false);
+  // Tocar la portada o los datos lleva a la página del evento (antes
+  // desplegaba "Últimos inscritos"; esa lista vive en el botón Inscritos).
+  const nav = useNavigate();
+  const abrirEvento = () => { if (ev.slug) nav(`/e/${ev.slug}`); };
   const regs = ev.registrations || [];
   const checkins = regs.filter(r => r.used).length;
   const grupos = groupRegistrations(ev, regs);
@@ -156,7 +160,7 @@ function EventCard({ ev, onOpen, onEdit, onValidate, onDelete, onShare, onToggle
     <div className="panel-card" style={{ overflow: "hidden" }}>
       {/* Cover image */}
       {ev.headerImage ? (
-        <div style={{ width: "100%", aspectRatio: "16/7", overflow: "hidden", cursor: "pointer" }} onClick={() => setExpanded(e => !e)}>
+        <div style={{ width: "100%", aspectRatio: "16/7", overflow: "hidden", cursor: "pointer" }} onClick={abrirEvento}>
           <img src={ev.headerImage} alt={ev.title} style={coverImgStyle(ev.imagePos, ev.imageZoom)} />
         </div>
       ) : ev.coverNeedsMigration ? (
@@ -169,7 +173,7 @@ function EventCard({ ev, onOpen, onEdit, onValidate, onDelete, onShare, onToggle
       ) : null}
 
       {/* Header del evento */}
-      <div style={{ padding: "18px 20px 16px", cursor: "pointer" }} onClick={() => setExpanded(e => !e)}>
+      <div style={{ padding: "18px 20px 16px", cursor: "pointer" }} onClick={abrirEvento}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
@@ -243,7 +247,7 @@ function EventCard({ ev, onOpen, onEdit, onValidate, onDelete, onShare, onToggle
       <div style={{ padding: "6px 8px 10px", borderTop: "1px solid var(--tf-divider)", display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 2 }}>
         {[
           { label: "Inscritos", onClick: () => onOpen(), icon: <><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20a6.5 6.5 0 0 1 13 0" /><path d="M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4-6" /></> },
-          { label: "Compartir", onClick: onShare, icon: <><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4" /></> },
+          { label: "Compartir", onClick: onShare, icon: <><path d="M21.5 2.5 10.8 13.2" /><path d="M21.5 2.5 14.8 21.5l-4-8.3-8.3-4z" /></> },
           { label: "Escanear", onClick: onValidate, icon: <><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2" /><path d="M7 12h10" /></> },
           { label: "Editar", onClick: onEdit, icon: <><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></> },
           { label: "Eliminar", onClick: onDelete, danger: true, icon: <><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /></> },
@@ -260,39 +264,6 @@ function EventCard({ ev, onOpen, onEdit, onValidate, onDelete, onShare, onToggle
         ))}
       </div>
 
-      {/* Lista de últimos inscritos */}
-      {expanded && regs.length > 0 && (
-        <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", padding: "0 20px 16px" }}>
-          <p style={{ fontSize: 12, fontWeight: 700, color: "#8fa3b1", textTransform: "uppercase", letterSpacing: "0.06em", margin: "16px 0 10px" }}>
-            Últimos inscritos
-          </p>
-          {/* Una línea por PERSONA con su número de entradas: antes quien
-              reservaba 3 aparecía tres veces con el mismo nombre. */}
-          {grupos.slice(0, 10).map(g => (
-            <div key={g.key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-              <div style={{ minWidth: 0 }}>
-                <span style={{ fontSize: 14, fontWeight: 600, color: "#ffffff" }}>{g.name}</span>
-                {g.total > 1 && (
-                  <span style={{ fontSize: 11, fontWeight: 800, color: "#34d399", marginLeft: 7, background: "rgba(52,211,153,0.16)", padding: "2px 7px", borderRadius: 100 }}>
-                    ×{g.total}
-                  </span>
-                )}
-                <span style={{ fontSize: 11, color: "#8fa3b1", marginLeft: 8 }}>{new Date(g.ts).toLocaleString("es-CO")}</span>
-              </div>
-              <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 100,
-                background: g.pendientes ? "rgba(251,191,36,0.16)" : g.usadas ? "rgba(52,211,153,0.25)" : "rgba(52,211,153,0.15)",
-                color: g.pendientes ? "#fbbf24" : g.usadas ? "#34d399" : "#a7f3d0" }}>
-                {g.pendientes ? "POR APROBAR" : g.usadas === g.total ? "CHECK-IN" : g.usadas ? `${g.usadas}/${g.total}` : "ACTIVO"}
-              </span>
-            </div>
-          ))}
-          {grupos.length > 10 && (
-            <button type="button" className="soft-btn soft-btn-secondary" style={{ fontSize: 15, marginTop: 12, width: "100%" }} onClick={() => onOpen()}>
-              Ver los {grupos.length} inscritos →
-            </button>
-          )}
-        </div>
-      )}
     </div>
   );
 }

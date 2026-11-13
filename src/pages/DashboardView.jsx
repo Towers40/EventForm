@@ -308,7 +308,7 @@ export default function DashboardView({ events = [], onNew, onOpen, onValidate, 
             <Barra valor={n} max={cap || Math.max(n, 1)} />
             <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
               <AccionChica onClick={() => onOpen?.(proximo.id)} icono={<><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20a6.5 6.5 0 0 1 13 0" /><path d="M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4-6" /></>}>Inscritos</AccionChica>
-              <AccionChica onClick={() => onShare?.(proximo)} icono={<><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4" /></>}>Compartir</AccionChica>
+              <AccionChica onClick={() => onShare?.(proximo)} icono={<><path d="M21.5 2.5 10.8 13.2" /><path d="M21.5 2.5 14.8 21.5l-4-8.3-8.3-4z" /></>}>Compartir</AccionChica>
               <AccionChica onClick={() => onValidate?.(proximo.id)} icono={<><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2" /><path d="M7 12h10" /></>}>Escanear</AccionChica>
             </div>
           </Seccion>

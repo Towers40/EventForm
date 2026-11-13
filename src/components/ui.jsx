@@ -47,7 +47,8 @@ const svg = (d, extra) => (
 export const IcoBack   = () => svg(<path d="M19 12H5M12 19l-7-7 7-7" />);
 export const IcoHome   = () => svg(<><path d="M3 9.5 12 3l9 6.5" /><path d="M5 10v10h14V10" /><path d="M9 20v-6h6v6" /></>);
 export const IcoPlus   = () => svg(<><path d="M12 5v14" /><path d="M5 12h14" /></>);
-export const IcoShare  = () => svg(<><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7" /><path d="M12 15V3" /><path d="m8 7 4-4 4 4" /></>);
+// Compartir = avión de papel (enviar), en toda la app.
+export const IcoShare  = () => svg(<><path d="M21.5 2.5 10.8 13.2" /><path d="M21.5 2.5 14.8 21.5l-4-8.3-8.3-4z" /></>);
 export const IcoMail   = () => svg(<><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" /></>);
 export const IcoRoute  = () => svg(<><path d="m3 11 19-8-8 19-2-9-9-2z" /></>);
 export const IcoQr     = () => svg(<><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><path d="M14 14h3v3M21 21v.01M21 14v.01M14 21v.01" /></>);
@@ -122,7 +123,10 @@ export function AttendeeStack({
   const resto    = total - visibles.length;
   const fuente   = Math.max(8.5, size * 0.42);
   const circulo  = {
-    width: size, height: size, borderRadius: "50%", flexShrink: 0,
+    // Ancho, alto y mínimos fijos + aspectRatio: siempre un círculo, nunca un
+    // óvalo (un flex estrecho aplastaba las fotos y el "+N").
+    width: size, height: size, minWidth: size, minHeight: size, aspectRatio: "1 / 1", padding: 0,
+    borderRadius: "50%", flexShrink: 0, overflow: "hidden",
     // El borde del color del fondo es lo que separa una cara de la siguiente
     // cuando se solapan; sin él se ven como una mancha.
     border: "1.5px solid rgba(0,0,0,0.85)",
@@ -149,14 +153,17 @@ export function AttendeeStack({
           )
         ))}
         {resto > 0 && (
-          <span style={{ ...circulo, background: "rgba(255,255,255,0.12)", color: "rgba(229,238,255,0.8)", fontSize: fuente * 0.95 }}>
-            +{resto > 99 ? "99" : resto}
+          // Del quinto en adelante: círculo neutro con "+N" dentro. La letra
+          // encoge con las cifras para que el número completo quepa.
+          <span title={`${resto} más`} style={{ ...circulo, background: "#3a3b40", color: "#ffffff", fontWeight: 600, letterSpacing: "-0.03em",
+            fontSize: size * (String(resto).length >= 4 ? 0.26 : String(resto).length === 3 ? 0.3 : String(resto).length === 2 ? 0.36 : 0.42) }}>
+            +{resto > 9999 ? "9999" : resto}
           </span>
         )}
       </div>
       {texto && (
         <span style={{ fontSize: 11.5, color: "rgba(229,238,255,0.5)", whiteSpace: "nowrap" }}>
-          {total === 1 ? "1 va" : `${total} van`}
+          {total === 1 ? "1 registrado" : `${total} registrados`}
         </span>
       )}
     </div>

@@ -174,11 +174,6 @@ export default function EventCard({ ev, destacado = false, duplicado = false }) 
 
       {/* Imagen */}
       <div style={{ position: "relative", zIndex: 1, pointerEvents: "none", flexShrink: 0, width: 74, height: 74, borderRadius: 14, overflow: "hidden", background: "#111" }}>
-        {destacado && gente >= POPULAR_MIN && (
-          <span style={{ position: "absolute", top: 4, left: 4, zIndex: 1, color: "#fb923c", display: "inline-flex", filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.9))" }}>
-            <FlameIcon size={14} />
-          </span>
-        )}
         {ev.headerImage ? (
           <img src={ev.headerImage} alt={ev.title} loading="lazy" decoding="async" width={74} height={74} style={coverImgStyle(ev.imagePos, ev.imageZoom)} />
         ) : (

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { coverImgStyle } from "../lib/images.js";
 import LocationSearch from "./LocationSearch.jsx";
+import { SOCIALS, socialUrl } from "../lib/socials.jsx";
 import { uploadImage } from "../lib/upload.js";
 import { dominantColorFromFile, dominantColorFromUrl, eventTint } from "../lib/dominantColor.js";
 import { EVENT_FONTS, DEFAULT_FONT_ID, getEventFont, loadAllEventFonts, loadEventFont, eventFontProps } from "../lib/fonts.js";
@@ -756,6 +757,35 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
           </div>
 
           {/* ── Entradas ── */}
+          {/* ── Organizador: nombre visible y redes. En la página del evento el
+              nombre va a la izquierda y los logos de sus redes a la derecha. ── */}
+          <p style={{ fontSize: 13, fontWeight: 600, color: SUB, marginBottom: 8, paddingLeft: 4 }}>Organizador</p>
+          <div style={cardStyle}>
+            <label style={{ display: "flex", alignItems: "center", gap: 14, padding: "6px 18px", ...rowDivider }}>
+              <span style={{ color: SUB }}><I.Capacity /></span>
+              <input type="text" value={draft.organizerName || ""} maxLength={60}
+                onChange={e => up("organizerName", e.target.value)}
+                placeholder={user?.name ? `${user.name} (tu nombre)` : "Nombre del organizador"}
+                aria-label="Nombre del organizador"
+                style={{ flex: 1, minWidth: 0, height: 44, background: "none", border: "none", outline: "none", color: TEXT, fontSize: 16, fontFamily: "inherit", caretColor: ACCENT }} />
+            </label>
+            {SOCIALS.map((red, i) => {
+              const valor = draft.socials?.[red.key] || "";
+              const invalido = valor.trim() && !socialUrl(red.key, valor);
+              return (
+                <label key={red.key} style={{ display: "flex", alignItems: "center", gap: 14, padding: "6px 18px", ...(i < SOCIALS.length - 1 ? rowDivider : {}) }}>
+                  <span style={{ color: valor && !invalido ? TEXT : SUB, display: "flex" }} title={red.label}>{red.icon(20)}</span>
+                  <input type="text" value={valor} maxLength={200} inputMode="url" autoCapitalize="none" autoCorrect="off" spellCheck={false}
+                    onChange={e => setDraft(p => ({ ...p, socials: { ...(p.socials || {}), [red.key]: e.target.value } }))}
+                    placeholder={`${red.label}: ${red.placeholder}`}
+                    aria-label={red.label} aria-invalid={invalido || undefined}
+                    style={{ flex: 1, minWidth: 0, height: 44, background: "none", border: "none", outline: "none", color: invalido ? "#fca5a5" : TEXT, fontSize: 16, fontFamily: "inherit", caretColor: ACCENT }} />
+                  {invalido && <span style={{ fontSize: 12, color: "#fca5a5", flexShrink: 0 }}>Enlace no válido</span>}
+                </label>
+              );
+            })}
+          </div>
+
           <p style={{ fontSize: 13, fontWeight: 600, color: SUB, marginBottom: 8, paddingLeft: 4 }}>Entradas</p>
           <div style={cardStyle}>
             {/* Require approval */}

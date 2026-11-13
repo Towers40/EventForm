@@ -69,9 +69,9 @@ function HeaderPill({ icon, label, short, active, onClick }) {
 
 // ─── ICONOS SVG (heredan color con currentColor) ──────────────────────────────
 const svgBase = (s = 18) => ({ width: s, height: s, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round" });
+function IconHome({ size }) { return <svg {...svgBase(size)}><path d="M3 9.5 12 3l9 6.5" /><path d="M5 10v10h14V10" /><path d="M9 20v-6h6v6" /></svg>; }
 function IconCalendar({ size }) { return <svg {...svgBase(size)}><rect x="3" y="4.5" width="18" height="16" rx="2" /><path d="M3 9h18M8 2.5v4M16 2.5v4" /></svg>; }
 function IconChart({ size }) { return <svg {...svgBase(size)}><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></svg>; }
-function IconSearch({ size }) { return <svg {...svgBase(size)}><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg>; }
 function IconPlus({ size }) { return <svg {...svgBase(size)}><path d="M12 5v14M5 12h14" /></svg>; }
 function IconCamera({ size }) { return <svg {...svgBase(size)}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-3h8l2 3h3a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg>; }
 function IconKeyboard({ size }) { return <svg {...svgBase(size)}><rect x="2" y="5" width="20" height="14" rx="2" /><path d="M6 9h0M10 9h0M14 9h0M18 9h0M6 13h0M10 13h0M14 13h0M18 13h0M8 17h8" /></svg>; }
@@ -168,7 +168,14 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
   });
 
   const _hasDraft = Boolean(_realInitial || _realPending);
-  const [view, setView] = useState(_hasDraft ? "builder" : "inicio");
+  // Al volver con "atrás" desde la página de un evento, HostApp se monta de
+  // nuevo: se retoma la pestaña que guardó el historial (solo las de lista,
+  // que no necesitan un evento seleccionado) en vez de caer siempre en Inicio.
+  const [view, setView] = useState(() => {
+    if (_hasDraft) return "builder";
+    const previa = typeof window !== "undefined" ? window.history.state?.efView : null;
+    return ["inicio", "mis_eventos", "mis_tickets", "discover", "stats", "mi_cuenta"].includes(previa) ? previa : "inicio";
+  });
   const [events, setEvents] = useState(() => (apiOn ? [] : loadEvents()));
   const [eventsLoading, setEventsLoading] = useState(apiOn);
   const [eventsError, setEventsError] = useState(null);
@@ -181,8 +188,6 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
   const [errors, setErrors] = useState({});
   const [vCode, setVCode] = useState("");
   const [vResult, setVResult] = useState(null);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const [createReturn, setCreateReturn] = useState("inicio");
   const [accountReturn, setAccountReturn] = useState("inicio");
   const [avatarUrl, setAvatarUrl] = useState(() => {
@@ -642,6 +647,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
 
   // Items de la barra inferior tipo liquid glass (móvil).
   const BOTTOM_NAV = [
+    { key: "inicio",      label: "Inicio",      icon: <IconHome /> },
     { key: "mis_eventos", label: "Mis eventos", icon: <IconCalendar /> },
     { key: "mis_tickets", label: "Tickets",     icon: <IconTicket /> },
     { key: "discover",    label: "Descubrir",   icon: <IconCompass /> },
@@ -656,12 +662,6 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
     { key: "stats",       label: "Dashboard" },
   ];
 
-  const searchResults = searchQuery.trim()
-    ? events.filter((e) => {
-        const q = searchQuery.trim().toLowerCase();
-        return (e.title || "").toLowerCase().includes(q) || (e.city || "").toLowerCase().includes(q) || (e.location || "").toLowerCase().includes(q);
-      })
-    : events;
 
   return (
     <div
@@ -911,54 +911,10 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
                 </button>
               );
             })}
-            {/* Separador + buscar */}
-            <div style={{ width: 1, background: "rgba(255,255,255,0.12)", margin: "8px 2px" }} />
-            <button type="button" className="ef-hover-fill ef-dock-search" onClick={() => { setSearchOpen(true); setSearchQuery(""); }} title="Buscar eventos"
-              style={{
-                flex: "0 0 auto", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3,
-                background: "transparent", border: "1px solid transparent", borderRadius: 18, padding: "9px 4px", cursor: "pointer",
-                color: "rgba(229,238,255,0.56)",
-              }}>
-              <span style={{ display: "flex" }}><IconSearch /></span>
-              <span className="ef-dock-label" style={{ fontSize: 11, fontWeight: 500 }}>Buscar</span>
-            </button>
           </div>
         </div>
       )}
 
-      {/* ── MODAL DE BÚSQUEDA DE EVENTOS ── */}
-      {searchOpen && (
-        <div onClick={() => setSearchOpen(false)}
-          style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "10vh 16px 16px" }}>
-          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 460, maxHeight: "78vh", display: "flex", flexDirection: "column", background: "var(--tf-sheet)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 22, overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-              <span style={{ display: "flex", color: "#34d399" }}><IconSearch /></span>
-              <input autoFocus type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Buscar mis eventos…"
-                style={{ flex: 1, background: "none", border: "none", outline: "none", color: "#ffffff", fontSize: 16, fontFamily: "inherit" }} />
-              <button type="button" className="ef-hover-fill" onClick={() => setSearchOpen(false)} style={{ background: "none", border: "none", borderRadius: "50%", color: "#8fa3b1", cursor: "pointer", fontSize: 20, lineHeight: 1, padding: 4 }}>×</button>
-            </div>
-            <div style={{ overflowY: "auto", padding: 8 }}>
-              {searchResults.length === 0 ? (
-                <p style={{ textAlign: "center", color: "rgba(229,238,255,0.5)", fontSize: 14, padding: "28px 12px" }}>Sin resultados.</p>
-              ) : (
-                searchResults.map((e) => (
-                  <button key={e.id} type="button" className="ef-hover-fill"
-                    onClick={() => { setSearchOpen(false); if (e.isDraft) editEvent(e); else go("crm", e.id); }}
-                    style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 12, padding: "11px 12px", borderRadius: 14, background: "transparent", border: "none", cursor: "pointer", color: "#ffffff" }}>
-                    <span style={{ width: 38, height: 38, borderRadius: 9, flexShrink: 0, overflow: "hidden", background: "rgba(52,211,153,0.18)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      {e.headerImage ? <img src={e.headerImage} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <IconCalendar />}
-                    </span>
-                    <span style={{ flex: 1, minWidth: 0 }}>
-                      <span style={{ display: "block", fontWeight: 700, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{e.title || "Sin título"}</span>
-                      <span style={{ display: "block", fontSize: 12, color: "rgba(229,238,255,0.5)" }}>{e.isDraft ? "Borrador" : (e.city || e.location || "Evento")}</span>
-                    </span>
-                  </button>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

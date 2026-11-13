@@ -21,7 +21,7 @@ const STEPS = [
     title: "Crea tu evento", desc: "Nombre, fecha, lugar y aforo. Listo en menos de 3 minutos." },
   { icon: ico(<><path d="M9 5h11M9 12h11M9 19h11" /><circle cx="4.5" cy="5" r="1.5" /><circle cx="4.5" cy="12" r="1.5" /><circle cx="4.5" cy="19" r="1.5" /></>),
     title: "Arma el formulario", desc: "Pide solo lo que necesitas: nombre, correo, teléfono u opciones." },
-  { icon: ico(<><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4" /></>),
+  { icon: ico(<><path d="M21.5 2.5 10.8 13.2" /><path d="M21.5 2.5 14.8 21.5l-4-8.3-8.3-4z" /></>),
     title: "Comparte el enlace", desc: "Por WhatsApp o Instagram. La gente se inscribe sola." },
   { icon: ico(<><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2" /><path d="M7 12h10" /></>),
     title: "Escanea en la puerta", desc: "Valida cada QR con la cámara de tu celular, en segundos." },
