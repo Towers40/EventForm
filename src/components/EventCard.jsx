@@ -1,6 +1,7 @@
 import { DISCOVER_CATEGORIES } from "../lib/categories.js";
 import { CAT_ICONS, CategoryIcon, CATEGORY_STYLE } from "../lib/categoryIcons.jsx";
 import { IcoPin, IcoVideo, ROW_BOX, AttendeeStack } from "./ui.jsx";
+import { coverImgStyle } from "../lib/images.js";
 
 // La tarjeta de evento del listado. Vive aquí y no dentro de Descubrir porque
 // la usan también el perfil de un organizador y cualquier listado que venga
@@ -179,7 +180,7 @@ export default function EventCard({ ev, destacado = false, duplicado = false }) 
           </span>
         )}
         {ev.headerImage ? (
-          <img src={ev.headerImage} alt={ev.title} loading="lazy" decoding="async" width={74} height={74} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <img src={ev.headerImage} alt={ev.title} loading="lazy" decoding="async" width={74} height={74} style={coverImgStyle(ev.imagePos, ev.imageZoom)} />
         ) : (
           <div style={{
             width: "100%", height: "100%",

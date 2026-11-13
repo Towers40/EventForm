@@ -69,7 +69,6 @@ function HeaderPill({ icon, label, short, active, onClick }) {
 
 // ─── ICONOS SVG (heredan color con currentColor) ──────────────────────────────
 const svgBase = (s = 18) => ({ width: s, height: s, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round" });
-function IconHome({ size }) { return <svg {...svgBase(size)}><path d="M3 9.5 12 3l9 6.5" /><path d="M5 10v10h14V10" /><path d="M9 20v-6h6v6" /></svg>; }
 function IconCalendar({ size }) { return <svg {...svgBase(size)}><rect x="3" y="4.5" width="18" height="16" rx="2" /><path d="M3 9h18M8 2.5v4M16 2.5v4" /></svg>; }
 function IconChart({ size }) { return <svg {...svgBase(size)}><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></svg>; }
 function IconSearch({ size }) { return <svg {...svgBase(size)}><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg>; }
@@ -626,6 +625,17 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
   const confirmEv = events.find((e) => e.id === evId);
   const confirmReg = confirmEv?.registrations.find((r) => r.id === regId);
 
+  // Pantallas secundarias: la flecha de volver ocupa el sitio del avatar.
+  const SUB_VIEWS = ["create_wizard", "builder", "crm", "validate", "mi_cuenta", "detail", "register", "confirm"];
+  const showBack = SUB_VIEWS.includes(view);
+  const goBack = () => {
+    if (view === "create_wizard") return go(createReturn || "inicio");
+    if (view === "mi_cuenta") return go(accountReturn || "inicio");
+    if (view === "crm" || view === "validate") return go("mis_eventos");
+    // El resto vuelve por el historial (lo gestiona el listener de popstate).
+    if (window.history.state?.efView) window.history.back(); else go("inicio");
+  };
+
   const initials = user?.name
     ? user.name.split(" ").slice(0, 2).map(w => w[0]).join("").toUpperCase()
     : "?";
@@ -664,17 +674,27 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
         textAlign: "left",
       }}
     >
-      {/* ── ENCABEZADO ── avatar+logo (izq) · navegación centrada (escritorio) · Nuevo evento (der) */}
+      {/* ── ENCABEZADO ──
+          Izquierda: avatar (Mi cuenta) o, en pantallas secundarias, la flecha
+          de volver — es donde el pulgar y el ojo la buscan, en vez de dentro
+          del contenido. Centro (móvil): el logo. Escritorio: avatar+logo a la
+          izquierda y la navegación al centro. */}
       <nav className={`ef-topbar${["inicio", "stats", "create_wizard", "builder"].includes(view) ? " ef-topbar-open" : ""}`} style={{ background: "rgba(18,20,22,0.82)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderBottom: "1px solid rgba(255,255,255,0.08)", padding: "0 20px", height: 60, alignItems: "center", gap: 12, position: "sticky", top: 0, zIndex: 10, boxShadow: "0 1px 8px rgba(0,0,0,0.4)" }}>
-        {/* Izquierda: avatar (Mi cuenta) + logo */}
         <div style={{ justifySelf: "start", display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+          {showBack ? (
+            <button type="button" className="ef-hover-fill" onClick={goBack} title="Volver" aria-label="Volver"
+              style={{
+                width: 42, height: 42, borderRadius: "50%", border: "none", padding: 0, flexShrink: 0,
+                background: "rgba(255,255,255,0.12)", color: "#ffffff", cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+              <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6" /></svg>
+            </button>
+          ) : (
           <button
             type="button"
             className="ef-hover-fill"
-            onClick={() => {
-              if (view === "mi_cuenta") { go(accountReturn || "inicio"); }
-              else { setAccountReturn(view); go("mi_cuenta"); }
-            }}
+            onClick={() => { setAccountReturn(view); go("mi_cuenta"); }}
             style={{
               width: 42, height: 42, borderRadius: "50%",
               boxSizing: "border-box",
@@ -694,11 +714,20 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
           >
             {!avatarUrl && initials}
           </button>
-          <button type="button" className="ef-hover-fill ef-logo-text" onClick={() => go("inicio")} style={{ background: "none", border: "none", borderRadius: 14, padding: "6px 10px", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontWeight: 600, fontSize: 18, letterSpacing: "-0.02em", color: "#ffffff", whiteSpace: "nowrap" }}>
+          )}
+          {/* Logo junto al avatar: solo escritorio (en móvil va centrado). */}
+          <button type="button" className="ef-hover-fill ef-logo-text ef-logo-side" onClick={() => go("inicio")} style={{ background: "none", border: "none", borderRadius: 14, padding: "6px 10px", cursor: "pointer", alignItems: "center", gap: 8, fontWeight: 600, fontSize: 18, letterSpacing: "-0.02em", color: "#ffffff", whiteSpace: "nowrap" }}>
             <TapInMark size={22} color={VERDE_CORPORATIVO} />
             <span className="ef-logo-word">{BRAND_NAME}</span>
           </button>
         </div>
+
+        {/* Logo centrado: solo móvil. Lleva al Inicio. */}
+        <button type="button" className="ef-hover-fill ef-logo-center" onClick={() => go("inicio")} aria-label="Inicio"
+          style={{ background: "none", border: "none", borderRadius: 14, padding: "6px 10px", cursor: "pointer", alignItems: "center", gap: 7, fontWeight: 600, fontSize: 18, letterSpacing: "-0.02em", color: "#ffffff", whiteSpace: "nowrap" }}>
+          <TapInMark size={22} color={VERDE_CORPORATIVO} />
+          <span>{BRAND_NAME}</span>
+        </button>
 
         {/* Centro: navegación principal (solo escritorio — en móvil la cubre la barra inferior + acciones por página) */}
         <div className="ef-header-nav" style={{ alignItems: "center", gap: 2 }}>
@@ -728,7 +757,6 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
         {/* Derecha: acciones, siempre solo iconos (casa · dashboard · +). */}
         <div style={{ justifySelf: "end", display: "flex", alignItems: "center", gap: 4, minWidth: 0 }}>
           <div className="ef-mobile-actions" style={{ alignItems: "center", gap: 5 }}>
-            <HeaderPill icon={<IconHome size={19} />} label="Inicio" active={view === "inicio"} onClick={() => go("inicio")} />
             <HeaderPill icon={<IconChart size={19} />} label="Dashboard" active={view === "stats"} onClick={() => go("stats")} />
             <HeaderPill icon={<IconPlus size={19} />} label="Nuevo evento" short="Nuevo" active={view === "create_wizard" || view === "builder"} onClick={startNew} />
           </div>
@@ -780,6 +808,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
             setDraft={setDraft}
             onDone={generatePreliminaryForm}
             onCancel={() => go(createReturn || "inicio")}
+            inApp
             isEditing={Boolean(evId)}
             user={user}
             avatarUrl={avatarUrl}
@@ -801,7 +830,6 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
         {view === "crm" && ev && (
           <EventCrm
             event={ev}
-            onBack={() => go("mis_eventos")}
             onToggleSoldOut={(v) => toggleSoldOut(ev.id, v)}
             onShare={() => setShareEv(ev)}
             initialFilter={crmFilter}
@@ -1520,8 +1548,6 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
           onComplete={onPublish}
           label="Publicar"
           accent="#34d399"
-          bg="rgba(52,211,153,0.14)"
-          border="rgba(52,211,153,0.4)"
         />
       </div>
     </div>

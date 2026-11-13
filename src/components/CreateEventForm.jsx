@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { coverImgStyle } from "../lib/images.js";
+import LocationSearch from "./LocationSearch.jsx";
 import { uploadImage } from "../lib/upload.js";
 import { dominantColorFromFile, dominantColorFromUrl, eventTint } from "../lib/dominantColor.js";
 import { EVENT_FONTS, DEFAULT_FONT_ID, getEventFont, loadAllEventFonts, loadEventFont, eventFontProps } from "../lib/fonts.js";
@@ -29,98 +31,14 @@ function fmtDateTime(dateStr, timeStr) {
   return base ? (timeStr ? `${base} · ${timeStr}` : base) : null;
 }
 
-// ── General address search (Photon / OpenStreetMap) ─────────────────────────
-async function searchAddresses(query) {
-  const q = query.trim();
-  if (q.length < 2) return [];
-  try {
-    const params = new URLSearchParams({ q, limit: "8" });
-    const res = await fetch(`https://photon.komoot.io/api/?${params}`);
-    if (!res.ok) return [];
-    const data = await res.json();
-    return (data?.features || []).map(f => {
-      const p = f.properties || {};
-      const parts = [p.name, p.street, p.housenumber, p.district, p.city, p.country].filter(Boolean);
-      return {
-        id: `${p.osm_type || "n"}-${p.osm_id || Math.random()}`,
-        label: parts.join(", "),
-        lat: f.geometry?.coordinates?.[1],
-        lng: f.geometry?.coordinates?.[0],
-      };
-    }).filter(x => x.lat && x.lng && x.label);
-  } catch { return []; }
-}
-
-// ── Full-screen location search modal ────────────────────────────────────────
-function LocationModal({ onSelect, onClose }) {
-  const [query,   setQuery]   = useState("");
-  const [results, setResults] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const inputRef = useRef(null);
-  const debounce = useRef(null);
-
-  useEffect(() => { setTimeout(() => inputRef.current?.focus(), 80); }, []);
-
-  function handleChange(e) {
-    const q = e.target.value;
-    setQuery(q);
-    clearTimeout(debounce.current);
-    if (q.trim().length < 2) { setResults([]); setLoading(false); return; }
-    setLoading(true);
-    debounce.current = setTimeout(async () => {
-      const res = await searchAddresses(q);
-      setResults(res);
-      setLoading(false);
-    }, 300);
-  }
-
-  return (
-    <div
-      onClick={onClose}
-      style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(3px)", WebkitBackdropFilter: "blur(3px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
-    >
-      <div
-        onClick={e => e.stopPropagation()}
-        style={{ width: "100%", maxWidth: 420, maxHeight: "76vh", display: "flex", flexDirection: "column", background: "var(--tf-sheet)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 22, overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}
-      >
-        {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", flexShrink: 0 }}>
-          <div style={{ flex: 1, position: "relative" }}>
-            <input
-              ref={inputRef}
-              type="text" value={query} onChange={handleChange}
-              placeholder="Buscar dirección o lugar…"
-              style={{ width: "100%", boxSizing: "border-box", background: "rgba(255,255,255,0.13)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 14, padding: "11px 40px 11px 14px", fontSize: 15, color: "#ffffff", outline: "none", caretColor: "#34d399", fontFamily: "inherit" }}
-            />
-            {loading && <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", fontSize: 13, color: "rgba(229,238,255,0.4)" }}>…</span>}
-          </div>
-          <button type="button" onClick={onClose} className="ef-hover-fill" style={{ background: "rgba(52,211,153,0.16)", border: "1px solid rgba(52,211,153,0.32)", borderRadius: 999, color: "#a7f3d0", fontSize: 20, lineHeight: 1, width: 36, height: 36, flexShrink: 0, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
-        </div>
-
-        {/* Suggestions */}
-        <div style={{ flex: 1, overflowY: "auto" }}>
-          {!loading && query.trim().length >= 2 && results.length === 0 && (
-            <p style={{ padding: "20px 20px", color: "rgba(229,238,255,0.4)", fontSize: 14, margin: 0 }}>Sin resultados. Intenta con otro término.</p>
-          )}
-          {query.trim().length < 2 && results.length === 0 && (
-            <p style={{ padding: "20px 20px", color: "rgba(229,238,255,0.4)", fontSize: 14, margin: 0 }}>Escribe al menos 2 letras para buscar una dirección o lugar.</p>
-          )}
-          {results.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => onSelect(item)}
-              className="ef-hover-fill"
-              style={{ width: "100%", background: "none", border: "none", borderBottom: "1px solid rgba(255,255,255,0.06)", padding: "14px 18px", textAlign: "left", cursor: "pointer", display: "flex", alignItems: "flex-start", gap: 12 }}
-            >
-              <svg style={{ flexShrink: 0, marginTop: 1 }} width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="rgba(52,211,153,0.7)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-              <span style={{ fontSize: 14, color: "#ffffff", lineHeight: 1.4 }}>{item.label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
+/** Color del selector propio: tono (0–359) e intensidad 0 claro · 1 medio · 2 profundo. */
+function colorDeHsl(h, intensidad) {
+  const [sat, lum] = [[70, 66], [65, 52], [60, 38]][intensidad] || [65, 52];
+  const s = sat / 100, l = lum / 100;
+  const k = (n) => (n + h / 30) % 12;
+  const a = s * Math.min(l, 1 - l);
+  const f = (n) => Math.round(255 * (l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)))));
+  return "#" + [f(0), f(8), f(4)].map((v) => v.toString(16).padStart(2, "0")).join("");
 }
 
 // ── Wheel picker internals ───────────────────────────────────────────────────
@@ -297,7 +215,7 @@ const I = {
 };
 
 // ── MAIN COMPONENT ───────────────────────────────────────────────────────────
-export default function CreateEventForm({ draft, setDraft, onDone, onCancel, user, avatarUrl, isEditing, onHome }) {
+export default function CreateEventForm({ draft, setDraft, onDone, onCancel, user, avatarUrl, isEditing, onHome, inApp = false }) {
   const today = new Date().toISOString().split("T")[0];
 
   const [startPicker, setStartPicker] = useState(false);
@@ -314,12 +232,15 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
   const [colorPortada, setColorPortada] = useState(null);
   const [imgBusy,     setImgBusy]     = useState(false);
   const [isDragging,  setIsDragging]  = useState(false);
+  // Selector de color propio (el "+").
+  const [colorLibre, setColorLibre] = useState(false);
+  const [tonoLibre, setTonoLibre] = useState(210);
+  const [intensidadLibre, setIntensidadLibre] = useState(1);
   const [err,         setErr]         = useState("");
 
   const imgRef   = useRef(null);
   const capRef   = useRef(null);
   const priceRef = useRef(null);
-  const dragRef  = useRef({ startX: 0, startY: 0, startPosX: 50, startPosY: 50 });
 
   const up = (k, v) => setDraft(p => ({ ...p, [k]: v }));
 
@@ -330,7 +251,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
         : fmtDateTime(draft.endDate, draft.endTime))
     : null;
 
-  const locLabel  = draft.address || "";
+  const locLabel  = draft.location && draft.address && !draft.address.startsWith(draft.location) ? `${draft.location} · ${draft.address}` : (draft.address || draft.location || "");
   const capVal    = draft.capacityNum;
   const capLabel  = (capVal && Number(capVal) > 0) ? `${Number(capVal).toLocaleString("es-CO")} personas` : "Ilimitada";
   const priceVal  = draft.priceType === "paid" && draft.price ? Number(draft.price) : 0;
@@ -359,6 +280,100 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
   useEffect(() => { if (showCap) capRef.current?.focus(); }, [showCap]);
   useEffect(() => { if (showPrice) priceRef.current?.focus(); }, [showPrice]);
 
+  // ── Gestos de la portada ──────────────────────────────────────────────────
+  const coverBoxRef = useRef(null);
+  const punterosRef = useRef(new Map());
+  const gestoRef = useRef(null);
+  const [natSize, setNatSize] = useState(null);
+  const coverZoom = Math.max(1, Number(draft.imageZoom) || 1);
+  // Tope de zoom según la resolución de la foto: el lado corto, dividido entre
+  // los píxeles FÍSICOS del recuadro, con un 25 % de tolerancia. Más allá de
+  // eso la foto se vería borrosa.
+  // Ancho del recuadro en estado (no leído del ref durante el render).
+  const [boxW, setBoxW] = useState(340);
+  useEffect(() => {
+    const el = coverBoxRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(([entry]) => setBoxW(Math.round(entry.contentRect.width) || 340));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const maxZoom = (() => {
+    if (!natSize) return 1;
+    const box = boxW;
+    const dpr = Math.min(window.devicePixelRatio || 1, 3);
+    const k = (Math.min(natSize.w, natSize.h) * 1.25) / (box * dpr);
+    return Math.max(1, Math.min(4, Math.round(k * 100) / 100));
+  })();
+  const zoomEfectivo = Math.min(coverZoom, maxZoom);
+
+  /** Cuánto % se mueve el encuadre por cada px arrastrado, en cada eje. */
+  function pasoPorPx(z) {
+    const B = coverBoxRef.current?.offsetWidth || 1;
+    if (!natSize) return { x: 0, y: 0 };
+    const s0 = B / Math.min(natSize.w, natSize.h);          // escala de "cover" en un recuadro cuadrado
+    const sobraX = natSize.w * s0 * z - B;                   // lo que sobresale de la foto en cada eje
+    const sobraY = natSize.h * s0 * z - B;
+    return { x: sobraX > 0.5 ? 100 / sobraX : 0, y: sobraY > 0.5 ? 100 / sobraY : 0 };
+  }
+  const limitar = (v, a, b) => Math.max(a, Math.min(b, v));
+
+  function iniciarArrastre(px, py) {
+    gestoRef.current = { modo: "mover", x: px, y: py, pos: { x: draft.imagePos?.x ?? 50, y: draft.imagePos?.y ?? 50 } };
+  }
+  function iniciarPellizco() {
+    const [a, b] = [...punterosRef.current.values()];
+    gestoRef.current = { modo: "zoom", dist: Math.hypot(a.x - b.x, a.y - b.y) || 1, zoom: zoomEfectivo };
+  }
+  function coverPointerDown(e) {
+    if (!draft.headerImage || e.target.closest("button, label, input")) return;
+    try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* noop */ }
+    punterosRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (punterosRef.current.size >= 2) iniciarPellizco(); else iniciarArrastre(e.clientX, e.clientY);
+    setIsDragging(true);
+  }
+  function coverPointerMove(e) {
+    if (!punterosRef.current.has(e.pointerId) || !gestoRef.current) return;
+    punterosRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const g = gestoRef.current;
+    if (g.modo === "zoom" && punterosRef.current.size >= 2) {
+      const [a, b] = [...punterosRef.current.values()];
+      const d = Math.hypot(a.x - b.x, a.y - b.y) || 1;
+      up("imageZoom", Math.round(limitar(g.zoom * (d / g.dist), 1, maxZoom) * 1000) / 1000);
+      return;
+    }
+    const paso = pasoPorPx(zoomEfectivo);
+    up("imagePos", {
+      x: limitar(g.pos.x - (e.clientX - g.x) * paso.x, 0, 100),
+      y: limitar(g.pos.y - (e.clientY - g.y) * paso.y, 0, 100),
+    });
+  }
+  function coverPointerUp(e) {
+    punterosRef.current.delete(e.pointerId);
+    // Al soltar un dedo del pellizco se sigue moviendo con el otro, sin salto.
+    if (punterosRef.current.size === 1) {
+      const [p] = [...punterosRef.current.values()];
+      iniciarArrastre(p.x, p.y);
+    } else if (punterosRef.current.size === 0) {
+      gestoRef.current = null;
+      setIsDragging(false);
+    }
+  }
+  // Rueda / pellizco de trackpad en escritorio. Va como listener nativo (no
+  // pasivo) para poder evitar que la página haga zoom o se desplace.
+  useEffect(() => {
+    const el = coverBoxRef.current;
+    if (!el || !draft.headerImage) return;
+    const onWheel = (ev) => {
+      if (!ev.ctrlKey && Math.abs(ev.deltaY) < Math.abs(ev.deltaX)) return;
+      if (!ev.ctrlKey && !ev.altKey) return; // sin modificador, deja desplazar la página
+      ev.preventDefault();
+      setDraft(p => ({ ...p, imageZoom: Math.round(limitar((Number(p.imageZoom) || 1) * Math.exp(-ev.deltaY * 0.01), 1, maxZoom) * 1000) / 1000 }));
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, [draft.headerImage, maxZoom, setDraft]);
+
   async function handleImage(e) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -376,9 +391,12 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
       // Si ya se eligió un color a mano, cambiar de portada NO lo pisa: sería
       // deshacer una decisión sin avisar. Se vuelve al de la portada desde el
       // propio selector de color.
+      setNatSize(null);
       setDraft(p => ({
         ...p,
         headerImage: url,
+        imagePos: { x: 50, y: 50 },
+        imageZoom: 1,
         themeColor: p.themeColorManual ? p.themeColor : (color || null),
       }));
     }
@@ -408,6 +426,13 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
     <>
       <style>{`
         .ce-wheel::-webkit-scrollbar { display: none; }
+        .ce-hue { flex: 1; -webkit-appearance: none; appearance: none; height: 14px; border-radius: 999px; outline: none;
+          background: linear-gradient(90deg,#f00,#ff0 17%,#0f0 33%,#0ff 50%,#00f 67%,#f0f 83%,#f00); }
+        .ce-hue::-webkit-slider-thumb { -webkit-appearance: none; width: 26px; height: 26px; border-radius: 50%; background: #fff; border: 3px solid rgba(0,0,0,0.25); box-shadow: 0 1px 6px rgba(0,0,0,0.4); cursor: pointer; }
+        .ce-hue::-moz-range-thumb { width: 26px; height: 26px; border-radius: 50%; background: #fff; border: 3px solid rgba(0,0,0,0.25); cursor: pointer; }
+        .ce-zoom { flex: 1; -webkit-appearance: none; appearance: none; height: 4px; border-radius: 4px; background: rgba(255,255,255,0.2); outline: none; }
+        .ce-zoom::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 1px 6px rgba(0,0,0,0.4); cursor: pointer; }
+        .ce-zoom::-moz-range-thumb { width: 22px; height: 22px; border: none; border-radius: 50%; background: #fff; cursor: pointer; }
         /* Sin fondo propio: hereda el degradado global de la página (antes pintaba
            su propio degradado sobre la columna y se veía como un recuadro). */
         .ce-bg { min-height: 100dvh; }
@@ -423,41 +448,36 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
             se ve aquí es literalmente lo que verá quien lo abra. */}
         <EventTintLayer tinte={tinte} />
         <div className="ce-scroll">
-          {/* ── Volver (acción translúcida) — regresa a la pantalla anterior ── */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginTop: 16 }}>
-            <IconButton title="Volver" tone="soft" onClick={onCancel}><IcoBack /></IconButton>
-            <span style={{ fontWeight: 700, fontSize: 15, color: TEXT }}>{isEditing ? "Editar evento" : "Crear evento"}</span>
+          {/* Título. La flecha de volver vive en el encabezado de la app; solo
+              se pinta aquí cuando el formulario se usa fuera de él (bienvenida,
+              sin sesión), donde no hay encabezado. */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 18 }}>
+            {!inApp && <IconButton title="Volver" tone="soft" onClick={onCancel}><IcoBack /></IconButton>}
+            <h1 style={{ margin: 0, fontSize: 28, fontWeight: 600, letterSpacing: "-0.03em", color: TEXT }}>{isEditing ? "Editar evento" : "Crear evento"}</h1>
           </div>
-          {/* ── Cover image ── */}
+          {/* ── Portada ──
+              Con foto: se arrastra en cualquier dirección y se acerca con dos
+              dedos (o rueda/trackpad, o el deslizador de abajo). El tope del
+              zoom sale de la resolución REAL de la foto, para no acercar más
+              allá de lo que se ve nítido. Ver coverImgStyle (lib/images.js). */}
           <div
-            style={{ position: "relative", margin: "20px 0 12px", borderRadius: 22, overflow: "hidden", aspectRatio: "1 / 1", background: draft.headerImage ? "none" : "var(--tf-surface)", border: BORDER, cursor: draft.headerImage ? (isDragging ? "grabbing" : "grab") : "default", touchAction: draft.headerImage ? "none" : "auto", userSelect: "none" }}
-            onPointerDown={e => {
-              if (!draft.headerImage || e.target.closest("button, label, input")) return;
-              e.currentTarget.setPointerCapture(e.pointerId);
-              dragRef.current = { startX: e.clientX, startY: e.clientY, startPosX: draft.imagePos?.x ?? 50, startPosY: draft.imagePos?.y ?? 50 };
-              setIsDragging(true);
-            }}
-            onPointerMove={e => {
-              if (!isDragging) return;
-              const dx = e.clientX - dragRef.current.startX;
-              const dy = e.clientY - dragRef.current.startY;
-              up("imagePos", {
-                x: Math.max(0, Math.min(100, dragRef.current.startPosX - dx * 0.13)),
-                y: Math.max(0, Math.min(100, dragRef.current.startPosY - dy * 0.13)),
-              });
-            }}
-            onPointerUp={() => setIsDragging(false)}
-            onPointerCancel={() => setIsDragging(false)}
+            ref={coverBoxRef}
+            style={{ position: "relative", margin: "20px 0 12px", borderRadius: 22, overflow: "hidden", aspectRatio: "1 / 1", background: draft.headerImage ? "#000" : "var(--tf-surface)", border: BORDER, cursor: draft.headerImage ? (isDragging ? "grabbing" : "grab") : "default", touchAction: draft.headerImage ? "none" : "auto", userSelect: "none" }}
+            onPointerDown={coverPointerDown}
+            onPointerMove={coverPointerMove}
+            onPointerUp={coverPointerUp}
+            onPointerCancel={coverPointerUp}
           >
             {draft.headerImage
               ? <>
                   <img
                     src={draft.headerImage} alt="portada" draggable={false}
-                    style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: `${draft.imagePos?.x ?? 50}% ${draft.imagePos?.y ?? 50}%`, display: "block", pointerEvents: "none" }}
+                    onLoad={e => setNatSize({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })}
+                    style={{ ...coverImgStyle(draft.imagePos, zoomEfectivo), pointerEvents: "none" }}
                   />
                   {!isDragging && (
-                    <div style={{ position: "absolute", bottom: 58, left: "50%", transform: "translateX(-50%)", background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)", borderRadius: 22, padding: "5px 13px", fontSize: 11, color: "rgba(255,255,255,0.75)", pointerEvents: "none", whiteSpace: "nowrap" }}>
-                      ✥ Arrastra para reencuadrar
+                    <div style={{ position: "absolute", bottom: 58, left: "50%", transform: "translateX(-50%)", background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)", borderRadius: 22, padding: "6px 13px", fontSize: 12, color: "rgba(255,255,255,0.85)", pointerEvents: "none", whiteSpace: "nowrap" }}>
+                      ✥ Arrastra para mover{maxZoom > 1.05 ? " · pellizca para acercar" : ""}
                     </div>
                   )}
                 </>
@@ -471,9 +491,20 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
               <input type="file" accept="image/*" hidden onChange={handleImage} ref={imgRef} />
             </label>
             {draft.headerImage && (
-              <button type="button" className="ef-hover-fill" onClick={() => { setColorPortada(null); setDraft(p => ({ ...p, headerImage: "", imagePos: { x: 50, y: 50 }, ...(p.themeColorManual ? {} : { themeColor: null }) })); }} style={{ position: "absolute", top: 10, right: 10, background: "rgba(0,0,0,0.55)", border: "none", borderRadius: 22, padding: "4px 10px", color: "#fff", fontSize: 11, cursor: "pointer" }}>Quitar</button>
+              <button type="button" className="ef-hover-fill" onClick={() => { setColorPortada(null); setNatSize(null); setDraft(p => ({ ...p, headerImage: "", imagePos: { x: 50, y: 50 }, imageZoom: 1, ...(p.themeColorManual ? {} : { themeColor: null }) })); }} style={{ position: "absolute", top: 10, right: 10, background: "rgba(0,0,0,0.55)", border: "none", borderRadius: 22, padding: "5px 11px", color: "#fff", fontSize: 12, cursor: "pointer" }}>Quitar</button>
             )}
           </div>
+
+          {/* Zoom: alternativa visible al pellizco (y la única en escritorio sin trackpad). */}
+          {draft.headerImage && maxZoom > 1.05 && (
+            <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "-2px 6px 14px" }}>
+              <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth={2} strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3M8 11h6" /></svg>
+              <input type="range" className="ce-zoom" min={1} max={maxZoom} step={0.01} value={zoomEfectivo}
+                aria-label="Acercar portada"
+                onChange={e => up("imageZoom", Number(e.target.value))} />
+              <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth={2} strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3M8 11h6M11 8v6" /></svg>
+            </div>
+          )}
 
           {/* ── Nombre del evento ──
               La tipografía se elige AQUÍ, en el propio campo del nombre: es
@@ -651,7 +682,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
                   {locLabel || "Elegir ubicación"}
                 </span>
                 {locLabel
-                  ? <span onClick={e => { e.stopPropagation(); setDraft(p => ({ ...p, address: "", lat: null, lng: null })); }} style={{ color: SUB, cursor: "pointer", flexShrink: 0 }}><I.X /></span>
+                  ? <span onClick={e => { e.stopPropagation(); setDraft(p => ({ ...p, address: "", location: "", lat: null, lng: null })); }} style={{ color: SUB, cursor: "pointer", flexShrink: 0 }}><I.X /></span>
                   : <span style={{ color: SUB, flexShrink: 0 }}><I.ChevronRight /></span>
                 }
               </div>
@@ -974,18 +1005,49 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
                   </button>
                 );
               })}
-              {/* Cualquier otro color, con el selector del sistema. */}
-              <label title="Otro color" style={{
-                width: 40, height: 40, borderRadius: "50%", cursor: "pointer", flexShrink: 0,
-                border: "1px solid rgba(255,255,255,0.2)",
-                background: "conic-gradient(#e0574a,#d4b02f,#5aad4f,#2fa89c,#3d8ad9,#6a5ae0,#db5a94,#e0574a)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}>
-                <span style={{ width: 16, height: 16, borderRadius: "50%", background: "rgba(18,20,22,0.9)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 13, lineHeight: 1 }}>+</span>
-                <input type="color" value={draft.themeColor || "#3d8ad9"} hidden
-                  onChange={e => setDraft(p => ({ ...p, themeColor: e.target.value, themeColorManual: true }))} />
-              </label>
+              {/* Cualquier otro color. Antes abría el selector del sistema con un
+                  <input type="color" hidden>, y Safari de iOS no abre el de un
+                  campo oculto: el "+" no hacía nada. Ahora es un selector
+                  propio (tono + intensidad) que funciona igual en todas partes. */}
+              {(() => {
+                const propio = draft.themeColorManual && draft.themeColor && !COLORES.includes(draft.themeColor.toLowerCase());
+                return (
+                  <button type="button" title="Otro color" aria-label="Elegir otro color" aria-expanded={colorLibre}
+                    onClick={() => setColorLibre(v => !v)}
+                    style={{
+                      width: 40, height: 40, borderRadius: "50%", cursor: "pointer", flexShrink: 0, padding: 0,
+                      border: propio || colorLibre ? "2px solid #ffffff" : "1px solid rgba(255,255,255,0.2)",
+                      background: propio ? draft.themeColor : "conic-gradient(#e0574a,#d4b02f,#5aad4f,#2fa89c,#3d8ad9,#6a5ae0,#db5a94,#e0574a)",
+                      display: "flex", alignItems: "center", justifyContent: "center", color: "#fff",
+                    }}>
+                    {propio ? <I.Check /> : <span style={{ width: 18, height: 18, borderRadius: "50%", background: "rgba(18,20,22,0.9)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 14, lineHeight: 1 }}>+</span>}
+                  </button>
+                );
+              })()}
             </div>
+
+            {colorLibre && (
+              <div style={{ background: "rgba(255,255,255,0.08)", borderRadius: 16, padding: "14px 14px 12px", marginBottom: 16 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+                  <span style={{ width: 36, height: 36, borderRadius: "50%", background: colorDeHsl(tonoLibre, intensidadLibre), flexShrink: 0, border: "2px solid rgba(255,255,255,0.85)" }} />
+                  <input type="range" className="ce-hue" min={0} max={359} value={tonoLibre} aria-label="Tono"
+                    onChange={e => { const h = Number(e.target.value); setTonoLibre(h); setDraft(p => ({ ...p, themeColor: colorDeHsl(h, intensidadLibre), themeColorManual: true })); }} />
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  {[["Claro", 0], ["Medio", 1], ["Profundo", 2]].map(([etq, i]) => (
+                    <button key={etq} type="button" onClick={() => { setIntensidadLibre(i); setDraft(p => ({ ...p, themeColor: colorDeHsl(tonoLibre, i), themeColorManual: true })); }}
+                      style={{
+                        flex: 1, height: 36, borderRadius: 10, cursor: "pointer", fontSize: 13, fontWeight: 500,
+                        border: "none", display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                        background: intensidadLibre === i ? "#ffffff" : "rgba(255,255,255,0.1)",
+                        color: intensidadLibre === i ? "#000" : "#fff",
+                      }}>
+                      <span style={{ width: 12, height: 12, borderRadius: "50%", background: colorDeHsl(tonoLibre, i) }} />{etq}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div style={{ display: "flex", gap: 10 }}>
               <button type="button" className="ef-hover-fill"
@@ -1005,9 +1067,13 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
 
       {/* ── Location modal (full-screen) ── */}
       {showLocModal && (
-        <LocationModal
+        <LocationSearch
+          initialCity={draft.city}
           onSelect={item => {
-            setDraft(p => ({ ...p, address: item.label, lat: item.lat, lng: item.lng }));
+            // Ahora también se guarda la CIUDAD (antes solo dirección y
+            // coordenadas): sin ella el evento no salía al filtrar por ciudad
+            // en Descubrir ni en su tarjeta.
+            setDraft(p => ({ ...p, address: item.address, location: item.location, city: item.city || p.city, lat: item.lat, lng: item.lng }));
             setShowLocModal(false);
           }}
           onClose={() => setShowLocModal(false)}

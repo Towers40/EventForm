@@ -4,6 +4,7 @@
 
 
 import { COVER_RADIUS, COVER_PAD } from "../lib/ui-tokens.js";
+import { coverImgStyle } from "../lib/images.js";
 
 // ── Botón de solo icono ─────────────────────────────────────────────────────
 // Los botones de navegación (volver, inicio, nuevo, compartir) van sin texto en
@@ -166,7 +167,7 @@ export function AttendeeStack({
 // Cuadrada, esquinas suavizadas y con margen a los lados: nunca pegada al
 // borde de la pantalla. Es el mismo marco en la página del evento, en la
 // entrada y al crear, para que no haya tres tratamientos distintos.
-export function EventCover({ src, alt, ratio = "1 / 1", radius = COVER_RADIUS, pad = COVER_PAD, children, style }) {
+export function EventCover({ src, alt, ratio = "1 / 1", radius = COVER_RADIUS, pad = COVER_PAD, children, style, pos, zoom }) {
   return (
     <div style={{ padding: `0 ${pad}px`, boxSizing: "border-box", ...style }}>
       <div style={{
@@ -176,7 +177,8 @@ export function EventCover({ src, alt, ratio = "1 / 1", radius = COVER_RADIUS, p
         boxShadow: "0 8px 28px rgba(0,0,0,0.35)",
       }}>
         {src
-          ? <img src={src} alt={alt || ""} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+          // Con el encuadre (posición + zoom) que eligió el organizador.
+          ? <img src={src} alt={alt || ""} style={coverImgStyle(pos, zoom)} />
           : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 54, opacity: 0.5 }}>🎉</div>}
         {children}
       </div>

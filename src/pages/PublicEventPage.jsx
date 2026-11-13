@@ -415,7 +415,7 @@ export default function PublicEventPage() {
 
         {/* ── Portada: cuadrada, con margen y esquinas suavizadas ── */}
         <div style={{ paddingTop: 68 }}>
-          <EventCover src={event.headerImage} alt={event.title} />
+          <EventCover src={event.headerImage} alt={event.title} pos={event.imagePos} zoom={event.imageZoom} />
         </div>
 
         {/* ── Content ── */}

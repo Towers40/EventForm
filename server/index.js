@@ -513,6 +513,8 @@ app.get("/api/auth/my-tickets", requireDb, authMiddleware, async (req, res) => {
           // Solo URLs: aquí la portada es una miniatura de 56 px y arrastrar
           // cientos de KB en base64 por cada entrada no tiene sentido.
           headerImage: String(ev.headerImage || "").startsWith("http") ? ev.headerImage : "",
+          imagePos: ev.imagePos || null,
+          imageZoom: ev.imageZoom || null,
           city: ev.city || "",
           location: ev.location || "",
         },
@@ -680,6 +682,8 @@ app.get("/api/public/tickets/:ticketId", requireDb, async (req, res) => {
           date: ev.date || "",
           startTime: ev.startTime || "",
           headerImage: ev.headerImage || "",
+          imagePos: ev.imagePos || null,
+          imageZoom: ev.imageZoom || null,
           city: ev.city || "",
           location: ev.location || "",
           // Personalización: la entrada se ve con la letra y el color del
@@ -1451,6 +1455,10 @@ app.get("/api/public/events", requireDb, async (req, res) => {
                    -- dos campos cortos del payload, no la portada entera.
                    json_extract(payload, '$.themeColor') AS theme_color,
                    json_extract(payload, '$.fontId')     AS font_id,
+                   -- Encuadre de la portada (posición y zoom elegidos al crear).
+                   json_extract(payload, '$.imagePos.x') AS img_x,
+                   json_extract(payload, '$.imagePos.y') AS img_y,
+                   json_extract(payload, '$.imageZoom')  AS img_zoom,
                    -- Quiénes van: hasta CUATRO caras por evento. El LIMIT va en
                    -- la subconsulta interior a propósito — así el JOIN con users
                    -- se hace sobre 4 filas, no sobre las 900 inscripciones que
@@ -1506,6 +1514,8 @@ app.get("/api/public/events", requireDb, async (req, res) => {
       hostId: r.host_id || null,
       themeColor: r.theme_color || null,
       fontId: r.font_id || null,
+      imagePos: r.img_x != null ? { x: Number(r.img_x), y: Number(r.img_y ?? 50) } : null,
+      imageZoom: r.img_zoom != null ? Number(r.img_zoom) : null,
       attendees: Number(r.attendees || 0),
       attendeePreview: parseAttendeePreview(r.attendee_preview),
     }));
@@ -1578,6 +1588,9 @@ app.get("/api/public/hosts/:id", requireDb, async (req, res) => {
              json_extract(payload, '$.endTime')   AS end_time,
              json_extract(payload, '$.themeColor') AS theme_color,
              json_extract(payload, '$.fontId')     AS font_id,
+             json_extract(payload, '$.imagePos.x') AS img_x,
+             json_extract(payload, '$.imagePos.y') AS img_y,
+             json_extract(payload, '$.imageZoom')  AS img_zoom,
              CASE WHEN json_extract(payload, '$.headerImage') LIKE 'http%'
                   THEN json_extract(payload, '$.headerImage') END AS header_image,
              (SELECT COUNT(*) FROM registrations r
@@ -1635,6 +1648,8 @@ app.get("/api/public/hosts/:id", requireDb, async (req, res) => {
       headerImage: r.header_image || "",
       themeColor: r.theme_color || null,
       fontId: r.font_id || null,
+      imagePos: r.img_x != null ? { x: Number(r.img_x), y: Number(r.img_y ?? 50) } : null,
+      imageZoom: r.img_zoom != null ? Number(r.img_zoom) : null,
       category: r.category || null,
       isPaid: Boolean(r.is_paid),
       price: r.price != null ? Number(r.price) : null,

@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import SlideToCancel from "../components/SlideToCancel.jsx";
 import TicketCarousel from "../components/TicketCarousel.jsx";
 import "../styles/typeform.css";
+import { coverImgStyle } from "../lib/images.js";
 
 const DAYS_ES   = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 const MONTHS_ES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
@@ -223,7 +224,7 @@ export default function MisTicketsView() {
               <div key={key} className="panel-card" style={{ padding: 0, overflow: "hidden" }}>
                 <div style={{ display: "flex", gap: 14, padding: 16, alignItems: "center" }}>
                   <div style={{ width: 56, height: 56, borderRadius: 14, flexShrink: 0, overflow: "hidden", background: "rgba(52,211,153,0.18)" }}>
-                    {event.headerImage && <img src={event.headerImage} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
+                    {event.headerImage && <img src={event.headerImage} alt="" style={coverImgStyle(event.imagePos, event.imageZoom)} />}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 700, fontSize: 15, color: "#ffffff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{event.title || "Evento"}</div>

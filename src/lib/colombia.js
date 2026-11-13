@@ -58,26 +58,60 @@ export const CITY_GEO = {
   "San Andrés": { search: "San Andres", bbox: "-81.75,12.55,-81.68,12.62" },
 };
 
-/** Lugares frecuentes por ciudad (atajos como apps de mapas). */
+/**
+ * Lugares de referencia por ciudad: atajos en el buscador de ubicación.
+ * Son SEMILLAS de búsqueda (al tocarlas se busca ese nombre), no coordenadas
+ * fijas. Cada una se comprobó contra Photon (nov 2026) con el sesgo de su
+ * ciudad; las que devolvían otro sitio o nada (p. ej. "Parque Lleras") se
+ * quitaron para no ofrecer atajos que llevan a "sin resultados".
+ */
 export const CITY_LANDMARKS = {
   "Bogotá D.C.": [
-    "Corferias",
-    "Movistar Arena",
-    "Centro Comercial Santafé",
-    "Parque Simón Bolívar",
-    "Teatro Colón",
-    "Centro Internacional",
+    "Movistar Arena", "Parque Simón Bolívar", "Teatro Colón", "Teatro Mayor Julio Mario Santo Domingo",
+    "Corferias", "Parque de la 93", "Zona T", "Usaquén", "Plaza de Bolívar", "Museo del Oro",
+    "Estadio El Campín", "Parque El Virrey", "Centro Comercial Andino", "Ágora Bogotá", "Universidad de los Andes",
   ],
   Medellín: [
-    "Plaza Mayor",
-    "Centro Comercial Santafé Medellín",
-    "Estadio Atanasio Girardot",
-    "Parque Lleras",
+    "Estadio Atanasio Girardot", "Parque Explora", "Jardín Botánico de Medellín", "Pueblito Paisa",
+    "Museo de Antioquia", "Teatro Metropolitano", "Centro Comercial Santafé", "Parque de los Deseos",
+    "Plaza Botero", "Universidad EAFIT",
   ],
-  Cali: ["Estadio Olímpico Pascual Guerrero", "Centro Comercial Jardín Plaza", "Granada"],
-  Cartagena: ["Centro Histórico", "Convention Center Cartagena", "Bocagrande"],
-  Barranquilla: ["Estadio Metropolitano", "Puerta de Oro"],
+  Cali: [
+    "Estadio Pascual Guerrero", "Teatro Municipal", "Parque del Perro", "Cristo Rey", "Zoológico de Cali",
+    "Centro Comercial Chipichape", "Granada", "Teatro Jorge Isaacs", "Universidad Icesi",
+  ],
+  Barranquilla: [
+    "Estadio Metropolitano Roberto Meléndez", "Gran Malecón", "Museo del Caribe", "Parque Washington",
+    "Teatro Amira de la Rosa", "Universidad del Norte",
+  ],
+  Cartagena: [
+    "Centro de Convenciones Cartagena de Indias", "Castillo de San Felipe de Barajas", "Getsemaní",
+    "Bocagrande", "Plaza de la Trinidad", "Teatro Adolfo Mejía",
+  ],
+  Bucaramanga: ["Parque San Pío", "Cenfer", "Parque de los Niños", "Centro Comercial Cacique", "Parque García Rovira"],
+  Pereira: ["Expofuturo", "Centro Comercial Unicentro", "Estadio Hernán Ramírez Villegas"],
+  Manizales: ["Catedral Basílica de Manizales", "Teatro Los Fundadores", "Expoferias", "Recinto del Pensamiento", "Estadio Palogrande"],
+  "Santa Marta": ["Parque de los Novios", "Marina Santa Marta", "Quinta de San Pedro Alejandrino", "Estadio Sierra Nevada"],
 };
+
+/** Centro aproximado de una ciudad (punto medio de su bbox). */
+export function getCityCenter(city) {
+  const [a, b, c, d] = getCityGeo(city || "Bogotá D.C.").bbox.split(",").map(Number);
+  return { lat: (b + d) / 2, lon: (a + c) / 2 };
+}
+
+const sinTildes = (s) => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+
+/** Nombre de ciudad de un resultado ("Santiago de Cali", "Bogotá") → el de la lista ("Cali", "Bogotá D.C."). */
+export function matchColombiaCity(name) {
+  const n = sinTildes(name);
+  if (!n) return null;
+  if (n.startsWith("bogota")) return "Bogotá D.C.";
+  return COLOMBIA_CITIES.find((c) => {
+    const k = sinTildes(c.replace(/D\.C\./, ""));
+    return n === k || n.includes(k);
+  }) || null;
+}
 
 export function getCityGeo(city) {
   return CITY_GEO[city] || { search: city.replace(/D\.C\./gi, "").trim(), bbox: "-81.8,-4.2,-66.9,13.5" };

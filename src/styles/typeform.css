@@ -638,9 +638,19 @@ h1, h2, h3, .ef-title {
 /* Móvil: fila simple con los extremos separados. Con `grid: 1fr auto 1fr` las
    dos columnas laterales valían la mitad cada una y el bloque avatar+logo, más
    ancho que su mitad, se montaba encima de los iconos de la derecha. */
-.ef-topbar { display: flex; justify-content: space-between; }
+/* Móvil: tres columnas — [avatar o ←] [logo centrado] [acciones]. Las
+   laterales son iguales (1fr) para que el logo quede en el centro exacto. */
+.ef-topbar { display: grid; grid-template-columns: 1fr auto 1fr; }
 .ef-topbar > * { min-width: 0; }
 .ef-logo-text { overflow: hidden; }
+.ef-logo-side { display: none; }
+.ef-logo-center { display: flex; }
+/* Con el logo al centro no hay sitio para que la píldora activa despliegue su
+   nombre: en móvil se marca solo con el relleno blanco. */
+@media (max-width: 939px) {
+  .ef-pill-on { padding: 0 8px; }
+  .ef-pill-on .ef-pill-label { max-width: 0 !important; margin-left: 0 !important; opacity: 0 !important; }
+}
 
 /* Escritorio: rejilla de tres columnas para dejar la navegación centrada. El
    corte es 940px y no 860px porque centrar exige que cada columna lateral quepa
@@ -650,6 +660,8 @@ h1, h2, h3, .ef-title {
   .ef-topbar { display: grid; grid-template-columns: 1fr auto 1fr; }
   .ef-header-nav { display: flex; }
   .ef-mobile-actions { display: none; }
+  .ef-logo-side { display: flex; }
+  .ef-logo-center { display: none; }
 }
 
 /* Móvil: encoge márgenes y logo para que la fila no se desborde. El umbral es

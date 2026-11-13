@@ -33,7 +33,7 @@ export default function ConfirmTicket({ ev, reg, regs, onDone, standalone, tintC
       {/* Portada cuadrada con esquinas suavizadas: el mismo marco que en la
           página del evento. Antes era 2:1 y cada pantalla se veía distinta. */}
       {ev.headerImage && (
-        <EventCover src={ev.headerImage} alt={ev.title} pad={0} style={{ marginBottom: 20 }} />
+        <EventCover src={ev.headerImage} alt={ev.title} pad={0} style={{ marginBottom: 20 }} pos={ev.imagePos} zoom={ev.imageZoom} />
       )}
 
       {/* Ticket header */}

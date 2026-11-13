@@ -34,8 +34,18 @@ Instrucciones de arquitectura, stack y estilo para el asistente de IA.
   (píldora `#fff` + texto negro), no en verde. Denegado rojo `rgba(220,38,38,*)`.
 * **Tipografía Onest** (Google Fonts, variable): titulares 600 con tracking
   negativo (`-0.02em` a `-0.035em`), alineados a la izquierda; jerarquía por tamaño.
-* **Categorías:** baldosas tipo app (`CategoryIcon` en `src/lib/categoryIcons.jsx`,
-  degradado propio por categoría + glifo blanco). No volver a contornos finos.
+* **Categorías:** baldosas tipo app (`CategoryIcon` en `src/lib/categoryIcons.jsx`):
+  color de la categoría translúcido (~30 %) + glifo en tono claro de su familia.
+* **Encabezado:** en móvil `[avatar | ←] [logo centrado] [dashboard, +]`. En
+  pantallas secundarias (`SUB_VIEWS` en HostApp) la flecha de volver ocupa el
+  sitio del avatar; no poner flechas de volver dentro del contenido.
+* **Portada:** encuadre `imagePos` {x,y} % + `imageZoom` (≥1). Pintar SIEMPRE con
+  `coverImgStyle(pos, zoom)` de `src/lib/images.js` (editor, página pública,
+  entrada, tarjetas). El zoom máximo lo limita la resolución real de la foto.
+* **Ubicación:** `LocationSearch.jsx` (pantalla completa, campo ≥16 px para que
+  iOS no haga zoom) + `searchEventPlaces` (UNA consulta a Photon por búsqueda,
+  sesgada a la ciudad; Photon limita a quien abusa). Lugares de referencia
+  validados en `CITY_LANDMARKS` (`src/lib/colombia.js`).
 * **Forma:** tarjetas radio 24, botones 52 px radio 14 (no píldora), campos 56 px
   radio 16. Clases: `.soft-btn-primary` (CTA), `.soft-btn-secondary` (contorno
   blanco), `.soft-btn-ghost` (superficie gris), `.tf-input-line`, `.panel-card`.

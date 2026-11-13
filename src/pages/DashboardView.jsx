@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { getCapacityMax } from "../lib/capacity.js";
 import { CategoryIcon } from "../lib/categoryIcons.jsx";
 import "../styles/typeform.css";
+import { coverImgStyle } from "../lib/images.js";
 
 // ─── Dashboard del organizador ──────────────────────────────────────────────
 //
@@ -348,7 +349,7 @@ export default function DashboardView({ events = [], onNew, onOpen, onValidate, 
             accion={<span style={{ fontSize: 12.5, fontWeight: 600, padding: "4px 10px", borderRadius: 999, background: "rgba(52,211,153,0.14)", color: "#6ee7b7" }}>{enDias(diasProx)}</span>}>
             <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 14 }}>
               {proximo.headerImage
-                ? <img src={proximo.headerImage} alt="" width={52} height={52} style={{ width: 52, height: 52, borderRadius: 14, objectFit: "cover", flexShrink: 0 }} />
+                ? <span style={{ width: 52, height: 52, borderRadius: 14, overflow: "hidden", flexShrink: 0, display: "block" }}><img src={proximo.headerImage} alt="" width={52} height={52} style={coverImgStyle(proximo.imagePos, proximo.imageZoom)} /></span>
                 : <CategoryIcon slug={proximo.category || "otro"} size={52} />}
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: 17, fontWeight: 600, letterSpacing: "-0.015em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{proximo.title}</div>

@@ -3,6 +3,7 @@ import { isSoldOut, capacityLabel, getCapacityMax } from "../lib/capacity.js";
 import { groupRegistrations } from "../lib/tickets.js";
 import { DataRow, IcoCalendar, IcoPin } from "../components/ui.jsx";
 import "../styles/typeform.css";
+import { coverImgStyle } from "../lib/images.js";
 
 function statusOf(ev) {
   const dateStr = ev.startDate || ev.date;
@@ -156,7 +157,7 @@ function EventCard({ ev, onOpen, onEdit, onValidate, onDelete, onShare, onToggle
       {/* Cover image */}
       {ev.headerImage ? (
         <div style={{ width: "100%", aspectRatio: "16/7", overflow: "hidden", cursor: "pointer" }} onClick={() => setExpanded(e => !e)}>
-          <img src={ev.headerImage} alt={ev.title} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: `${ev.imagePos?.x ?? 50}% ${ev.imagePos?.y ?? 50}%`, display: "block" }} />
+          <img src={ev.headerImage} alt={ev.title} style={coverImgStyle(ev.imagePos, ev.imageZoom)} />
         </div>
       ) : ev.coverNeedsMigration ? (
         // La portada estaba guardada dentro del evento y no se envía (hacía

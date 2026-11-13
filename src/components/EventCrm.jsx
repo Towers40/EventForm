@@ -56,9 +56,12 @@ export default function EventCrm({ event, onBack, onToggleSoldOut, onShare, onSe
 
   return (
     <div>
-      <div style={{ marginBottom: 20 }}>
-        <IconButton title="Volver" tone="soft" onClick={onBack}><IcoBack /></IconButton>
-      </div>
+      {/* Volver vive en el encabezado de la app. */}
+      {onBack && (
+        <div style={{ marginBottom: 20 }}>
+          <IconButton title="Volver" tone="soft" onClick={onBack}><IcoBack /></IconButton>
+        </div>
+      )}
 
       <div className="panel-card" style={{ marginBottom: 24 }}>
         <div className="panel-card-header">
