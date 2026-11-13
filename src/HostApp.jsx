@@ -4,7 +4,7 @@ import { useState, useEffect, useLayoutEffect, useCallback, useRef, lazy, Suspen
 const QrScanner = lazy(() => import("./components/QrScanner.jsx"));
 import FieldInput, { FieldError } from "./components/FieldInput.jsx";
 import EventHeader from "./components/EventHeader.jsx";
-import ColombiaAddressPicker from "./components/ColombiaAddressPicker.jsx";
+import LocationSearch from "./components/LocationSearch.jsx";
 import HeaderImageUpload from "./components/HeaderImageUpload.jsx";
 import LocationMap from "./components/LocationMap.jsx";
 import EventCrm from "./components/EventCrm.jsx";
@@ -91,16 +91,45 @@ function IconFieldMulti({ size = 16 }) { return <svg {...svgBase(size)}><path d=
 function IconFieldCheck({ size = 16 }) { return <svg {...svgBase(size)}><rect x="3" y="3" width="18" height="18" rx="4" /><path d="m8 12 3 3 5-6" /></svg>; }
 
 const FIELD_TYPES = [
-  { type: "text", label: "Texto corto", icon: <IconFieldText /> },
-  { type: "email", label: "Email", icon: <IconFieldEmail /> },
-  { type: "phone", label: "Teléfono", icon: <IconFieldPhone /> },
-  { type: "age", label: "Edad", icon: <IconFieldAge /> },
-  { type: "number", label: "Número", icon: <IconFieldNumber /> },
-  { type: "textarea", label: "Texto largo", icon: <IconFieldTextarea /> },
-  { type: "select", label: "Selección única", icon: <IconFieldSelect /> },
-  { type: "multi_select", label: "Selección múltiple", icon: <IconFieldMulti /> },
-  { type: "checkbox", label: "Verificación", icon: <IconFieldCheck /> },
+  { type: "text", label: "Texto corto", desc: "Una línea: nombre, empresa…", icon: <IconFieldText size={20} /> },
+  { type: "email", label: "Email", desc: "Valida que sea un correo", icon: <IconFieldEmail size={20} /> },
+  { type: "phone", label: "Teléfono", desc: "Número de contacto", icon: <IconFieldPhone size={20} /> },
+  { type: "age", label: "Edad", desc: "Años cumplidos", icon: <IconFieldAge size={20} /> },
+  { type: "number", label: "Número", desc: "Cualquier cantidad", icon: <IconFieldNumber size={20} /> },
+  { type: "textarea", label: "Texto largo", desc: "Comentarios o respuestas abiertas", icon: <IconFieldTextarea size={20} /> },
+  { type: "select", label: "Selección única", desc: "Elegir una opción de una lista", icon: <IconFieldSelect size={20} /> },
+  { type: "multi_select", label: "Selección múltiple", desc: "Elegir varias opciones", icon: <IconFieldMulti size={20} /> },
+  { type: "checkbox", label: "Verificación", desc: "Una casilla para aceptar algo", icon: <IconFieldCheck size={20} /> },
 ];
+
+// Visibilidad del evento (menú desplegable en "Publicación").
+const VIS_OPTIONS = [
+  { value: "public", label: "Público", desc: "Aparece en Descubrir",
+    icon: <svg {...svgBase(20)}><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" /></svg> },
+  { value: "unlisted", label: "Solo enlace", desc: "Solo entra quien tenga el enlace",
+    icon: <svg {...svgBase(20)}><path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1" /><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3A4.5 4.5 0 0 0 11 19.4l1-1" /></svg> },
+  { value: "private", label: "Privado", desc: "Solo tú puedes verlo",
+    icon: <svg {...svgBase(20)}><rect x="4.5" y="10.5" width="15" height="10" rx="2.5" /><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" /></svg> },
+];
+
+// Fila de un menú desplegable: baldosa con icono + título + una línea.
+// Los menús se abren EN la página (empujan lo de debajo), sin ventana ni fondo.
+function MenuFila({ icon, label, desc, active, onClick }) {
+  return (
+    <button type="button" role="option" aria-selected={Boolean(active)} onClick={onClick} className="ef-hover-fill"
+      style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, textAlign: "left", padding: "10px 12px", border: "none", borderRadius: 14, background: active ? "rgba(255,255,255,0.1)" : "transparent", color: "#fff", cursor: "pointer" }}>
+      <span style={{ width: 40, height: 40, borderRadius: 12, background: "var(--tf-surface-2)", display: "grid", placeItems: "center", flexShrink: 0 }}>{icon}</span>
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ display: "block", fontSize: 15.5, fontWeight: 500, letterSpacing: "-0.01em" }}>{label}</span>
+        {desc && <span style={{ display: "block", fontSize: 13, color: "var(--tf-muted)", marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{desc}</span>}
+      </span>
+      {active && <svg {...svgBase(18)} strokeWidth={2.4}><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>}
+    </button>
+  );
+}
+function Chevron({ open }) {
+  return <svg {...svgBase(18)} style={{ flexShrink: 0, color: "var(--tf-muted)", transition: "transform .18s", transform: open ? "rotate(180deg)" : "none" }}><path d="m6 9 6 6 6-6" /></svg>;
+}
 
 const DEFAULTS = {
   text: "Nombre completo", email: "Correo electrónico", phone: "Teléfono",
@@ -943,6 +972,8 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
   useEffect(() => { loadEventFont(draft?.fontId); }, [draft?.fontId]);
   const [showTools, setShowTools] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [visOpen, setVisOpen] = useState(false);
+  const [showLoc, setShowLoc] = useState(false);
   const [dragId, setDragId] = useState(null);
   const itemRefs = useRef(new Map());
   const updateOptions = (fid, options) => onUpdate(fid, { options });
@@ -1100,9 +1131,14 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
   }, [dragId]);
 
   const bldLabel = {
-    display: "block", fontSize: 11, fontWeight: 800, color: "#8fa3b1",
-    textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8,
+    display: "block", fontSize: 13.5, fontWeight: 500, color: "var(--tf-muted)", marginBottom: 8,
   };
+  // Resumen de fecha y lugar para la fila plegada.
+  const resumenConfig = [
+    draft.startDate ? new Date(draft.startDate + "T12:00:00").toLocaleDateString("es-CO", { day: "numeric", month: "short" }) + (draft.startTime ? ` · ${draft.startTime}` : "") : "",
+    draft.location || draft.address || draft.city || "",
+  ].filter(Boolean).join(" · ") || "Fecha, lugar e instrucciones de llegada";
+  const visActual = VIS_OPTIONS.find((o) => o.value === (draft.visibility || "public")) || VIS_OPTIONS[0];
 
   return (
     <div style={{ maxWidth: 540, margin: "0 auto", paddingBottom: 80, position: "relative", zIndex: 1 }}>
@@ -1153,24 +1189,22 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
           />
         </div>
 
-        {/* Configuración adicional (ubicación) — colapsable */}
-        <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
-          <button
-            type="button"
-            onClick={() => setShowSettings((s) => !s)}
-            style={{
-              width: "100%", textAlign: "left", padding: "12px 24px",
-              background: "none", border: "none", cursor: "pointer",
-              fontSize: 13, fontWeight: 600, color: "#8fa3b1",
-              display: "flex", alignItems: "center", gap: 8,
-            }}
-          >
-            <span>{showSettings ? "▾" : "▸"}</span>
-            Ubicación y configuración del evento
+        {/* Fecha y lugar — plegable, con los mismos campos que el resto de la app */}
+        <div style={{ borderTop: "1px solid var(--tf-divider)" }}>
+          <button type="button" onClick={() => setShowSettings((v) => !v)} aria-expanded={showSettings} className="ef-hover-fill"
+            style={{ width: "100%", textAlign: "left", padding: "14px 20px", background: "none", border: "none", cursor: "pointer", color: "#fff", display: "flex", alignItems: "center", gap: 14 }}>
+            <span style={{ width: 40, height: 40, borderRadius: 12, background: "var(--tf-surface-2)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+              <svg {...svgBase(20)}><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" /></svg>
+            </span>
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ display: "block", fontSize: 15.5, fontWeight: 600, letterSpacing: "-0.01em" }}>Ubicación y configuración</span>
+              <span style={{ display: "block", fontSize: 13, color: "var(--tf-muted)", marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{resumenConfig}</span>
+            </span>
+            <Chevron open={showSettings} />
           </button>
           {showSettings && (
-            <div style={{ padding: "0 24px 20px", display: "grid", gap: 16 }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+            <div style={{ padding: "6px 20px 22px", display: "grid", gap: 20 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16 }}>
                 <div>
                   <DateTimePicker
                     label="Inicio"
@@ -1198,10 +1232,33 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
                   />
                 </div>
               </div>
-              <ColombiaAddressPicker
-                value={{ city: draft.city, address: draft.address, lat: draft.lat, lng: draft.lng }}
-                onChange={(loc) => setDraft((p) => ({ ...p, city: loc.city, address: loc.address, location: loc.location, lat: loc.lat, lng: loc.lng }))}
-              />
+
+              <div>
+                <label style={bldLabel}>Lugar</label>
+                <button type="button" onClick={() => setShowLoc(true)} className="ef-hover-fill"
+                  style={{ width: "100%", minHeight: 56, display: "flex", alignItems: "center", gap: 12, textAlign: "left", padding: "10px 16px", border: "none", borderRadius: 16, background: "var(--tf-field)", color: "#fff", cursor: "pointer" }}>
+                  <svg {...svgBase(20)} style={{ flexShrink: 0, color: "var(--tf-muted)" }}><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" /></svg>
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    {(draft.location || draft.address) ? (
+                      <>
+                        <span style={{ display: "block", fontSize: 16, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{draft.location || draft.address}</span>
+                        <span style={{ display: "block", fontSize: 13, color: "var(--tf-muted)", marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {[draft.address && draft.address !== draft.location ? draft.address : "", draft.city].filter(Boolean).join(" · ") || "Toca para cambiar"}
+                        </span>
+                      </>
+                    ) : (
+                      <span style={{ fontSize: 16, color: "var(--tf-faint)" }}>Elegir ubicación</span>
+                    )}
+                  </span>
+                  <svg {...svgBase(18)} style={{ flexShrink: 0, color: "var(--tf-muted)" }}><path d="m9 6 6 6-6 6" /></svg>
+                </button>
+                {draft.lat != null && draft.lng != null && (
+                  <div style={{ marginTop: 10, borderRadius: 16, overflow: "hidden" }}>
+                    <LocationMap lat={draft.lat} lng={draft.lng} height={170} />
+                  </div>
+                )}
+              </div>
+
               <div>
                 <label style={bldLabel}>Instrucciones de llegada (opcional)</label>
                 <textarea
@@ -1210,13 +1267,24 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
                   placeholder="Ej. Entrada por la portería norte, preguntar por recepción…"
                   value={draft.locationInstructions || ""}
                   onChange={(e) => setDraft((p) => ({ ...p, locationInstructions: e.target.value }))}
-                  style={{ fontSize: 14, resize: "vertical", minHeight: 84 }}
+                  style={{ fontSize: 16, fontWeight: 400, resize: "vertical", minHeight: 84, fontFamily: "inherit" }}
                 />
               </div>
             </div>
           )}
         </div>
       </div>
+
+      {showLoc && (
+        <LocationSearch
+          initialCity={draft.city}
+          onSelect={(item) => {
+            setDraft((p) => ({ ...p, address: item.address, location: item.location, city: item.city || p.city, lat: item.lat, lng: item.lng }));
+            setShowLoc(false);
+          }}
+          onClose={() => setShowLoc(false)}
+        />
+      )}
 
       {/* ── Encabezado de campos ── */}
       <div style={{ marginBottom: 16 }}>
@@ -1376,29 +1444,22 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
         ))}
       </div>
 
-      {/* ── Añadir campo ── */}
-      <div style={{ marginTop: 12 }}>
-        <button onClick={() => setShowTools((s) => !s)} className="soft-btn soft-btn-secondary"
-          style={{ width: "100%", fontSize: 14 }}>
-          {showTools ? "Cerrar catálogo de campos" : "+ Añadir campo al formulario"}
+      {/* ── Añadir campo: "+" que despliega el catálogo aquí mismo ── */}
+      <div style={{ marginTop: 14, display: "flex", flexDirection: "column", alignItems: "center" }}>
+        <button type="button" onClick={() => setShowTools((v) => !v)} className="ef-hover-fill"
+          aria-label={showTools ? "Cerrar lista de campos" : "Añadir campo"} aria-expanded={showTools} title="Añadir campo"
+          style={{ width: 52, height: 52, borderRadius: "50%", border: "none", background: showTools ? "#fff" : "var(--tf-surface-2)", color: showTools ? "#000" : "#fff", cursor: "pointer", display: "grid", placeItems: "center" }}>
+          <svg {...svgBase(22)} strokeWidth={2.2} style={{ transition: "transform .2s", transform: showTools ? "rotate(45deg)" : "none" }}><path d="M12 5v14M5 12h14" /></svg>
         </button>
+        {!showTools && <span style={{ fontSize: 13, color: "var(--tf-muted)", marginTop: 8 }}>Añadir campo</span>}
       </div>
 
       {showTools && (
-        <div className="panel-card" style={{ marginTop: 8, padding: 16 }}>
-          <p style={{ fontSize: 12, fontWeight: 700, color: "#8fa3b1", marginBottom: 12, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-            Selecciona el tipo de campo
-          </p>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            {FIELD_TYPES.map((ft) => (
-              <button key={ft.type} type="button"
-                onClick={() => { onAdd(ft.type); setShowTools(false); }}
-                className="soft-btn soft-btn-secondary"
-                style={{ textAlign: "left", fontSize: 13, padding: "10px 14px", display: "inline-flex", alignItems: "center", gap: 8 }}>
-                <span style={{ display: "inline-flex", color: "#34d399" }}>{ft.icon}</span> {ft.label}
-              </button>
-            ))}
-          </div>
+        <div className="panel-card ef-menu-in" role="listbox" aria-label="Tipos de campo" style={{ marginTop: 10, padding: 6 }}>
+          {FIELD_TYPES.map((ft) => (
+            <MenuFila key={ft.type} icon={ft.icon} label={ft.label} desc={ft.desc}
+              onClick={() => { onAdd(ft.type); setShowTools(false); }} />
+          ))}
         </div>
       )}
 
@@ -1411,26 +1472,23 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
         {/* Visibility */}
         <div style={{ marginBottom: 20 }}>
           <label style={bldLabel}>Visibilidad</label>
-          <div style={{ display: "flex", gap: 8 }}>
-            {[
-              { value: "public",   label: "🌐 Público",       title: "Aparece en Discover" },
-              { value: "unlisted", label: "🔗 Solo enlace",   title: "No aparece en Discover" },
-              { value: "private",  label: "🔒 Privado",       title: "Solo tú puedes verlo" },
-            ].map(opt => {
-              const active = (draft.visibility || "public") === opt.value;
-              return (
-                <button
-                  key={opt.value}
-                  type="button"
-                  title={opt.title}
-                  onClick={() => setDraft(p => ({ ...p, visibility: opt.value }))}
-                  style={{ fontSize: 11, flex: 1, padding: "10px 6px", cursor: "pointer", fontWeight: 700, borderRadius: 14, background: active ? "rgba(52,211,153,0.22)" : "rgba(255,255,255,0.06)", border: `1px solid ${active ? "rgba(52,211,153,0.4)" : "rgba(255,255,255,0.1)"}`, color: active ? "#ffffff" : "rgba(229,238,255,0.5)" }}
-                >
-                  {opt.label}
-                </button>
-              );
-            })}
-          </div>
+          <button type="button" onClick={() => setVisOpen((v) => !v)} aria-haspopup="listbox" aria-expanded={visOpen} className="ef-hover-fill"
+            style={{ width: "100%", minHeight: 56, display: "flex", alignItems: "center", gap: 12, textAlign: "left", padding: "8px 16px 8px 8px", border: "none", borderRadius: 16, background: "var(--tf-field)", color: "#fff", cursor: "pointer" }}>
+            <span style={{ width: 40, height: 40, borderRadius: 12, background: "var(--tf-surface-2)", display: "grid", placeItems: "center", flexShrink: 0 }}>{visActual.icon}</span>
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ display: "block", fontSize: 16, fontWeight: 500 }}>{visActual.label}</span>
+              <span style={{ display: "block", fontSize: 13, color: "var(--tf-muted)", marginTop: 1 }}>{visActual.desc}</span>
+            </span>
+            <Chevron open={visOpen} />
+          </button>
+          {visOpen && (
+            <div role="listbox" aria-label="Visibilidad" className="ef-menu-in" style={{ marginTop: 6, padding: 6, borderRadius: 16, background: "var(--tf-field)" }}>
+              {VIS_OPTIONS.map((o) => (
+                <MenuFila key={o.value} icon={o.icon} label={o.label} desc={o.desc} active={o.value === visActual.value}
+                  onClick={() => { setDraft((p) => ({ ...p, visibility: o.value })); setVisOpen(false); }} />
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Category */}

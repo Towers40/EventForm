@@ -826,3 +826,8 @@ h1, h2, h3, .ef-title {
 @media (min-width: 760px)  { .ef-ev-grid > * { flex-basis: calc((100% - 10px) / 2); } }
 @media (min-width: 1100px) { .ef-ev-grid > * { flex-basis: calc((100% - 20px) / 3); } }
 @media (min-width: 1400px) { .ef-ev-grid > * { flex-basis: calc((100% - 30px) / 4); } }
+
+/* Menús desplegables en la página (catálogo de campos, visibilidad). */
+.ef-menu-in { animation: ef-menu-in 0.18s ease-out; transform-origin: top center; }
+@keyframes ef-menu-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .ef-menu-in { animation: none; } }

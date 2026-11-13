@@ -172,12 +172,12 @@ export default function DateTimePicker({ date, time, onChange, minDate, minTime,
     setOpen(s => !s);
   }
 
-  const triggerStyle = (filled) => ({
-    minHeight: 58, flexShrink: 0,
-    border: `1.5px solid ${filled ? "#34d399" : "rgba(255,255,255,0.13)"}`,
-    borderRadius: 14,
-    background: filled ? "rgba(52,211,153,0.18)" : "rgba(255,255,255,0.04)",
-    cursor: "pointer", padding: "0 16px",
+  // Mismo campo que el resto de la app: superficie translúcida sin borde.
+  const triggerStyle = () => ({
+    minHeight: 56, flexShrink: 0, minWidth: 0,
+    border: "none", borderRadius: 16,
+    background: "var(--tf-field)",
+    cursor: "pointer", padding: "0 14px", fontFamily: "inherit",
     display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8,
   });
 
@@ -189,7 +189,7 @@ export default function DateTimePicker({ date, time, onChange, minDate, minTime,
       <style>{`.wheel-col-inner::-webkit-scrollbar { display: none; }`}</style>
 
       {label && (
-        <p style={{ fontSize: 11, fontWeight: 800, color: "#5c6b7a", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>
+        <p style={{ fontSize: 13.5, fontWeight: 500, color: "var(--tf-muted)", margin: "0 0 8px" }}>
           {label}
         </p>
       )}
@@ -201,7 +201,7 @@ export default function DateTimePicker({ date, time, onChange, minDate, minTime,
           onClick={(e) => openPicker(e.currentTarget)}
           style={{ ...triggerStyle(!!date), flex: 1 }}
         >
-          <span style={{ fontSize: 15, fontWeight: date ? 700 : 400, color: date ? "#ffffff" : "#34d399", whiteSpace: "nowrap" }}>
+          <span style={{ fontSize: 15, fontWeight: 500, color: date ? "#ffffff" : "var(--tf-faint)", whiteSpace: "nowrap" }}>
             {dateFmt || "Fecha"}
           </span>
           <span style={{ fontSize: 11, color: "#8fa3b1" }}>▾</span>
@@ -210,9 +210,9 @@ export default function DateTimePicker({ date, time, onChange, minDate, minTime,
         <button
           type="button"
           onClick={(e) => openPicker(e.currentTarget)}
-          style={{ ...triggerStyle(!!time), width: 110 }}
+          style={{ ...triggerStyle(!!time), width: 116 }}
         >
-          <span style={{ fontSize: 15, fontWeight: time ? 700 : 400, color: time ? "#ffffff" : "#34d399", whiteSpace: "nowrap" }}>
+          <span style={{ fontSize: 15, fontWeight: 500, color: time ? "#ffffff" : "var(--tf-faint)", whiteSpace: "nowrap" }}>
             {timeFmt || "Hora"}
           </span>
           <span style={{ fontSize: 11, color: "#8fa3b1" }}>▾</span>
