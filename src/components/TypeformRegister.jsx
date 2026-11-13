@@ -19,7 +19,7 @@ const LEGACY_HINTS = new Set([
 const inputBase = {
   width: "100%",
   padding: "12px 14px",
-  background: "rgba(255,255,255,0.04)",
+  background: "rgba(255,255,255,0.09)",
   border: "1px solid rgba(255,255,255,0.15)",
   borderRadius: 14,
   color: "#ffffff",
@@ -148,8 +148,10 @@ function FieldWidget({ field, value, onChange }) {
   );
 }
 
-export default function TypeformRegister({ event, tintColor, onSubmit, onBack }) {
-  const [form, setForm] = useState({});
+export default function TypeformRegister({ event, tintColor, onSubmit, onBack, initialForm = null, prefilledCount = 0 }) {
+  // Con sesión iniciada llega prellenado con los datos de la cuenta: solo hay
+  // que revisar y completar lo que falte.
+  const [form, setForm] = useState(() => ({ ...(initialForm || {}) }));
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [quantity, setQuantity] = useState(1);
@@ -237,6 +239,13 @@ export default function TypeformRegister({ event, tintColor, onSubmit, onBack })
           })}>{event.title}</p>
         </div>
 
+        {prefilledCount > 0 && (
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 22, padding: "12px 14px", borderRadius: 14, background: "var(--tf-accent-a)", color: "#ffffff", fontSize: 14, lineHeight: 1.4 }}>
+            <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="var(--tf-accent)" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M20 6 9 17l-5-5" /></svg>
+            <span>Completamos {prefilledCount} {prefilledCount === 1 ? "dato" : "datos"} con tu cuenta. Revisa y termina lo que falte.</span>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} noValidate>
           {/* Cuántas entradas — solo si el anfitrión permite más de una */}
           {maxPerUser > 1 && (
@@ -250,14 +259,14 @@ export default function TypeformRegister({ event, tintColor, onSubmit, onBack })
                   <button type="button" aria-label="Una entrada menos"
                     onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                     disabled={quantity <= 1}
-                    style={{ width: 34, height: 34, borderRadius: 14, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)", color: quantity <= 1 ? "rgba(255,255,255,0.25)" : "#ffffff", fontSize: 19, fontWeight: 700, cursor: quantity <= 1 ? "default" : "pointer", lineHeight: 1 }}>
+                    style={{ width: 34, height: 34, borderRadius: 14, background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.15)", color: quantity <= 1 ? "rgba(255,255,255,0.25)" : "#ffffff", fontSize: 19, fontWeight: 700, cursor: quantity <= 1 ? "default" : "pointer", lineHeight: 1 }}>
                     −
                   </button>
                   <span aria-live="polite" style={{ minWidth: 28, textAlign: "center", fontSize: 18, fontWeight: 800, color: "#34d399" }}>{quantity}</span>
                   <button type="button" aria-label="Una entrada más"
                     onClick={() => setQuantity((q) => Math.min(maxPerUser, q + 1))}
                     disabled={quantity >= maxPerUser}
-                    style={{ width: 34, height: 34, borderRadius: 14, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)", color: quantity >= maxPerUser ? "rgba(255,255,255,0.25)" : "#ffffff", fontSize: 19, fontWeight: 700, cursor: quantity >= maxPerUser ? "default" : "pointer", lineHeight: 1 }}>
+                    style={{ width: 34, height: 34, borderRadius: 14, background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.15)", color: quantity >= maxPerUser ? "rgba(255,255,255,0.25)" : "#ffffff", fontSize: 19, fontWeight: 700, cursor: quantity >= maxPerUser ? "default" : "pointer", lineHeight: 1 }}>
                     +
                   </button>
                 </div>

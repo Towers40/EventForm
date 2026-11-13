@@ -26,13 +26,16 @@ Instrucciones de arquitectura, stack y estilo para el asistente de IA.
 
 ## 🎨 UI y estilo
 * **Una sola estética: negro puro + esmeralda, inspirada en plata.co** (nov 2026).
-  Fondo `#000`, superficies sólidas sin borde `#121416` / `#1b1d21` (sin vidrio ni
-  velos navy). Texto `#fff`; secundario frío `rgba(229,238,255,.78/.56/.36)`.
+  Fondo `#000`; tarjetas y campos blancos translúcidos sin borde (`--tf-surface`
+  11 %, `--tf-surface-2` 17 %, `--tf-field` 13 %) con desenfoque, para que se
+  despeguen del fondo y tomen el tinte de la portada; modales `--tf-sheet`. Texto `#fff`; secundario frío `rgba(229,238,255,.78/.56/.36)`.
   **Un solo color de acción**: esmeralda `#34d399` con texto `#03140c`, solo en el
   CTA principal (uno por pantalla). Estados activos/seleccionados en blanco
   (píldora `#fff` + texto negro), no en verde. Denegado rojo `rgba(220,38,38,*)`.
 * **Tipografía Onest** (Google Fonts, variable): titulares 600 con tracking
   negativo (`-0.02em` a `-0.035em`), alineados a la izquierda; jerarquía por tamaño.
+* **Categorías:** baldosas tipo app (`CategoryIcon` en `src/lib/categoryIcons.jsx`,
+  degradado propio por categoría + glifo blanco). No volver a contornos finos.
 * **Forma:** tarjetas radio 24, botones 52 px radio 14 (no píldora), campos 56 px
   radio 16. Clases: `.soft-btn-primary` (CTA), `.soft-btn-secondary` (contorno
   blanco), `.soft-btn-ghost` (superficie gris), `.tf-input-line`, `.panel-card`.
@@ -50,6 +53,16 @@ Instrucciones de arquitectura, stack y estilo para el asistente de IA.
 ## 🗺️ Rutas
 `/app` (host), `/e/:slug` (evento público), `/t/:ticketId` (entrada/QR público),
 `/discover`, `/o/:hostId`, `/login`, `/privacidad`, `/verify-email`. El panel vive en `HostApp.jsx`.
+
+## ⚡ Inscripción con un clic
+* `shared/profileFields.js` (lo importan cliente y servidor) mapea cada campo
+  del formulario a un dato de perfil (nombre, correo, teléfono, edad, ciudad,
+  documento, empresa, cargo, instagram, género). Las preguntas propias del
+  evento NO se guardan ni se rellenan.
+* Con sesión, `/e/:slug` prellena el formulario; si cubre todos los obligatorios
+  muestra "Inscripción con un clic". Al inscribirse, el servidor guarda esos
+  datos en `users.profile` (solo si el correo es el de la cuenta). Se editan en
+  Mi cuenta → "Datos para inscribirte".
 
 ## 🔐 Seguridad (no romper)
 * Códigos de verificación/recuperación de **6 cifras** con límite de intentos en

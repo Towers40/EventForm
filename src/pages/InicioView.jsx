@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import "../styles/typeform.css";
 import { TapInMark } from "../lib/brand.jsx";
+import PosterMarquee from "../components/PosterMarquee.jsx";
 
 // Inicio del anfitrión, con la estructura de plata.co: titular grande alineado
 // a la izquierda, una sola acción principal, cifras grandes y una lista de
@@ -29,8 +30,14 @@ export default function InicioView({ events, onNew, onGoTo }) {
   return (
     <div style={{ maxWidth: 640, margin: "0 auto", padding: "0 4px" }}>
 
+      {/* Carrusel de ideas de evento (los pósters de la bienvenida): dice de un
+          vistazo qué se puede organizar con TapIn. Va a sangre, de borde a borde. */}
+      <section className="ef-bleed" style={{ paddingTop: 12 }}>
+        <PosterMarquee variante="cinta" filas={2} card={98} />
+      </section>
+
       {/* Hero */}
-      <section style={{ padding: "28px 0 36px" }}>
+      <section style={{ padding: "24px 0 36px" }}>
         <TapInMark size={30} color="var(--tf-accent)" />
         <h1 style={{ fontSize: "clamp(34px, 9vw, 52px)", lineHeight: 1.05, letterSpacing: "-0.035em", fontWeight: 600, margin: "18px 0 14px" }}>
           Crea tu evento en minutos
@@ -62,7 +69,8 @@ export default function InicioView({ events, onNew, onGoTo }) {
               className="ef-hover-fill"
               onClick={() => onGoTo?.(s.to)}
               style={{
-                padding: "20px 16px 18px", textAlign: "left", cursor: "pointer", border: "none",
+                padding: "20px 8px 18px", textAlign: "center", cursor: "pointer", border: "none",
+                display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
                 background: "transparent", color: "inherit", borderRadius: 0,
                 borderLeft: i ? "1px solid var(--tf-divider)" : "none",
               }}

@@ -44,7 +44,9 @@ body {
 }
 
 /* ─── Sistema TapIn (inspirado en plata.co) ────────────────────────────────
-   · Fondo NEGRO puro y superficies sólidas gris carbón, sin velos de color.
+   · Fondo NEGRO puro; las tarjetas y campos son blancos translúcidos (11–17 %)
+     con desenfoque: se despegan claramente del fondo y, cuando el evento tiene
+     portada, toman su tinte (como en Luma).
    · UN solo color de acción (esmeralda de la marca) para el botón principal;
      todo lo demás es blanco o gris. El color se gana su sitio.
    · Titulares grandes, peso 600 y tracking negativo; texto secundario frío
@@ -55,10 +57,12 @@ body {
   --font:         'Onest', system-ui, -apple-system, 'Segoe UI', sans-serif;
 
   --tf-bg:        #000000;
-  --tf-surface:   #121416;
-  --tf-surface-2: #1b1d21;
-  --tf-field:     #1b1d21;
-  --tf-card:      #121416;
+  --tf-surface:   rgba(255,255,255,0.11);
+  --tf-surface-2: rgba(255,255,255,0.17);
+  --tf-field:     rgba(255,255,255,0.13);
+  --tf-card:      rgba(255,255,255,0.11);
+  /* Hojas y modales: opacos, un escalón más claros que las tarjetas. */
+  --tf-sheet:     rgba(30,31,35,0.97);
   --tf-border:    rgba(229,238,255,0.12);
   --tf-divider:   rgba(229,238,255,0.08);
 
@@ -130,7 +134,7 @@ body::after {
 
 .tf-progress {
   height: 3px;
-  background: rgba(255,255,255,0.07);
+  background: rgba(255,255,255,0.12);
   width: 100%;
 }
 
@@ -386,7 +390,7 @@ h1, h2, h3, .ef-title {
   margin: 0 0 22px;
   padding: 12px 14px;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.07);
+  background: rgba(255,255,255,0.12);
   color: rgba(255, 255, 255, 0.75);
   font-size: 13px;
   line-height: 1.45;
@@ -408,7 +412,7 @@ h1, h2, h3, .ef-title {
   padding: 18px;
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 14px;
-  background: rgba(255,255,255,0.04);
+  background: rgba(255,255,255,0.09);
 }
 
 .tf-upload-drop {
@@ -416,7 +420,7 @@ h1, h2, h3, .ef-title {
   min-height: 220px;
   border: 2px dashed rgba(52,211,153,0.5);
   border-radius: 12px;
-  background: rgba(255,255,255,0.03);
+  background: rgba(255,255,255,0.12);
   color: var(--tf-accent-lt);
   display: flex;
   align-items: center;
@@ -447,7 +451,7 @@ h1, h2, h3, .ef-title {
   margin: 0 auto 34px;
   border-radius: 999px;
   overflow: hidden;
-  background: rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.13);
 }
 
 .host-tf-body {
@@ -536,6 +540,8 @@ h1, h2, h3, .ef-title {
   border-radius: var(--r-lg);
   border: none;
   background: var(--tf-surface);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+  backdrop-filter: blur(24px) saturate(150%);
   overflow: hidden;
 }
 
@@ -589,7 +595,7 @@ h1, h2, h3, .ef-title {
   background: var(--tf-surface-2);
   color: var(--tf-text);
 }
-.soft-btn-ghost:hover { background: #24272c; }
+.soft-btn-ghost:hover { background: rgba(255,255,255,0.22); }
 .soft-btn:disabled, .soft-btn[disabled] {
   background: var(--tf-surface-2);
   color: var(--tf-faint);

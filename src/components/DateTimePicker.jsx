@@ -83,7 +83,7 @@ function WheelCol({ items, selectedKey, getKey, getLabel, onChange, flex }) {
       <div style={{
         position: "absolute", left: 6, right: 6,
         top: ITEM_H * 2, height: ITEM_H,
-        background: "rgba(255,255,255,0.07)",
+        background: "rgba(255,255,255,0.12)",
         borderRadius: 14, pointerEvents: "none", zIndex: 1,
       }} />
       {/* Scrollable list */}
@@ -251,7 +251,7 @@ export default function DateTimePicker({ date, time, onChange, minDate, minTime,
               onChange={d => emit(d, time || limit.time)}
             />
             {/* Vertical divider */}
-            <div style={{ width: 1, background: "rgba(255,255,255,0.07)", alignSelf: "stretch", margin: "8px 0" }} />
+            <div style={{ width: 1, background: "rgba(255,255,255,0.12)", alignSelf: "stretch", margin: "8px 0" }} />
             {/* Hour column */}
             <WheelCol
               flex={1}
@@ -265,7 +265,7 @@ export default function DateTimePicker({ date, time, onChange, minDate, minTime,
               }}
             />
             {/* Vertical divider */}
-            <div style={{ width: 1, background: "rgba(255,255,255,0.07)", alignSelf: "stretch", margin: "8px 0" }} />
+            <div style={{ width: 1, background: "rgba(255,255,255,0.12)", alignSelf: "stretch", margin: "8px 0" }} />
             {/* Minute column */}
             <WheelCol
               flex={1}

@@ -15,7 +15,7 @@ export function IconButton({
 }) {
   const tonos = {
     glass:  { background: "rgba(0,0,0,0.5)",            border: "1px solid rgba(255,255,255,0.2)",  color: "#fff" },
-    soft:   { background: "rgba(255,255,255,0.07)",     border: "1px solid rgba(255,255,255,0.14)", color: "#a7f3d0" },
+    soft:   { background: "rgba(255,255,255,0.12)",     border: "1px solid rgba(255,255,255,0.14)", color: "#a7f3d0" },
     accent: { background: "rgba(52,211,153,0.22)",     border: "1px solid rgba(52,211,153,0.45)", color: "#ffffff" },
     green:  { background: "rgba(52,211,153,0.16)",       border: "1px solid rgba(52,211,153,0.4)",    color: "#6ee7b7" },
   };
@@ -124,7 +124,7 @@ export function AttendeeStack({
     width: size, height: size, borderRadius: "50%", flexShrink: 0,
     // El borde del color del fondo es lo que separa una cara de la siguiente
     // cuando se solapan; sin él se ven como una mancha.
-    border: "1.5px solid rgba(18,20,22,0.95)",
+    border: "1.5px solid rgba(0,0,0,0.85)",
     marginLeft: -size * 0.3,
     display: "flex", alignItems: "center", justifyContent: "center",
     fontSize: fuente, fontWeight: 700, lineHeight: 1, boxSizing: "border-box",
@@ -190,7 +190,7 @@ export function CopiedToast({ visible, texto = "Enlace copiado" }) {
   return (
     <div style={{
       position: "fixed", bottom: 96, left: "50%", transform: "translateX(-50%)",
-      zIndex: 400, background: "rgba(18,20,22,0.97)", color: "#6ee7b7",
+      zIndex: 400, background: "var(--tf-sheet)", color: "#6ee7b7",
       border: "1px solid rgba(52,211,153,0.4)", borderRadius: 100,
       padding: "10px 18px", fontSize: 13.5, fontWeight: 700,
       boxShadow: "0 8px 28px rgba(0,0,0,0.5)", pointerEvents: "none",
@@ -218,7 +218,7 @@ export function DirectionsSheet({ lat, lng, abierto, onCerrar }) {
   return (
     <div onClick={onCerrar}
       style={{ position: "fixed", inset: 0, zIndex: 350, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 16 }}>
-      <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 420, background: "rgba(18,20,22,0.98)", border: "1px solid rgba(255,255,255,0.13)", borderRadius: 22, overflow: "hidden", boxShadow: "0 24px 70px rgba(0,0,0,0.6)" }}>
+      <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 420, background: "var(--tf-sheet)", border: "1px solid rgba(255,255,255,0.13)", borderRadius: 22, overflow: "hidden", boxShadow: "0 24px 70px rgba(0,0,0,0.6)" }}>
         <p style={{ margin: 0, padding: "18px 20px 12px", fontSize: 15, fontWeight: 700, color: "#ffffff" }}>
           ¿Con qué app quieres ir?
         </p>
@@ -231,7 +231,7 @@ export function DirectionsSheet({ lat, lng, abierto, onCerrar }) {
           </a>
         ))}
         <button type="button" onClick={onCerrar}
-          style={{ width: "100%", padding: "15px 20px", background: "rgba(255,255,255,0.04)", border: "none", borderTop: "1px solid rgba(255,255,255,0.07)", color: "rgba(229,238,255,0.6)", fontSize: 14.5, fontWeight: 700, cursor: "pointer" }}>
+          style={{ width: "100%", padding: "15px 20px", background: "rgba(255,255,255,0.09)", border: "none", borderTop: "1px solid rgba(255,255,255,0.07)", color: "rgba(229,238,255,0.6)", fontSize: 14.5, fontWeight: 700, cursor: "pointer" }}>
           Cancelar
         </button>
       </div>

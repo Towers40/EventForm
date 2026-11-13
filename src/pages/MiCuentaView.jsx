@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { api } from "../lib/api.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { uploadImage } from "../lib/upload.js";
+import { PROFILE_KEYS } from "../../shared/profileFields.js";
 import "../styles/typeform.css";
 
 export default function MiCuentaView() {
@@ -198,6 +199,9 @@ export default function MiCuentaView() {
         </form>
       </div>
 
+      {/* Datos para inscribirse con un clic */}
+      <DatosInscripcion user={user} token={token} patchUser={patchUser} />
+
       {/* Cambiar contraseña */}
       <div className="panel-card" style={{ marginBottom: 20 }}>
         <div className="panel-card-header">
@@ -309,7 +313,7 @@ export default function MiCuentaView() {
           zIndex: 1000
         }}>
           <div style={{
-            background: "rgba(18,20,22,0.95)", borderRadius: 22, padding: 28, maxWidth: 380,
+            background: "var(--tf-sheet)", borderRadius: 22, padding: 28, maxWidth: 380,
             border: "1px solid rgba(220,38,38,0.3)",
             boxShadow: "0 24px 64px rgba(0,0,0,0.7)",
             backdropFilter: "blur(20px)",
@@ -346,7 +350,7 @@ export default function MiCuentaView() {
                 type="button"
                 onClick={() => setDeleteModalOpen(false)}
                 style={{
-                  flex: 1, padding: "10px 16px", background: "rgba(255,255,255,0.07)",
+                  flex: 1, padding: "10px 16px", background: "rgba(255,255,255,0.12)",
                   border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, cursor: "pointer", fontSize: 13,
                   fontWeight: 600, color: "#ffffff"
                 }}
@@ -369,6 +373,84 @@ export default function MiCuentaView() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * Datos que se reutilizan al inscribirse a un evento (además del nombre y el
+ * correo de la cuenta). Se van guardando solos al inscribirse; aquí se ven, se
+ * corrigen y se borran. El teléfono va siempre visible porque es el que casi
+ * todos los eventos piden.
+ */
+function DatosInscripcion({ user, token, patchUser }) {
+  const perfil = user?.profile || {};
+  const [valores, setValores] = useState(() => ({ ...perfil }));
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState("");
+  const visibles = PROFILE_KEYS.filter((k) => k.key === "phone" || perfil[k.key] != null || valores[k.key]);
+  const cambiado = PROFILE_KEYS.some((k) => (valores[k.key] || "") !== (perfil[k.key] || ""));
+
+  const guardar = async (e) => {
+    e.preventDefault();
+    setBusy(true); setMsg("");
+    try {
+      const cambios = {};
+      for (const { key } of PROFILE_KEYS) {
+        const nuevo = String(valores[key] || "").trim();
+        if (nuevo !== (perfil[key] || "")) cambios[key] = nuevo || null;
+      }
+      const { user: u } = await api.updateMe(token, { profile: cambios });
+      patchUser({ profile: u.profile });
+      setValores({ ...u.profile });
+      setMsg("✓ Guardado");
+    } catch (ex) {
+      setMsg(ex.message || "No se pudo guardar");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="panel-card" style={{ marginBottom: 20 }}>
+      <div className="panel-card-header">
+        <h2 style={{ margin: 0, fontSize: 15, fontWeight: 500, color: "#ffffff" }}>Datos para inscribirte</h2>
+        <p style={{ margin: "4px 0 0", fontSize: 13, color: "var(--tf-muted)", lineHeight: 1.45 }}>
+          Con estos datos, tu nombre y tu correo te inscribes a un evento con un clic. Se guardan cuando te inscribes y puedes cambiarlos o borrarlos aquí.
+        </p>
+      </div>
+      <form onSubmit={guardar} style={{ padding: 20 }}>
+        {visibles.map(({ key, label }) => (
+          <div key={key} style={{ marginBottom: 16 }}>
+            <label htmlFor={`perfil-${key}`} style={{ fontSize: 13, color: "var(--tf-muted)", display: "block", marginBottom: 8 }}>{label}</label>
+            <div style={{ display: "flex", gap: 8 }}>
+              <input
+                id={`perfil-${key}`}
+                className="tf-input-line"
+                value={valores[key] || ""}
+                inputMode={key === "phone" ? "tel" : key === "age" ? "numeric" : undefined}
+                autoComplete={key === "phone" ? "tel" : "off"}
+                placeholder={key === "phone" ? "Ej. 300 123 4567" : ""}
+                onChange={(e) => setValores((v) => ({ ...v, [key]: e.target.value }))}
+                style={{ fontSize: 16, flex: 1 }}
+              />
+              {key !== "phone" && (
+                <button type="button" aria-label={`Borrar ${label}`} title="Borrar"
+                  onClick={() => setValores((v) => ({ ...v, [key]: "" }))}
+                  className="soft-btn soft-btn-ghost" style={{ minHeight: 0, width: 52, padding: 0, color: "#fca5a5" }}>
+                  <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" /></svg>
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <button type="submit" className="soft-btn soft-btn-ghost" disabled={busy || !cambiado}>
+            {busy ? "Guardando…" : "Guardar datos"}
+          </button>
+          {msg && <span style={{ fontSize: 13, color: msg.startsWith("✓") ? "#34d399" : "#f87171", fontWeight: 600 }}>{msg}</span>}
+        </div>
+      </form>
     </div>
   );
 }

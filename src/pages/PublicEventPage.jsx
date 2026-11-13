@@ -6,6 +6,8 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { api, apiEnabled } from "../lib/api.js";
 import { loadEvents } from "../lib/storage.js";
 import { isSoldOut } from "../lib/capacity.js";
+import { validateRegistrationForm } from "../lib/tickets.js";
+import { prefillFromProfile } from "../../shared/profileFields.js";
 import { IconButton, IcoBack, IcoShare, IcoMail, IcoQr, EventCover, CopiedToast, AttendeeStack, EventTintLayer } from "../components/ui.jsx";
 import LocationMap from "../components/LocationMap.jsx";
 import { eventTint, dominantColorFromUrl } from "../lib/dominantColor.js";
@@ -75,10 +77,64 @@ function Avatar({ name, src, size = 24 }) {
   );
 }
 
+// ── Inscripción con un clic ───────────────────────────────────────────────────
+// Muestra QUÉ datos se van a enviar antes de confirmar: un clic no debe ser un
+// salto a ciegas, y así la persona ve que el teléfono o el correo son los
+// correctos (y puede cambiarlos con "Editar").
+function QuickRegister({ event, campos, valores, cantidad, setCantidad, busy, error, onConfirm, onEdit }) {
+  const maxPorPersona = Math.max(1, Math.min(Number(event.maxPerUser) || 1, 20));
+  const mostrar = (v) => Array.isArray(v) ? v.join(", ") : String(v);
+  return (
+    <div className="panel-card" style={{ padding: 16 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+        <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="var(--tf-accent)" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z" /></svg>
+        <span style={{ fontSize: 15, fontWeight: 600 }}>Inscripción con un clic</span>
+      </div>
+      <p style={{ margin: "0 0 10px", fontSize: 14, color: "var(--tf-muted)", lineHeight: 1.45 }}>
+        Usaremos los datos de tu cuenta:
+      </p>
+      <div style={{ display: "flex", flexDirection: "column", gap: 2, marginBottom: 14 }}>
+        {campos.map((f) => (
+          <div key={f.id} style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: "8px 0", borderBottom: "1px solid var(--tf-divider)", fontSize: 14 }}>
+            <span style={{ color: "var(--tf-muted)", flexShrink: 0 }}>{f.label}</span>
+            <span style={{ color: "#ffffff", fontWeight: 500, textAlign: "right", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{mostrar(valores[f.id])}</span>
+          </div>
+        ))}
+      </div>
+
+      {maxPorPersona > 1 && (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+          <span style={{ fontSize: 14, color: "var(--tf-muted)" }}>Entradas</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
+            <button type="button" aria-label="Una entrada menos" disabled={cantidad <= 1} onClick={() => setCantidad((q) => Math.max(1, q - 1))}
+              style={{ width: 34, height: 34, borderRadius: 10, border: "none", background: "var(--tf-surface-2)", color: "#fff", fontSize: 18, cursor: "pointer", opacity: cantidad <= 1 ? 0.4 : 1 }}>−</button>
+            <span className="ef-app-font" style={{ minWidth: 18, textAlign: "center", fontWeight: 600 }}>{cantidad}</span>
+            <button type="button" aria-label="Una entrada más" disabled={cantidad >= maxPorPersona} onClick={() => setCantidad((q) => Math.min(maxPorPersona, q + 1))}
+              style={{ width: 34, height: 34, borderRadius: 10, border: "none", background: "var(--tf-surface-2)", color: "#fff", fontSize: 18, cursor: "pointer", opacity: cantidad >= maxPorPersona ? 0.4 : 1 }}>+</button>
+          </span>
+        </div>
+      )}
+
+      <button type="button" onClick={onConfirm} disabled={busy} className="soft-btn soft-btn-primary" style={{ width: "100%" }}>
+        {busy ? "Confirmando…" : event.requireApproval ? "Solicitar mi lugar" : "Confirmar mi entrada"}
+      </button>
+      {error && <p style={{ color: "#f87171", fontSize: 13, margin: "10px 0 0", textAlign: "center" }}>{error}</p>}
+      <button type="button" onClick={onEdit} disabled={busy}
+        style={{ display: "block", margin: "10px auto 0", background: "none", border: "none", color: "#ffffff", fontSize: 14, textDecoration: "underline", textUnderlineOffset: 3, cursor: "pointer", padding: 6 }}>
+        Editar mis datos
+      </button>
+      <p style={{ margin: "8px 0 0", fontSize: 12, color: "var(--tf-faint)", textAlign: "center", lineHeight: 1.5 }}>
+        Al confirmar aceptas la <a href="/privacidad" style={{ color: "var(--tf-muted)" }}>política de privacidad</a> y que el organizador reciba estos datos.
+        {event.requireApproval && " El organizador debe aprobar tu solicitud."}
+      </p>
+    </div>
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 export default function PublicEventPage() {
   const { slug }                   = useParams();
-  const { token }                  = useAuth();
+  const { token, user }            = useAuth();
   const [event, setEvent]          = useState(null);
   const [reg, setReg]              = useState(null);
   // Todas las entradas de esta persona para el evento (los eventos que
@@ -96,6 +152,10 @@ export default function PublicEventPage() {
   // personalización: no lo traen guardado, así que se calcula aquí una vez.
   const [colorPortada, setColorPortada] = useState(null);
   const { compartir, copiado } = useShare();
+  // Inscripción con un clic (datos de la cuenta).
+  const [quickBusy, setQuickBusy]   = useState(false);
+  const [quickErr, setQuickErr]     = useState("");
+  const [quickQty, setQuickQty]     = useState(1);
 
   useEffect(() => {
     let cancelled = false;
@@ -270,8 +330,31 @@ export default function PublicEventPage() {
   // (página, inscripción y entrada) usan el mismo.
   const colorEvento = event?.themeColor || colorPortada;
 
+  // Con sesión iniciada, el formulario se contesta con los datos de la cuenta
+  // (nombre, correo, teléfono y lo que ya dio en otros eventos). Si con eso
+  // basta para todos los campos obligatorios, la inscripción es un solo clic.
+  const prellenado = token && user ? prefillFromProfile(event.fields || [], user) : null;
+  const puedeUnClic = Boolean(prellenado) && prellenado.missing.length === 0
+    && prellenado.filled.length > 0
+    && Object.keys(validateRegistrationForm(event.fields || [], prellenado.form)).length === 0;
+
+  const inscribirUnClic = async () => {
+    setQuickBusy(true); setQuickErr("");
+    try {
+      // El clic en "Confirmar" ES la aceptación: el texto de debajo lo dice
+      // antes de pulsar, con enlace a la política (Ley 1581: consentimiento
+      // previo, expreso e informado).
+      await handleSubmit({ form: prellenado.form, quantity: quickQty, consentPrivacy: true, consentMarketing: false });
+    } catch (e) {
+      setQuickErr(e.message || "No se pudo completar la inscripción.");
+    } finally {
+      setQuickBusy(false);
+    }
+  };
+
   if (phase === "register") return (
     <TypeformRegister event={event} tintColor={colorEvento}
+      initialForm={prellenado?.form} prefilledCount={prellenado?.filled.length || 0}
       onSubmit={handleSubmit} onBack={() => setPhase("event")} />
   );
 
@@ -399,11 +482,11 @@ export default function PublicEventPage() {
             ) : regLoading ? (
               // Aún no se sabe si tiene entrada: placeholder neutro (mismo tamaño
               // que el botón) para no mostrar "Registrarse" por error.
-              <div style={{ width: "100%", padding: "16px", background: "rgba(255,255,255,0.05)", borderRadius: 14, textAlign: "center", color: SUB, fontWeight: 700, fontSize: 15, boxSizing: "border-box" }}>
+              <div style={{ width: "100%", padding: "16px", background: "rgba(255,255,255,0.10)", borderRadius: 14, textAlign: "center", color: SUB, fontWeight: 700, fontSize: 15, boxSizing: "border-box" }}>
                 Comprobando tu inscripción…
               </div>
             ) : soldOut ? (
-              <div style={{ padding: "16px", background: "rgba(255,255,255,0.05)", borderRadius: 14, textAlign: "center", color: SUB, fontWeight: 700, fontSize: 15 }}>Entradas agotadas</div>
+              <div style={{ padding: "16px", background: "rgba(255,255,255,0.10)", borderRadius: 14, textAlign: "center", color: SUB, fontWeight: 700, fontSize: 15 }}>Entradas agotadas</div>
             ) : needsAccount ? (
               <>
                 <button onClick={goToLogin} style={{ width: "100%", minHeight: 52, padding: "0 16px", background: "var(--tf-accent)", color: "var(--tf-on-accent)", borderRadius: 14, fontWeight: 600, fontSize: 16, border: "none", cursor: "pointer", letterSpacing: "-0.01em" }}>
@@ -414,11 +497,26 @@ export default function PublicEventPage() {
                   para seguir el estado de tu entrada.
                 </p>
               </>
+            ) : puedeUnClic ? (
+              <QuickRegister
+                event={event}
+                campos={(event.fields || []).filter((f) => prellenado.filled.includes(f.id))}
+                valores={prellenado.form}
+                cantidad={quickQty} setCantidad={setQuickQty}
+                busy={quickBusy} error={quickErr}
+                onConfirm={inscribirUnClic}
+                onEdit={() => setPhase("register")}
+              />
             ) : (
               <>
                 <button onClick={() => setPhase("register")} style={{ width: "100%", minHeight: 52, padding: "0 16px", background: "var(--tf-accent)", color: "var(--tf-on-accent)", borderRadius: 14, fontWeight: 600, fontSize: 16, border: "none", cursor: "pointer", letterSpacing: "-0.01em" }}>
                   {event.requireApproval ? "Solicitar mi lugar" : "Registrarse"}
                 </button>
+                {prellenado && prellenado.filled.length > 0 && (
+                  <p style={{ margin: "10px 0 0", fontSize: 12.5, color: SUB, textAlign: "center", lineHeight: 1.5 }}>
+                    Ya completamos {prellenado.filled.length} {prellenado.filled.length === 1 ? "dato" : "datos"} con tu cuenta; solo falta lo demás.
+                  </p>
+                )}
                 {event.requireApproval && (
                   <p style={{ margin: "10px 0 0", fontSize: 12.5, color: SUB, textAlign: "center", lineHeight: 1.5 }}>
                     El organizador debe aprobar tu solicitud. Tu QR se activará cuando lo haga.

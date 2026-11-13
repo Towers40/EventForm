@@ -126,7 +126,7 @@ export default function EventCrm({ event, onBack, onToggleSoldOut, onShare, onSe
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
             <thead>
-              <tr style={{ background: "rgba(255,255,255,0.04)", textAlign: "left" }}>
+              <tr style={{ background: "rgba(255,255,255,0.09)", textAlign: "left" }}>
                 {["Asistente", "Entradas", "Registro", "Ingreso", "Marketing", ...(needsApproval ? ["Aprobación"] : [])].map((h) => (
                   <th key={h} style={{ padding: 12, borderBottom: BORDER, color: SUB, fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.05em" }}>{h}</th>
                 ))}

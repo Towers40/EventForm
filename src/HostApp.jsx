@@ -34,7 +34,7 @@ import { publicBaseUrl } from "./lib/platform.js";
 import SlideToCancel from "./components/SlideToCancel.jsx";
 import { IconButton, DataRow, IcoCalendar, IcoPin, EventTintLayer } from "./components/ui.jsx";
 import { DISCOVER_CATEGORIES } from "./lib/categories.js";
-import { CAT_ICONS } from "./lib/categoryIcons.jsx";
+import { CategoryIcon } from "./lib/categoryIcons.jsx";
 import { eventFontProps, getEventFont, loadEventFont } from "./lib/fonts.js";
 import { eventTint } from "./lib/dominantColor.js";
 import {
@@ -762,7 +762,15 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
             onToggleSoldOut={toggleSoldOut}
           />
         )}
-        {view === "stats" && <DashboardView events={events} />}
+        {view === "stats" && (
+          <DashboardView
+            events={events}
+            onNew={startNew}
+            onOpen={(id, filtro = "todos") => { setCrmFilter(filtro); go("crm", id); }}
+            onValidate={(id) => openValidate(id)}
+            onShare={(ev) => setShareEv(ev)}
+          />
+        )}
         {view === "mis_tickets" && <MisTicketsView />}
         {view === "discover" && <DiscoverPage embedded />}
         {view === "mi_cuenta" && <MiCuentaView />}
@@ -892,7 +900,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
       {searchOpen && (
         <div onClick={() => setSearchOpen(false)}
           style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "10vh 16px 16px" }}>
-          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 460, maxHeight: "78vh", display: "flex", flexDirection: "column", background: "rgba(18,20,22,0.98)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 22, overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 460, maxHeight: "78vh", display: "flex", flexDirection: "column", background: "var(--tf-sheet)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 22, overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
               <span style={{ display: "flex", color: "#34d399" }}><IconSearch /></span>
               <input autoFocus type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Buscar mis eventos…"
@@ -1262,7 +1270,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
               style={{
                 position: "absolute", top: 8, right: 8,
                 width: 24, height: 24, borderRadius: "50%",
-                border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.07)", color: "rgba(229,238,255,0.6)",
+                border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.12)", color: "rgba(229,238,255,0.6)",
                 cursor: "pointer", fontSize: 14, fontWeight: 700,
                 display: "flex", alignItems: "center", justifyContent: "center",
                 lineHeight: 1, zIndex: 1,
@@ -1322,7 +1330,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
 
             {/* Panel de edición del campo */}
             {editFid === f.id && (
-              <div style={{ padding: "16px 20px", borderTop: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.03)" }}>
+              <div style={{ padding: "16px 20px", borderTop: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.07)" }}>
                 <div style={{ marginBottom: 16 }}>
                   <label style={bldLabel}>Pregunta o título del campo</label>
                   <input
@@ -1451,15 +1459,15 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
                   type="button"
                   onClick={() => setDraft(p => ({ ...p, category: active ? null : c.slug }))}
                   style={{
-                    display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6,
-                    padding: "12px 6px", borderRadius: 14, cursor: "pointer",
-                    background: active ? `${c.color}22` : "rgba(255,255,255,0.06)",
-                    border: `1px solid ${active ? c.color : "rgba(255,255,255,0.1)"}`,
-                    color: active ? "#ffffff" : "rgba(229,238,255,0.7)",
+                    display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8,
+                    padding: "14px 6px 12px", borderRadius: 16, cursor: "pointer",
+                    background: active ? "rgba(255,255,255,0.16)" : "var(--tf-surface)",
+                    border: `1.5px solid ${active ? "#ffffff" : "transparent"}`,
+                    color: active ? "#ffffff" : "rgba(229,238,255,0.72)",
                   }}
                 >
-                  <span style={{ display: "flex" }}>{CAT_ICONS[c.slug]?.(active ? c.color : "rgba(229,238,255,0.7)", 24)}</span>
-                  <span style={{ fontSize: 11.5, fontWeight: active ? 700 : 600 }}>{c.label}</span>
+                  <CategoryIcon slug={c.slug} size={40} />
+                  <span style={{ fontSize: 12.5, fontWeight: active ? 600 : 500 }}>{c.label}</span>
                 </button>
               );
             })}
@@ -1498,7 +1506,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
                 style={{
                   flex: 1, border: "1px solid rgba(255,255,255,0.11)", borderRadius: 14,
                   padding: "11px 14px", fontSize: 14, color: "#ffffff",
-                  background: "rgba(255,255,255,0.06)", outline: "none", fontFamily: "inherit",
+                  background: "rgba(255,255,255,0.11)", outline: "none", fontFamily: "inherit",
                 }}
               />
             </div>
@@ -1526,7 +1534,7 @@ function iconBtn() {
     height: 30,
     borderRadius: "50%",
     border: "1px solid rgba(255,255,255,0.1)",
-    background: "rgba(255,255,255,0.07)",
+    background: "rgba(255,255,255,0.12)",
     color: "rgba(229,238,255,0.6)",
     cursor: "pointer",
     fontSize: 14,
@@ -1825,7 +1833,7 @@ function Validate({ event, scopeLabel, code, setCode, result, onCheck, onScan, o
             <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(229,238,255,0.7)" }}>Aforo</span>
             <span style={{ fontSize: 14, fontWeight: 800, color: "#a7f3d0" }}>{capMax != null ? `${total} / ${capMax}` : `${total} inscritos`}</span>
           </div>
-          <div style={{ height: 10, borderRadius: 6, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+          <div style={{ height: 10, borderRadius: 6, background: "rgba(255,255,255,0.13)", overflow: "hidden" }}>
             <div style={{ height: "100%", width: `${scanPct}%`, background: "linear-gradient(90deg, #34d399, #6ee7b7)", borderRadius: 6, transition: "width 0.4s" }} />
           </div>
         </div>

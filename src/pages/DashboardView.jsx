@@ -1,30 +1,51 @@
 import { useMemo, useState } from "react";
 import { getCapacityMax } from "../lib/capacity.js";
+import { CategoryIcon } from "../lib/categoryIcons.jsx";
 import "../styles/typeform.css";
 
-const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+// ─── Dashboard del organizador ──────────────────────────────────────────────
+//
+// Pensado para responder, en este orden, lo que un organizador se pregunta:
+//   1. ¿Hay algo que requiera mi acción?   → avisos (solicitudes por aprobar)
+//   2. ¿Cómo voy?                          → 4 cifras grandes
+//   3. ¿Va a más o a menos?                → inscripciones en el tiempo
+//   4. ¿Qué es lo próximo?                 → próximo evento con accesos directos
+//   5. ¿Qué funciona mejor?                → ranking de eventos (tocable)
+// Dos filtros arriba (periodo y evento) gobiernan TODO lo de debajo; antes las
+// cifras eran globales y el detalle por evento vivía escondido en un acordeón.
 
-const TEXT   = "#ffffff";
-const SUB    = "rgba(229,238,255,0.64)";
-const MUTED  = "rgba(229,238,255,0.42)";
-const ACCENT = "#34d399";
-const OK     = "#6ee7b7";
-const HOMBRE = "#34d399";
-const MUJER  = "#f2a2c0";
-const LINEA  = "rgba(255,255,255,0.12)";
-const PISTA  = "rgba(255,255,255,0.08)";
+const TEXT  = "#ffffff";
+const SUB   = "rgba(229,238,255,0.64)";
+const MUTED = "rgba(229,238,255,0.42)";
+const ACCENT = "var(--tf-accent)";
+const MUJER = "#f2a2c0";
+const DIA = 86400000;
+const MESES_CORTOS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 
-/** Fecha del evento en formato YYYY-MM-DD, venga del campo nuevo o del viejo. */
+/** Fecha del evento (YYYY-MM-DD), venga del campo nuevo o del viejo. */
 const fechaDe = (ev) => ev.startDate || ev.date || "";
+/** Hoy en local como YYYY-MM-DD (comparable como texto con fechaDe). */
+const hoyISO = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+const esProximo = (ev, hoy) => (ev.endDate || fechaDe(ev) || "9999") >= hoy;
 
-/**
- * Normaliza el género declarado en el formulario.
- *
- * No hay campo de género en el modelo: sale de una pregunta del formulario del
- * anfitrión, así que llegan textos libres ("Hombre", "F", "masculino"). Una "m"
- * suelta es ambigua (¿mujer o masculino?) y se cuenta como "otro" antes que
- * inventarse el dato.
- */
+function fechaCorta(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || "");
+  return m ? `${Number(m[3])} ${MESES_CORTOS[Number(m[2]) - 1]}` : "Sin fecha";
+}
+function diasHasta(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || "");
+  if (!m) return null;
+  const objetivo = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+  return Math.round((objetivo - hoy) / DIA);
+}
+const enDias = (n) => n == null ? "" : n <= 0 ? "Hoy" : n === 1 ? "Mañana" : `En ${n} días`;
+const pct = (a, b) => (b > 0 ? Math.round((a / b) * 100) : null);
+
+// ── Género (solo si el formulario lo pregunta) ───────────────────────────────
 function generoDe(valor) {
   const v = String(valor ?? "").trim().toLowerCase();
   if (!v) return null;
@@ -32,450 +53,384 @@ function generoDe(valor) {
   if (/^(mujer|mujeres|femenino|fem|female|woman|f)$/.test(v)) return "m";
   return "otro";
 }
-
-const campoGeneroDe = (ev) =>
-  (ev.fields || []).find((f) => /g[eé]ner|sexo/i.test(f.label || ""));
-
-function metricasDe(ev) {
-  const regs = ev.registrations || [];
-  const reservadas = regs.length;
-  const asistieron = regs.filter((r) => r.used).length;
-  // "Entradas totales" es el aforo del evento. Si no se definió, no hay techo
-  // contra el que medir y se muestra el propio número de reservas.
-  const aforo = getCapacityMax(ev.capacity, ev);
-
-  const campo = campoGeneroDe(ev);
-  let hombres = 0, mujeres = 0, otros = 0;
-  if (campo) {
-    for (const r of regs) {
+function generoDeEventos(eventos) {
+  let h = 0, m = 0, o = 0;
+  for (const ev of eventos) {
+    const campo = (ev.fields || []).find((f) => /g[eé]ner|sexo/i.test(f.label || ""));
+    if (!campo) continue;
+    for (const r of ev.registrations || []) {
       const g = generoDe(r.data?.[campo.id]);
-      if (g === "h") hombres++;
-      else if (g === "m") mujeres++;
-      else if (g) otros++;
+      if (g === "h") h++; else if (g === "m") m++; else if (g) o++;
     }
   }
-
-  return {
-    reservadas, asistieron, aforo, campo,
-    hombres, mujeres, otros,
-    conGenero: hombres + mujeres + otros,
-    tasa: reservadas > 0 ? asistieron / reservadas : 0,
-    ocupacion: aforo ? Math.min(1, reservadas / aforo) : 0,
-  };
+  return { h, m, o, total: h + m + o };
 }
 
-/** Anillo de progreso: el porcentaje se lee en el centro, como en un reloj. */
-function Anillo({ pct = 0, valor, unidad, etiqueta, nota, color = ACCENT, size = 104, stroke = 9 }) {
-  const r = (size - stroke) / 2;
-  const c = 2 * Math.PI * r;
-  const p = Math.max(0, Math.min(1, pct || 0));
+// ── Piezas ──────────────────────────────────────────────────────────────────
+function Pildora({ activa, children, onClick }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 9 }}>
-      <div style={{ position: "relative", width: size, height: size }}>
-        <svg width={size} height={size} style={{ display: "block", transform: "rotate(-90deg)" }} aria-hidden="true">
-          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={PISTA} strokeWidth={stroke} />
-          {p > 0 && (
-            <circle
-              cx={size / 2} cy={size / 2} r={r} fill="none"
-              stroke={color} strokeWidth={stroke} strokeLinecap="round"
-              strokeDasharray={c} strokeDashoffset={c * (1 - p)}
-              style={{ transition: "stroke-dashoffset .6s ease" }}
-            />
-          )}
-        </svg>
-        {/* Centrado real: alineación por línea base empujaba el número contra
-            el borde de arriba del anillo. */}
-        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 1 }}>
-          <span style={{ fontSize: 26, fontWeight: 600, color: TEXT, lineHeight: 1, letterSpacing: "-0.5px" }}>{valor}</span>
-          {unidad && <span style={{ fontSize: 13, fontWeight: 600, color: SUB, lineHeight: 1, alignSelf: "center", marginTop: 5 }}>{unidad}</span>}
-        </div>
-      </div>
-      <div style={{ textAlign: "center" }}>
-        <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: SUB }}>
-          {etiqueta}
-        </div>
-        {nota && <div style={{ fontSize: 11.5, color: MUTED, marginTop: 3 }}>{nota}</div>}
-      </div>
-    </div>
-  );
-}
-
-/** Cuadro con recuadro de valor a la izquierda y etiqueta a la derecha. */
-function Cuadro({ valor, etiqueta, nota, color = ACCENT }) {
-  return (
-    <div style={{
-      display: "flex", alignItems: "center", gap: 10,
-      border: `1px solid ${LINEA}`, borderRadius: 16,
-      background: "rgba(255,255,255,0.04)", padding: "11px 13px",
-    }}>
-      <span style={{
-        flexShrink: 0, minWidth: 44, height: 44, padding: "0 7px", borderRadius: 13,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        background: `${color}22`, border: `1px solid ${color}44`,
-        color, fontSize: 17, fontWeight: 700, letterSpacing: "-0.4px",
-      }}>
-        {valor}
-      </span>
-      <div style={{ minWidth: 0 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: TEXT }}>
-          {etiqueta}
-        </div>
-        {nota && <div style={{ fontSize: 11.5, color: MUTED, marginTop: 2 }}>{nota}</div>}
-      </div>
-    </div>
-  );
-}
-
-/** Barra apilada hombre/mujer con su leyenda. */
-function BarraGenero({ hombres, mujeres, otros }) {
-  const total = hombres + mujeres + otros;
-  const pct = (n) => (total > 0 ? (n / total) * 100 : 0);
-  const leyenda = [
-    { label: "Hombre", n: hombres, color: HOMBRE },
-    { label: "Mujer",  n: mujeres, color: MUJER },
-    ...(otros > 0 ? [{ label: "Otro / sin responder", n: otros, color: "rgba(255,255,255,0.28)" }] : []),
-  ];
-  return (
-    <div>
-      <div style={{ display: "flex", height: 12, borderRadius: 999, overflow: "hidden", background: PISTA }}>
-        {leyenda.map((l) => l.n > 0 && (
-          <div key={l.label} title={`${l.label}: ${l.n}`}
-            style={{ width: `${pct(l.n)}%`, background: l.color, transition: "width .5s ease" }} />
-        ))}
-      </div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 14, marginTop: 10 }}>
-        {leyenda.map((l) => (
-          <span key={l.label} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: SUB }}>
-            <span style={{ width: 9, height: 9, borderRadius: "50%", background: l.color, flexShrink: 0 }} />
-            {l.label}
-            <b style={{ color: TEXT, fontWeight: 700 }}>{l.n}</b>
-            <span style={{ color: MUTED }}>{total > 0 ? `${Math.round(pct(l.n))}%` : "—"}</span>
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/** Métricas de un evento concreto: anillos arriba, cuadros y barra debajo. */
-function MetricasEvento({ ev }) {
-  const m = metricasDe(ev);
-  const entradasTotales = m.aforo ?? m.reservadas;
-  const hayGenero = Boolean(m.campo) && m.conGenero > 0;
-
-  return (
-    <div style={{
-      border: `1px solid ${LINEA}`, borderRadius: 18,
-      background: "rgba(255,255,255,0.035)", padding: "20px 16px", marginTop: 12,
-    }}>
-      {/* Anillos: solo lo que es una proporción real */}
-      <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 26, marginBottom: 22 }}>
-        <Anillo
-          pct={m.aforo ? m.ocupacion : (m.reservadas > 0 ? 1 : 0)}
-          valor={m.aforo ? Math.round(m.ocupacion * 100) : m.reservadas}
-          unidad={m.aforo ? "%" : null}
-          etiqueta="Reservadas"
-          nota={m.aforo ? `${m.reservadas} / ${m.aforo}` : "sin aforo definido"}
-          color={ACCENT}
-        />
-        <Anillo
-          pct={m.tasa}
-          valor={m.reservadas > 0 ? Math.round(m.tasa * 100) : "—"}
-          unidad={m.reservadas > 0 ? "%" : null}
-          etiqueta="Asistencia"
-          nota={`${m.asistieron} de ${m.reservadas} entraron`}
-          color={OK}
-        />
-      </div>
-
-      {/* Cuadros. Hombre y Mujer solo salen si el evento pregunta el género y
-          alguien ha respondido: un "0 / sin datos" no es una métrica, es ruido. */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginBottom: hayGenero ? 18 : 0 }}>
-        <Cuadro valor={entradasTotales} etiqueta="Entradas totales"
-                nota={m.aforo ? "aforo del evento" : "sin aforo definido"} />
-        <Cuadro valor={m.reservadas} etiqueta="Reservadas" nota="entradas emitidas" color={ACCENT} />
-        {hayGenero && (
-          <Cuadro valor={m.hombres} etiqueta="Hombre" color={HOMBRE}
-                  nota={`${Math.round((m.hombres / m.conGenero) * 100)}% del total`} />
-        )}
-        {hayGenero && (
-          <Cuadro valor={m.mujeres} etiqueta="Mujer" color={MUJER}
-                  nota={`${Math.round((m.mujeres / m.conGenero) * 100)}% del total`} />
-        )}
-      </div>
-
-      {/* Reparto por género */}
-      {hayGenero && (
-        <div>
-          <p style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: SUB, margin: "0 0 10px" }}>
-            Reparto por género
-          </p>
-          <BarraGenero hombres={m.hombres} mujeres={m.mujeres} otros={m.otros} />
-        </div>
-      )}
-    </div>
-  );
-}
-
-export default function DashboardView({ events }) {
-  const [seleccionado, setSeleccionado] = useState(null);
-  const [verEventos, setVerEventos] = useState(false);
-  const [anio, setAnio] = useState(new Date().getFullYear());
-
-  const regs = events.flatMap((e) => e.registrations || []);
-  const total = regs.length;
-  const checkins = regs.filter((r) => r.used).length;
-
-  // Años con eventos, más el año actual: el filtro nunca arranca vacío aunque
-  // este año todavía no haya nada.
-  const anios = useMemo(() => {
-    const s = new Set([new Date().getFullYear()]);
-    for (const ev of events) {
-      const m = /^(\d{4})/.exec(fechaDe(ev));
-      if (m) s.add(Number(m[1]));
-    }
-    return [...s].sort((a, b) => a - b);
-  }, [events]);
-  const anioMin = anios[0];
-  const anioMax = anios[anios.length - 1];
-
-  const { porMes, sinFecha, totalAnio } = useMemo(() => {
-    const arr = Array(12).fill(0);
-    let sin = 0;
-    for (const ev of events) {
-      const m = /^(\d{4})-(\d{2})/.exec(fechaDe(ev));
-      if (!m) { sin++; continue; }
-      if (Number(m[1]) === anio) arr[Number(m[2]) - 1]++;
-    }
-    return { porMes: arr, sinFecha: sin, totalAnio: arr.reduce((a, b) => a + b, 0) };
-  }, [events, anio]);
-  const maxMes = Math.max(1, ...porMes);
-
-  const topEvent = useMemo(
-    () => [...events].sort((a, b) => (b.registrations?.length || 0) - (a.registrations?.length || 0))[0],
-    [events]
-  );
-
-  const listaEventos = useMemo(
-    () => [...events].sort((a, b) => (fechaDe(b) || "").localeCompare(fechaDe(a) || "")),
-    [events]
-  );
-
-  // Totales de todos los eventos juntos, para el resumen de "Eventos creados".
-  const globales = useMemo(() => {
-    let aforo = 0, hombres = 0, mujeres = 0, otros = 0, conGenero = 0;
-    for (const ev of events) {
-      const m = metricasDe(ev);
-      if (m.aforo) aforo += m.aforo;
-      hombres += m.hombres; mujeres += m.mujeres; otros += m.otros; conGenero += m.conGenero;
-    }
-    return { aforo, hombres, mujeres, otros, conGenero };
-  }, [events]);
-
-  // Recuadros compactos: antes ocupaban media pantalla en móvil porque el
-  // subtítulo de "Tasa de asistencia" estiraba a las cuatro por igual.
-  const stat = (label, value, extra) => (
-    <div className="panel-card" style={{ padding: "12px 10px", textAlign: "center", ...extra }}>
-      <div style={{ fontSize: 28, fontWeight: 600, color: TEXT, lineHeight: 1.1, letterSpacing: "-0.03em" }}>{value}</div>
-      <div style={{ fontSize: 12.5, fontWeight: 500, color: SUB, marginTop: 6, lineHeight: 1.25 }}>{label}</div>
-    </div>
-  );
-
-  const btnAnio = (dir, disabled) => (
-    <button
-      type="button"
-      onClick={() => setAnio((a) => a + dir)}
-      disabled={disabled}
-      aria-label={dir < 0 ? "Año anterior" : "Año siguiente"}
+    <button type="button" onClick={onClick} aria-pressed={activa}
       style={{
-        width: 30, height: 30, borderRadius: "50%", flexShrink: 0,
-        display: "inline-flex", alignItems: "center", justifyContent: "center",
-        background: "rgba(255,255,255,0.06)", border: `1px solid ${LINEA}`,
-        color: disabled ? MUTED : TEXT, cursor: disabled ? "default" : "pointer",
-        opacity: disabled ? 0.4 : 1,
-      }}
-    >
-      <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-        <path d={dir < 0 ? "M15 18l-6-6 6-6" : "M9 18l6-6-6-6"} />
-      </svg>
+        height: 38, padding: "0 15px", borderRadius: 999, cursor: "pointer", flexShrink: 0,
+        fontSize: 14, fontWeight: 500, whiteSpace: "nowrap",
+        background: activa ? "#ffffff" : "transparent",
+        border: activa ? "1px solid #ffffff" : "1px solid rgba(229,238,255,0.24)",
+        color: activa ? "#000000" : "#ffffff",
+      }}>
+      {children}
     </button>
   );
+}
+
+function Kpi({ valor, etiqueta, nota, notaColor }) {
+  return (
+    <div className="panel-card" style={{ padding: "18px 10px 16px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center" }}>
+      <div style={{ fontSize: 34, fontWeight: 600, letterSpacing: "-0.035em", lineHeight: 1, color: TEXT }}>{valor}</div>
+      <div style={{ fontSize: 13.5, color: SUB, marginTop: 8 }}>{etiqueta}</div>
+      {nota && <div style={{ fontSize: 12, color: notaColor || MUTED, marginTop: 4, fontWeight: notaColor ? 600 : 400 }}>{nota}</div>}
+    </div>
+  );
+}
+
+function Seccion({ titulo, accion, children, style }) {
+  return (
+    <section className="panel-card" style={{ padding: "18px 16px", marginBottom: 12, ...style }}>
+      {(titulo || accion) && (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 14 }}>
+          <h2 style={{ fontSize: 17, fontWeight: 600, letterSpacing: "-0.015em", margin: 0 }}>{titulo}</h2>
+          {accion}
+        </div>
+      )}
+      {children}
+    </section>
+  );
+}
+
+function Barra({ valor, max, color = ACCENT, alto = 6 }) {
+  const p = max > 0 ? Math.min(100, (valor / max) * 100) : 0;
+  return (
+    <div style={{ height: alto, borderRadius: alto, background: "rgba(255,255,255,0.1)", overflow: "hidden" }}>
+      <div style={{ width: `${p}%`, height: "100%", borderRadius: alto, background: p >= 90 ? "#f87171" : color, transition: "width .4s ease" }} />
+    </div>
+  );
+}
+
+function AccionChica({ children, onClick, icono }) {
+  return (
+    <button type="button" onClick={onClick} className="ef-hover-fill"
+      style={{
+        flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
+        padding: "10px 4px 9px", border: "none", borderRadius: 14, cursor: "pointer",
+        background: "rgba(255,255,255,0.08)", color: TEXT, fontSize: 12.5, fontWeight: 500,
+      }}>
+      <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{icono}</svg>
+      {children}
+    </button>
+  );
+}
+
+/** Inscripciones agrupadas por día (o semana) en la ventana elegida. */
+function GraficoInscripciones({ regs, rango }) {
+  const { cubos, total, previo } = useMemo(() => {
+    const finHoy = new Date(); finHoy.setHours(23, 59, 59, 999);
+    const dias = rango;
+    const porSemana = dias > 31;
+    const tam = porSemana ? 7 : 1;
+    const n = Math.ceil(dias / tam);
+    const inicio = finHoy.getTime() - dias * DIA + 1;
+    const arr = Array.from({ length: n }, (_, i) => {
+      const desde = new Date(inicio + i * tam * DIA);
+      return { n: 0, desde };
+    });
+    let tot = 0, prev = 0;
+    for (const r of regs) {
+      const t = Number(r.ts) || 0;
+      if (t >= inicio && t <= finHoy.getTime()) {
+        const i = Math.min(n - 1, Math.floor((t - inicio) / (tam * DIA)));
+        arr[i].n++; tot++;
+      } else if (t >= inicio - dias * DIA && t < inicio) prev++;
+    }
+    return { cubos: arr, total: tot, previo: prev };
+  }, [regs, rango]);
+
+  const max = Math.max(1, ...cubos.map((c) => c.n));
+  const delta = previo > 0 ? Math.round(((total - previo) / previo) * 100) : null;
+  const etiqueta = (d) => `${d.getDate()} ${MESES_CORTOS[d.getMonth()]}`;
+
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 14 }}>
+        <span style={{ fontSize: 30, fontWeight: 600, letterSpacing: "-0.03em", lineHeight: 1 }}>{total}</span>
+        <span style={{ fontSize: 13.5, color: SUB }}>inscripciones</span>
+        {delta != null && (
+          <span style={{ marginLeft: "auto", fontSize: 12.5, fontWeight: 600, padding: "3px 8px", borderRadius: 999,
+            color: delta >= 0 ? "#6ee7b7" : "#fca5a5", background: delta >= 0 ? "rgba(52,211,153,0.14)" : "rgba(248,113,113,0.14)" }}>
+            {delta >= 0 ? "▲" : "▼"} {Math.abs(delta)}% vs. periodo anterior
+          </span>
+        )}
+      </div>
+      <div style={{ display: "flex", alignItems: "flex-end", gap: cubos.length > 20 ? 2 : 5, height: 110 }}
+        role="img" aria-label={`${total} inscripciones en los últimos ${rango} días`}>
+        {cubos.map((c, i) => (
+          <div key={i} title={`${etiqueta(c.desde)}: ${c.n}`}
+            style={{
+              flex: 1, minWidth: 0, borderRadius: 4,
+              height: c.n ? `${Math.max(8, (c.n / max) * 100)}%` : 3,
+              background: c.n ? ACCENT : "rgba(255,255,255,0.12)",
+              opacity: c.n ? 0.95 : 1,
+            }} />
+        ))}
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11.5, color: MUTED, marginTop: 8 }}>
+        <span>{etiqueta(cubos[0].desde)}</span>
+        <span>Hoy</span>
+      </div>
+    </div>
+  );
+}
+
+// ── Vista ───────────────────────────────────────────────────────────────────
+export default function DashboardView({ events = [], onNew, onOpen, onValidate, onShare }) {
+  const [periodo, setPeriodo] = useState("todos");     // proximos | pasados | todos
+  const [eventoId, setEventoId] = useState("");         // "" = todos
+  const [rango, setRango] = useState(30);               // días del gráfico
+  const hoy = hoyISO();
+
+  // Eventos dentro del periodo (sin borradores).
+  const enPeriodo = useMemo(() => {
+    const base = events.filter((e) => !e.isDraft);
+    if (periodo === "proximos") return base.filter((e) => esProximo(e, hoy));
+    if (periodo === "pasados") return base.filter((e) => !esProximo(e, hoy));
+    return base;
+  }, [events, periodo, hoy]);
+
+  // Si el evento elegido sale del periodo, se vuelve a "Todos".
+  const elegido = enPeriodo.find((e) => e.id === eventoId) || null;
+  const alcance = useMemo(() => (elegido ? [elegido] : enPeriodo), [elegido, enPeriodo]);
+
+  const m = useMemo(() => {
+    const regs = alcance.flatMap((e) => e.registrations || []);
+    const checkins = regs.filter((r) => r.used).length;
+    let aforo = 0, conAforo = 0, regsConAforo = 0;
+    for (const e of alcance) {
+      const cap = getCapacityMax(e.capacity, e);
+      if (cap) { aforo += cap; conAforo++; regsConAforo += (e.registrations || []).length; }
+    }
+    const semana = Date.now() - 7 * DIA;
+    const pendientes = alcance
+      .map((e) => ({ ev: e, n: (e.registrations || []).filter((r) => r.approved === false).length }))
+      .filter((x) => x.n > 0);
+    return {
+      regs, checkins, aforo, conAforo, regsConAforo,
+      nuevasSemana: regs.filter((r) => Number(r.ts) >= semana).length,
+      proximos: alcance.filter((e) => esProximo(e, hoy)).length,
+      pendientes,
+      totalPendientes: pendientes.reduce((n, x) => n + x.n, 0),
+    };
+  }, [alcance, hoy]);
+
+  const proximo = useMemo(() => {
+    const lista = (elegido ? [elegido] : events.filter((e) => !e.isDraft))
+      .filter((e) => esProximo(e, hoy) && fechaDe(e))
+      .sort((a, b) => fechaDe(a).localeCompare(fechaDe(b)));
+    return lista[0] || null;
+  }, [events, elegido, hoy]);
+
+  const ranking = useMemo(
+    () => [...enPeriodo].sort((a, b) => (b.registrations?.length || 0) - (a.registrations?.length || 0)),
+    [enPeriodo]
+  );
+  const genero = useMemo(() => generoDeEventos(alcance), [alcance]);
+
+  // ── Vacío ──
+  if (!events.filter((e) => !e.isDraft).length) {
+    return (
+      <div style={{ maxWidth: 760, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 34, fontWeight: 600, letterSpacing: "-0.03em", margin: "8px 0 8px" }}>Dashboard</h1>
+        <div className="panel-card" style={{ padding: "40px 24px", textAlign: "center", marginTop: 20 }}>
+          <p style={{ fontSize: 17, fontWeight: 600, margin: "0 0 6px" }}>Aún no hay datos</p>
+          <p style={{ fontSize: 14.5, color: SUB, margin: "0 0 20px" }}>Crea tu primer evento y aquí verás inscripciones, asistencia y aforo.</p>
+          {onNew && <button type="button" className="soft-btn soft-btn-primary" onClick={onNew}>Crear evento</button>}
+        </div>
+      </div>
+    );
+  }
+
+  const total = m.regs.length;
+  const ocupacion = m.aforo ? pct(m.regsConAforo, m.aforo) : null;
+  const asistencia = pct(m.checkins, total);
+  const diasProx = proximo ? diasHasta(fechaDe(proximo)) : null;
 
   return (
     <div style={{ maxWidth: 760, margin: "0 auto" }}>
-      <h1 style={{ fontSize: 34, fontWeight: 600, letterSpacing: "-0.03em", color: TEXT, margin: "8px 0 8px" }}>Dashboard</h1>
-      <p style={{ fontSize: 15, color: SUB, margin: "0 0 24px" }}>
-        Visión global de tu actividad en TapIn
-      </p>
+      <h1 style={{ fontSize: 34, fontWeight: 600, letterSpacing: "-0.03em", margin: "8px 0 6px" }}>Dashboard</h1>
+      <p style={{ fontSize: 15, color: SUB, margin: "0 0 18px" }}>Lo importante de tus eventos, de un vistazo.</p>
 
-      {/* Stats principales. "Eventos creados" es el que abre el detalle: dentro
-          van las métricas generales y el listado para entrar evento por evento,
-          en vez de tener la lista suelta al final de la página. */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px,1fr))", gap: 10, marginBottom: verEventos ? 12 : 24 }}>
-        <button
-          type="button"
-          onClick={() => setVerEventos((v) => !v)}
-          aria-expanded={verEventos}
-          className="panel-card"
-          style={{
-            padding: "12px 10px", textAlign: "center", cursor: "pointer", position: "relative",
-            background: verEventos ? "rgba(52,211,153,0.14)" : undefined,
-            borderColor: verEventos ? "rgba(52,211,153,0.45)" : undefined,
-            fontFamily: "inherit",
-          }}
-        >
-          <div style={{ fontSize: 28, fontWeight: 600, color: TEXT, lineHeight: 1.1, letterSpacing: "-0.03em" }}>{events.length}</div>
-          <div style={{ fontSize: 12.5, fontWeight: 500, color: SUB, marginTop: 6, lineHeight: 1.25, display: "inline-flex", alignItems: "center", gap: 4 }}>
-            Eventos creados
-            <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={verEventos ? ACCENT : MUTED}
-                 strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round"
-                 style={{ transform: verEventos ? "rotate(180deg)" : "none", transition: "transform .2s" }}>
-              <path d="m6 9 6 6 6-6" />
-            </svg>
-          </div>
-        </button>
-        {stat("Inscritos totales", total)}
-        {stat("Check-ins totales", checkins)}
-        {stat("Tasa de asistencia", total > 0 ? `${Math.round((checkins / total) * 100)}%` : "—")}
-      </div>
-
-      {/* ── Detalle de "Eventos creados" ── */}
-      {verEventos && (
-        <div className="panel-card" style={{ padding: 20, marginBottom: 24 }}>
-          <p style={{ fontSize: 11, fontWeight: 800, color: "#8fa3b1", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 16px" }}>
-            Métricas generales
-          </p>
-
-          <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 26, marginBottom: 20 }}>
-            <Anillo
-              pct={globales.aforo ? Math.min(1, total / globales.aforo) : (total > 0 ? 1 : 0)}
-              valor={globales.aforo ? Math.round(Math.min(1, total / globales.aforo) * 100) : total}
-              unidad={globales.aforo ? "%" : null}
-              etiqueta="Reservadas"
-              nota={globales.aforo ? `${total} / ${globales.aforo}` : "sin aforos definidos"}
-              color={ACCENT}
-            />
-            <Anillo
-              pct={total > 0 ? checkins / total : 0}
-              valor={total > 0 ? Math.round((checkins / total) * 100) : "—"}
-              unidad={total > 0 ? "%" : null}
-              etiqueta="Asistencia"
-              nota={`${checkins} de ${total} entraron`}
-              color={OK}
-            />
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10 }}>
-            <Cuadro valor={events.length} etiqueta="Eventos" nota="creados en total" />
-            <Cuadro valor={globales.aforo || total} etiqueta="Entradas totales"
-                    nota={globales.aforo ? "suma de aforos" : "sin aforos definidos"} color={ACCENT} />
-          </div>
-
-          {globales.conGenero > 0 && (
-            <div style={{ marginTop: 18 }}>
-              <p style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: SUB, margin: "0 0 10px" }}>
-                Reparto por género
-              </p>
-              <BarraGenero hombres={globales.hombres} mujeres={globales.mujeres} otros={globales.otros} />
-            </div>
-          )}
-
-          {/* Listado para entrar a cada evento */}
-          <div style={{ borderTop: `1px solid ${LINEA}`, margin: "20px 0 14px" }} />
-          <p style={{ fontSize: 12.5, color: MUTED, margin: "0 0 12px" }}>
-            Elige un evento para ver sus métricas.
-          </p>
-
-          {listaEventos.length === 0 ? (
-            <p style={{ color: "#8fa3b1", fontSize: 14, margin: 0 }}>Todavía no has creado ningún evento.</p>
-          ) : listaEventos.map((ev) => {
-            const abierto = seleccionado === ev.id;
-            const nRegs = (ev.registrations || []).length;
-            return (
-              <div key={ev.id} style={{ marginBottom: 8 }}>
-                <button
-                  type="button"
-                  onClick={() => setSeleccionado(abierto ? null : ev.id)}
-                  aria-expanded={abierto}
-                  style={{
-                    width: "100%", display: "flex", alignItems: "center", gap: 12,
-                    padding: "12px 14px", borderRadius: 16, cursor: "pointer", textAlign: "left",
-                    background: abierto ? "rgba(52,211,153,0.14)" : "rgba(255,255,255,0.04)",
-                    border: `1px solid ${abierto ? "rgba(52,211,153,0.45)" : LINEA}`,
-                    transition: "background .15s, border-color .15s",
-                  }}
-                >
-                  <span style={{ minWidth: 0, flex: 1 }}>
-                    <span style={{ display: "block", fontSize: 14, fontWeight: 600, color: TEXT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {ev.title || "Evento sin título"}
-                    </span>
-                    <span style={{ display: "block", fontSize: 11.5, color: MUTED, marginTop: 2 }}>
-                      {fechaDe(ev) || "Sin fecha"} · {nRegs} {nRegs === 1 ? "reserva" : "reservas"}
-                    </span>
-                  </span>
-                  <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={abierto ? ACCENT : MUTED}
-                       strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round"
-                       style={{ flexShrink: 0, transform: abierto ? "rotate(180deg)" : "none", transition: "transform .2s" }}>
-                    <path d="m6 9 6 6 6-6" />
-                  </svg>
-                </button>
-                {abierto && <MetricasEvento ev={ev} />}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Evento con más inscritos */}
-      {topEvent && (
-        <div className="panel-card" style={{ padding: 20, marginBottom: 16 }}>
-          <p style={{ fontSize: 11, fontWeight: 800, color: "#8fa3b1", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 8px" }}>
-            Evento con más inscritos
-          </p>
-          <p style={{ fontSize: 17, fontWeight: 600, color: TEXT, margin: "0 0 4px" }}>{topEvent.title}</p>
-          <p style={{ fontSize: 13, color: ACCENT, fontWeight: 700, margin: 0 }}>
-            {topEvent.registrations?.length || 0} inscritos
-          </p>
-        </div>
-      )}
-
-      {/* ── Eventos por mes ── */}
-      <div className="panel-card" style={{ padding: 20, marginBottom: 16 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10, marginBottom: 16 }}>
-          <p style={{ fontSize: 11, fontWeight: 800, color: "#8fa3b1", textTransform: "uppercase", letterSpacing: "0.06em", margin: 0 }}>
-            Eventos por mes
-          </p>
-          {/* Filtro de año: arranca en el año actual y retrocede uno a uno. */}
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-            {btnAnio(-1, anio <= anioMin)}
-            <span style={{ fontSize: 15, fontWeight: 700, color: TEXT, minWidth: 46, textAlign: "center", letterSpacing: "-0.3px" }}>
-              {anio}
-            </span>
-            {btnAnio(1, anio >= anioMax)}
-          </div>
-        </div>
-
-        {porMes.map((n, i) => (
-          <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-            <span style={{ fontSize: 12.5, color: n > 0 ? SUB : MUTED, width: 78, flexShrink: 0 }}>{MESES[i]}</span>
-            <div style={{ flex: 1, background: PISTA, borderRadius: 999, height: 8, overflow: "hidden" }}>
-              <div style={{
-                width: `${(n / maxMes) * 100}%`, height: "100%",
-                background: ACCENT, borderRadius: 999, transition: "width 0.4s",
-              }} />
-            </div>
-            <span style={{ fontSize: 12.5, fontWeight: 700, color: n > 0 ? ACCENT : MUTED, width: 22, textAlign: "right" }}>{n}</span>
-          </div>
+      {/* ── Filtros: gobiernan todo lo de abajo ── */}
+      <div style={{ display: "flex", gap: 8, overflowX: "auto", marginBottom: 10, paddingBottom: 2 }}>
+        {[["todos", "Todos"], ["proximos", "Próximos"], ["pasados", "Pasados"]].map(([k, l]) => (
+          <Pildora key={k} activa={periodo === k} onClick={() => setPeriodo(k)}>{l}</Pildora>
         ))}
+      </div>
+      <label style={{ position: "relative", display: "block", marginBottom: 18 }}>
+        <span className="sr-only" style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)" }}>Evento</span>
+        <select value={elegido ? elegido.id : ""} onChange={(e) => setEventoId(e.target.value)}
+          style={{
+            width: "100%", height: 48, padding: "0 44px 0 16px", borderRadius: 14, border: "none",
+            background: "var(--tf-field)", color: TEXT, fontSize: 15.5, fontWeight: 500,
+            appearance: "none", WebkitAppearance: "none", cursor: "pointer",
+          }}>
+          <option value="">Todos los eventos ({enPeriodo.length})</option>
+          {enPeriodo.map((e) => (
+            <option key={e.id} value={e.id}>{e.title || "Sin título"} · {fechaCorta(fechaDe(e))}</option>
+          ))}
+        </select>
+        <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round"
+          style={{ position: "absolute", right: 16, top: 15, pointerEvents: "none" }} aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+      </label>
 
-        <p style={{ fontSize: 12, color: MUTED, margin: "12px 0 0" }}>
-          {totalAnio === 0
-            ? `Sin eventos en ${anio}.`
-            : `${totalAnio} ${totalAnio === 1 ? "evento" : "eventos"} en ${anio}.`}
-          {sinFecha > 0 && ` ${sinFecha} sin fecha.`}
-        </p>
+      {/* ── 1. Lo que requiere acción ── */}
+      {m.totalPendientes > 0 && (
+        <button type="button" className="ef-hover-fill"
+          onClick={() => onOpen?.(m.pendientes[0].ev.id, "pendientes")}
+          style={{
+            width: "100%", display: "flex", alignItems: "center", gap: 12, textAlign: "left",
+            padding: "14px 16px", marginBottom: 12, border: "none", borderRadius: 18, cursor: "pointer",
+            background: "rgba(251,191,36,0.14)", color: "#fbbf24",
+          }}>
+          <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
+          <span style={{ flex: 1, fontSize: 14.5, fontWeight: 600 }}>
+            {m.totalPendientes} {m.totalPendientes === 1 ? "solicitud por aprobar" : "solicitudes por aprobar"}
+            <span style={{ display: "block", fontSize: 12.5, fontWeight: 400, opacity: 0.85, marginTop: 2 }}>
+              {m.pendientes.length === 1 ? m.pendientes[0].ev.title : `En ${m.pendientes.length} eventos`} · su QR no funciona hasta que apruebes
+            </span>
+          </span>
+          <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="m9 18 6-6-6-6" /></svg>
+        </button>
+      )}
+
+      {/* ── 2. Cifras clave ── */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10, marginBottom: 12 }}>
+        <Kpi valor={total} etiqueta="Inscritos"
+          nota={m.nuevasSemana > 0 ? `+${m.nuevasSemana} esta semana` : "sin nuevas esta semana"}
+          notaColor={m.nuevasSemana > 0 ? "#6ee7b7" : null} />
+        <Kpi valor={asistencia != null ? `${asistencia}%` : "—"} etiqueta="Asistencia"
+          nota={`${m.checkins} de ${total} entraron`} />
+        <Kpi valor={ocupacion != null ? `${ocupacion}%` : "—"} etiqueta="Ocupación"
+          nota={m.aforo ? `${m.regsConAforo} de ${m.aforo} cupos` : "sin aforo definido"} />
+        <Kpi valor={elegido ? (esProximo(elegido, hoy) ? enDias(diasHasta(fechaDe(elegido))) : "Pasado") : alcance.length}
+          etiqueta={elegido ? "Estado" : "Eventos"}
+          nota={elegido ? fechaCorta(fechaDe(elegido)) : `${m.proximos} ${m.proximos === 1 ? "próximo" : "próximos"}`} />
       </div>
 
+      {/* ── 3. Evolución ── */}
+      <Seccion titulo="Inscripciones"
+        accion={
+          <div style={{ display: "inline-flex", gap: 2, padding: 3, borderRadius: 999, background: "rgba(255,255,255,0.08)" }}>
+            {[7, 30, 90].map((d) => (
+              <button key={d} type="button" onClick={() => setRango(d)} aria-pressed={rango === d}
+                style={{ height: 28, padding: "0 11px", borderRadius: 999, border: "none", cursor: "pointer", fontSize: 12.5, fontWeight: 600,
+                  background: rango === d ? "#ffffff" : "transparent", color: rango === d ? "#000" : SUB }}>
+                {d} d
+              </button>
+            ))}
+          </div>
+        }>
+        <GraficoInscripciones regs={m.regs} rango={rango} />
+      </Seccion>
+
+      {/* ── 4. Próximo evento ── */}
+      {proximo && (() => {
+        const n = (proximo.registrations || []).length;
+        const cap = getCapacityMax(proximo.capacity, proximo);
+        return (
+          <Seccion titulo={elegido ? "Este evento" : "Próximo evento"}
+            accion={<span style={{ fontSize: 12.5, fontWeight: 600, padding: "4px 10px", borderRadius: 999, background: "rgba(52,211,153,0.14)", color: "#6ee7b7" }}>{enDias(diasProx)}</span>}>
+            <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 14 }}>
+              {proximo.headerImage
+                ? <img src={proximo.headerImage} alt="" width={52} height={52} style={{ width: 52, height: 52, borderRadius: 14, objectFit: "cover", flexShrink: 0 }} />
+                : <CategoryIcon slug={proximo.category || "otro"} size={52} />}
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 17, fontWeight: 600, letterSpacing: "-0.015em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{proximo.title}</div>
+                <div style={{ fontSize: 13.5, color: SUB, marginTop: 2 }}>
+                  {fechaCorta(fechaDe(proximo))}{proximo.startTime ? ` · ${proximo.startTime}` : ""}{proximo.city ? ` · ${proximo.city}` : ""}
+                </div>
+              </div>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5, marginBottom: 7 }}>
+              <span style={{ color: SUB }}>Inscritos</span>
+              <span style={{ fontWeight: 600 }}>{n}{cap ? <span style={{ color: MUTED, fontWeight: 400 }}> / {cap}</span> : ""}</span>
+            </div>
+            <Barra valor={n} max={cap || Math.max(n, 1)} />
+            <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
+              <AccionChica onClick={() => onOpen?.(proximo.id)} icono={<><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20a6.5 6.5 0 0 1 13 0" /><path d="M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4-6" /></>}>Inscritos</AccionChica>
+              <AccionChica onClick={() => onShare?.(proximo)} icono={<><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4" /></>}>Compartir</AccionChica>
+              <AccionChica onClick={() => onValidate?.(proximo.id)} icono={<><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2" /><path d="M7 12h10" /></>}>Escanear</AccionChica>
+            </div>
+          </Seccion>
+        );
+      })()}
+
+      {/* Reparto por género: solo si algún formulario lo pregunta */}
+      {genero.total > 0 && (
+        <Seccion titulo="Público">
+          <div style={{ display: "flex", height: 10, borderRadius: 999, overflow: "hidden", background: "rgba(255,255,255,0.1)" }}>
+            {[[genero.h, "var(--tf-accent)"], [genero.m, MUJER], [genero.o, "rgba(255,255,255,0.35)"]].map(([n, c], i) => n > 0 && (
+              <div key={i} style={{ width: `${(n / genero.total) * 100}%`, background: c }} />
+            ))}
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginTop: 10, fontSize: 13, color: SUB }}>
+            {[["Hombres", genero.h, "var(--tf-accent)"], ["Mujeres", genero.m, MUJER], ["Otro / sin responder", genero.o, "rgba(255,255,255,0.35)"]]
+              .filter(([, n], i) => n > 0 || i < 2)
+              .map(([l, n, c]) => (
+                <span key={l} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ width: 9, height: 9, borderRadius: "50%", background: c }} />
+                  {l} <b style={{ color: TEXT, fontWeight: 600 }}>{pct(n, genero.total)}%</b>
+                </span>
+              ))}
+          </div>
+        </Seccion>
+      )}
+
+      {/* ── 5. Ranking (solo con varios eventos en el filtro) ── */}
+      {!elegido && ranking.length > 1 && (
+        <Seccion titulo="Tus eventos" accion={<span style={{ fontSize: 12.5, color: MUTED }}>por inscritos</span>}>
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            {ranking.slice(0, 8).map((e, i) => {
+              const n = (e.registrations || []).length;
+              const cap = getCapacityMax(e.capacity, e);
+              const ci = (e.registrations || []).filter((r) => r.used).length;
+              return (
+                <button key={e.id} type="button" className="ef-hover-fill" onClick={() => { setEventoId(e.id); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left",
+                    padding: "11px 6px", border: "none", borderRadius: 12, cursor: "pointer", background: "transparent", color: TEXT,
+                    borderTop: i ? "1px solid var(--tf-divider)" : "none",
+                  }}>
+                  <span style={{ width: 18, fontSize: 13, color: MUTED, fontWeight: 600, textAlign: "center", flexShrink: 0 }}>{i + 1}</span>
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ display: "block", fontSize: 14.5, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.title || "Sin título"}</span>
+                    <span style={{ display: "block", fontSize: 12, color: MUTED, margin: "2px 0 6px" }}>
+                      {fechaCorta(fechaDe(e))}{ci ? ` · ${ci} check-ins` : ""}
+                    </span>
+                    <Barra valor={n} max={cap || Math.max(...ranking.map((x) => (x.registrations || []).length), 1)} alto={4} />
+                  </span>
+                  <span style={{ textAlign: "right", flexShrink: 0, minWidth: 44 }}>
+                    <span style={{ display: "block", fontSize: 17, fontWeight: 600 }}>{n}</span>
+                    <span style={{ display: "block", fontSize: 11.5, color: MUTED }}>{cap ? `de ${cap}` : "inscritos"}</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </Seccion>
+      )}
+
+      {elegido && (
+        <button type="button" className="soft-btn soft-btn-ghost" style={{ width: "100%", marginTop: 4 }} onClick={() => setEventoId("")}>
+          Ver todos los eventos
+        </button>
+      )}
     </div>
   );
 }

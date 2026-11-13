@@ -146,7 +146,7 @@ function Flecha({ dir, onClick, disabled }) {
       style={{
         width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
         display: "inline-flex", alignItems: "center", justifyContent: "center",
-        background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.14)",
+        background: "rgba(255,255,255,0.11)", border: "1px solid rgba(255,255,255,0.14)",
         color: disabled ? "rgba(229,238,255,0.22)" : "#a7f3d0",
         cursor: disabled ? "default" : "pointer", padding: 0,
       }}

@@ -96,3 +96,7 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
+
+/* A sangre: anula el padding lateral de .app-main (carrusel del Inicio). */
+.ef-bleed { margin-left: -16px; margin-right: -16px; overflow: hidden; }
+@media (max-width: 480px) { .ef-bleed { margin-left: -12px; margin-right: -12px; } }

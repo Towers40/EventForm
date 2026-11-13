@@ -81,7 +81,7 @@ function LocationModal({ onSelect, onClose }) {
     >
       <div
         onClick={e => e.stopPropagation()}
-        style={{ width: "100%", maxWidth: 420, maxHeight: "76vh", display: "flex", flexDirection: "column", background: "rgba(18,20,22,0.98)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 22, overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}
+        style={{ width: "100%", maxWidth: 420, maxHeight: "76vh", display: "flex", flexDirection: "column", background: "var(--tf-sheet)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 22, overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}
       >
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", flexShrink: 0 }}>
@@ -90,7 +90,7 @@ function LocationModal({ onSelect, onClose }) {
               ref={inputRef}
               type="text" value={query} onChange={handleChange}
               placeholder="Buscar dirección o lugar…"
-              style={{ width: "100%", boxSizing: "border-box", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 14, padding: "11px 40px 11px 14px", fontSize: 15, color: "#ffffff", outline: "none", caretColor: "#34d399", fontFamily: "inherit" }}
+              style={{ width: "100%", boxSizing: "border-box", background: "rgba(255,255,255,0.13)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 14, padding: "11px 40px 11px 14px", fontSize: 15, color: "#ffffff", outline: "none", caretColor: "#34d399", fontFamily: "inherit" }}
             />
             {loading && <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", fontSize: 13, color: "rgba(229,238,255,0.4)" }}>…</span>}
           </div>
@@ -161,7 +161,7 @@ function WheelCol({ items, selectedKey, getKey, getLabel, onChange, flex }) {
     <div style={{ flex: flex || 1, position: "relative", height: ITEM_H * VISIBLE, overflow: "hidden" }}>
       <div style={{ position: "absolute", inset: 0, zIndex: 2, pointerEvents: "none",
         background: `linear-gradient(to bottom,rgba(18,20,22,0.92) 0%,rgba(18,20,22,0.4) 22%,transparent 38%,transparent 62%,rgba(18,20,22,0.4) 78%,rgba(18,20,22,0.92) 100%)` }} />
-      <div style={{ position: "absolute", left: 6, right: 6, top: ITEM_H * 2, height: ITEM_H, background: "rgba(255,255,255,0.07)", borderRadius: 14, pointerEvents: "none", zIndex: 1 }} />
+      <div style={{ position: "absolute", left: 6, right: 6, top: ITEM_H * 2, height: ITEM_H, background: "rgba(255,255,255,0.12)", borderRadius: 14, pointerEvents: "none", zIndex: 1 }} />
       <div ref={ref} onScroll={onScroll} className="ce-wheel"
         style={{ height: "100%", overflowY: "scroll", scrollSnapType: "y mandatory", scrollbarWidth: "none", msOverflowStyle: "none" }}>
         <div style={{ height: ITEM_H * 2 }} />
@@ -232,7 +232,7 @@ function WheelPanel({ date, time, minDate, minTime, onChange, onClose }) {
   }, []);
 
   return (
-    <div style={{ borderRadius: 18, overflow: "hidden", background: "rgba(18,20,22,0.95)", border: "1px solid rgba(255,255,255,0.1)", margin: "8px 0 0" }}>
+    <div style={{ borderRadius: 18, overflow: "hidden", background: "var(--tf-sheet)", border: "1px solid rgba(255,255,255,0.1)", margin: "8px 0 0" }}>
       <div style={{ display: "flex", borderBottom: "1px solid rgba(255,255,255,0.06)", padding: "8px 0 6px" }}>
         {[["Día",0.8],["Mes",1.2],["Año",1.2],["Hr",0.8],["Min",0.8]].map(([lbl, f]) => (
           <div key={lbl} style={{ flex: f, textAlign: "center", fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: "0.1em", textTransform: "uppercase" }}>{lbl}</div>
@@ -245,7 +245,7 @@ function WheelPanel({ date, time, minDate, minTime, onChange, onClose }) {
           onChange={m => emit(sy, m, sd)} />
         <WheelCol key="y" flex={1.2} items={years} selectedKey={sy} getKey={i => i.value} getLabel={i => i.label}
           onChange={y => emit(y, sm, sd)} />
-        <div style={{ width: 1, background: "rgba(255,255,255,0.07)", margin: "8px 0" }} />
+        <div style={{ width: 1, background: "rgba(255,255,255,0.12)", margin: "8px 0" }} />
         <WheelCol key="h" flex={0.8} items={HOURS} selectedKey={hour} getKey={i => i.value} getLabel={i => i.label}
           onChange={h => onChange(clampToLimit({ date: curDate, time: `${pad2(h)}:${pad2(minute)}` }, limit))} />
         <WheelCol key="mi" flex={0.8} items={MINUTES} selectedKey={minute} getKey={i => i.value} getLabel={i => i.label}
@@ -430,7 +430,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
           </div>
           {/* ── Cover image ── */}
           <div
-            style={{ position: "relative", margin: "20px 0 12px", borderRadius: 22, overflow: "hidden", aspectRatio: "1 / 1", background: draft.headerImage ? "none" : "rgba(255,255,255,0.05)", border: BORDER, cursor: draft.headerImage ? (isDragging ? "grabbing" : "grab") : "default", touchAction: draft.headerImage ? "none" : "auto", userSelect: "none" }}
+            style={{ position: "relative", margin: "20px 0 12px", borderRadius: 22, overflow: "hidden", aspectRatio: "1 / 1", background: draft.headerImage ? "none" : "var(--tf-surface)", border: BORDER, cursor: draft.headerImage ? (isDragging ? "grabbing" : "grab") : "default", touchAction: draft.headerImage ? "none" : "auto", userSelect: "none" }}
             onPointerDown={e => {
               if (!draft.headerImage || e.target.closest("button, label, input")) return;
               e.currentTarget.setPointerCapture(e.pointerId);
@@ -673,7 +673,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
                   placeholder="Enlace del evento (Zoom, Meet, Teams…)"
                   value={draft.virtualUrl || ""}
                   onChange={e => up("virtualUrl", e.target.value)}
-                  style={{ width: "100%", boxSizing: "border-box", background: "rgba(255,255,255,0.05)", border: BORDER, borderRadius: 14, padding: "13px 16px", fontSize: 15, color: TEXT, outline: "none", caretColor: ACCENT, fontFamily: "inherit" }}
+                  style={{ width: "100%", boxSizing: "border-box", background: "rgba(255,255,255,0.10)", border: BORDER, borderRadius: 14, padding: "13px 16px", fontSize: 15, color: TEXT, outline: "none", caretColor: ACCENT, fontFamily: "inherit" }}
                 />
               </div>
             )}
@@ -703,7 +703,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
                   onChange={e => up("eventDescription", e.target.value)}
                   placeholder="Describe tu evento: qué pasará, para quién es, qué traer…"
                   rows={5} autoFocus
-                  style={{ width: "100%", boxSizing: "border-box", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 14, padding: "14px 16px", fontSize: 15, color: TEXT, resize: "vertical", outline: "none", caretColor: ACCENT, lineHeight: 1.5, fontFamily: "inherit" }}
+                  style={{ width: "100%", boxSizing: "border-box", background: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 14, padding: "14px 16px", fontSize: 15, color: TEXT, resize: "vertical", outline: "none", caretColor: ACCENT, lineHeight: 1.5, fontFamily: "inherit" }}
                 />
               </div>
             )}
@@ -729,7 +729,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
                 <button type="button" className="ef-hover-fill" aria-label="Menos entradas"
                   onClick={() => up("maxPerUser", Math.max(1, (Number(draft.maxPerUser) || 1) - 1))}
                   disabled={(Number(draft.maxPerUser) || 1) <= 1}
-                  style={{ width: 30, height: 30, borderRadius: 9, background: "rgba(255,255,255,0.06)", border: BORDER, color: (Number(draft.maxPerUser) || 1) <= 1 ? "rgba(255,255,255,0.2)" : TEXT, fontSize: 17, fontWeight: 700, cursor: (Number(draft.maxPerUser) || 1) <= 1 ? "default" : "pointer", lineHeight: 1 }}>
+                  style={{ width: 30, height: 30, borderRadius: 9, background: "rgba(255,255,255,0.11)", border: BORDER, color: (Number(draft.maxPerUser) || 1) <= 1 ? "rgba(255,255,255,0.2)" : TEXT, fontSize: 17, fontWeight: 700, cursor: (Number(draft.maxPerUser) || 1) <= 1 ? "default" : "pointer", lineHeight: 1 }}>
                   −
                 </button>
                 <span style={{ minWidth: 26, textAlign: "center", fontSize: 15, fontWeight: 700, color: (Number(draft.maxPerUser) || 1) > 1 ? ACCENT : TEXT }}>
@@ -738,7 +738,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
                 <button type="button" className="ef-hover-fill" aria-label="Más entradas"
                   onClick={() => up("maxPerUser", Math.min(20, (Number(draft.maxPerUser) || 1) + 1))}
                   disabled={(Number(draft.maxPerUser) || 1) >= 20}
-                  style={{ width: 30, height: 30, borderRadius: 9, background: "rgba(255,255,255,0.06)", border: BORDER, color: (Number(draft.maxPerUser) || 1) >= 20 ? "rgba(255,255,255,0.2)" : TEXT, fontSize: 17, fontWeight: 700, cursor: (Number(draft.maxPerUser) || 1) >= 20 ? "default" : "pointer", lineHeight: 1 }}>
+                  style={{ width: 30, height: 30, borderRadius: 9, background: "rgba(255,255,255,0.11)", border: BORDER, color: (Number(draft.maxPerUser) || 1) >= 20 ? "rgba(255,255,255,0.2)" : TEXT, fontSize: 17, fontWeight: 700, cursor: (Number(draft.maxPerUser) || 1) >= 20 ? "default" : "pointer", lineHeight: 1 }}>
                   +
                 </button>
               </div>
@@ -848,8 +848,8 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
           )}
 
           {/* Bottom CTA */}
-          <button type="button" className="ef-hover-fill" onClick={handleSubmit} style={{ width: "100%", marginTop: 20, padding: 16, background: "rgba(52,211,153,0.18)", border: "1px solid rgba(52,211,153,0.45)", borderRadius: RADIUS, color: "#6ee7b7", fontWeight: 800, fontSize: 16, cursor: "pointer", letterSpacing: "0.02em" }}>
-            Continuar →
+          <button type="button" className="soft-btn soft-btn-primary" onClick={handleSubmit} style={{ width: "100%", marginTop: 20 }}>
+            Continuar
           </button>
         </div>
       </div>
@@ -857,7 +857,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
       {/* ── Price bottom sheet ── */}
       {showPrice && (
         <div style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.55)" }} onClick={() => setShowPrice(false)}>
-          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, maxWidth: 540, margin: "0 auto", background: "rgba(18,20,22,0.98)", borderRadius: "24px 24px 0 0", padding: "28px 20px 44px", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", border: "1px solid rgba(255,255,255,0.11)", borderBottom: "none" }}
+          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, maxWidth: 540, margin: "0 auto", background: "var(--tf-sheet)", borderRadius: "24px 24px 0 0", padding: "28px 20px 44px", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", border: "1px solid rgba(255,255,255,0.11)", borderBottom: "none" }}
             onClick={e => e.stopPropagation()}>
             <div style={{ width: 36, height: 4, background: "rgba(255,255,255,0.18)", borderRadius: 2, margin: "0 auto 24px" }} />
             <p style={{ fontSize: 17, fontWeight: 700, color: TEXT, margin: "0 0 6px" }}>Precio de entrada</p>
@@ -868,12 +868,12 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
               type="number" inputMode="numeric" placeholder="Ej. 50000"
               value={draft.price || ""}
               onChange={e => up("price", e.target.value)}
-              style={{ width: "100%", boxSizing: "border-box", background: "rgba(255,255,255,0.07)", border: BORDER, borderRadius: 18, padding: "16px 18px", fontSize: 22, color: TEXT, outline: "none", caretColor: ACCENT, fontFamily: "inherit", marginBottom: 16 }}
+              style={{ width: "100%", boxSizing: "border-box", background: "rgba(255,255,255,0.12)", border: BORDER, borderRadius: 18, padding: "16px 18px", fontSize: 22, color: TEXT, outline: "none", caretColor: ACCENT, fontFamily: "inherit", marginBottom: 16 }}
             />
             <div style={{ display: "flex", gap: 10 }}>
               <button type="button" className="ef-hover-fill"
                 onClick={() => { up("priceType", "free"); up("price", ""); setShowPrice(false); }}
-                style={{ flex: 1, padding: "14px 0", background: "rgba(255,255,255,0.07)", border: BORDER, borderRadius: 18, color: SUB, fontSize: 14, cursor: "pointer", fontWeight: 600 }}>
+                style={{ flex: 1, padding: "14px 0", background: "rgba(255,255,255,0.12)", border: BORDER, borderRadius: 18, color: SUB, fontSize: 14, cursor: "pointer", fontWeight: 600 }}>
                 Gratis
               </button>
               <button type="button" className="ef-hover-fill"
@@ -889,7 +889,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
       {/* ── Capacity bottom sheet ── */}
       {showCap && (
         <div style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.55)" }} onClick={() => setShowCap(false)}>
-          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, maxWidth: 540, margin: "0 auto", background: "rgba(18,20,22,0.98)", borderRadius: "24px 24px 0 0", padding: "28px 20px 44px", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", border: "1px solid rgba(255,255,255,0.11)", borderBottom: "none" }}
+          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, maxWidth: 540, margin: "0 auto", background: "var(--tf-sheet)", borderRadius: "24px 24px 0 0", padding: "28px 20px 44px", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", border: "1px solid rgba(255,255,255,0.11)", borderBottom: "none" }}
             onClick={e => e.stopPropagation()}>
             <div style={{ width: 36, height: 4, background: "rgba(255,255,255,0.18)", borderRadius: 2, margin: "0 auto 24px" }} />
             <p style={{ fontSize: 17, fontWeight: 700, color: TEXT, margin: "0 0 6px" }}>Capacidad del evento</p>
@@ -903,12 +903,12 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
                 const v = e.target.value;
                 if (v === "" || (Number(v) >= 0 && Number(v) <= 1000)) up("capacityNum", v);
               }}
-              style={{ width: "100%", boxSizing: "border-box", background: "rgba(255,255,255,0.07)", border: BORDER, borderRadius: 18, padding: "16px 18px", fontSize: 22, color: TEXT, outline: "none", caretColor: ACCENT, fontFamily: "inherit", marginBottom: 16 }}
+              style={{ width: "100%", boxSizing: "border-box", background: "rgba(255,255,255,0.12)", border: BORDER, borderRadius: 18, padding: "16px 18px", fontSize: 22, color: TEXT, outline: "none", caretColor: ACCENT, fontFamily: "inherit", marginBottom: 16 }}
             />
             <div style={{ display: "flex", gap: 10 }}>
               <button type="button" className="ef-hover-fill"
                 onClick={() => { up("capacityNum", ""); setShowCap(false); }}
-                style={{ flex: 1, padding: "14px 0", background: "rgba(255,255,255,0.07)", border: BORDER, borderRadius: 18, color: SUB, fontSize: 14, cursor: "pointer", fontWeight: 600 }}>
+                style={{ flex: 1, padding: "14px 0", background: "rgba(255,255,255,0.12)", border: BORDER, borderRadius: 18, color: SUB, fontSize: 14, cursor: "pointer", fontWeight: 600 }}>
                 Ilimitada
               </button>
               <button type="button" className="ef-hover-fill"
@@ -924,7 +924,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
       {/* ── Color del evento ── */}
       {showColor && (
         <div style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.55)" }} onClick={() => setShowColor(false)}>
-          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, maxWidth: 540, margin: "0 auto", background: "rgba(18,20,22,0.98)", borderRadius: "24px 24px 0 0", padding: "28px 20px 44px", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", border: "1px solid rgba(255,255,255,0.11)", borderBottom: "none" }}
+          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, maxWidth: 540, margin: "0 auto", background: "var(--tf-sheet)", borderRadius: "24px 24px 0 0", padding: "28px 20px 44px", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", border: "1px solid rgba(255,255,255,0.11)", borderBottom: "none" }}
             onClick={e => e.stopPropagation()}>
             <div style={{ width: 36, height: 4, background: "rgba(255,255,255,0.18)", borderRadius: 2, margin: "0 auto 24px" }} />
             <p style={{ fontSize: 17, fontWeight: 700, color: TEXT, margin: "0 0 6px" }}>Color del evento</p>
@@ -990,7 +990,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
             <div style={{ display: "flex", gap: 10 }}>
               <button type="button" className="ef-hover-fill"
                 onClick={() => setDraft(p => ({ ...p, themeColor: null, themeColorManual: true }))}
-                style={{ flex: 1, padding: "14px 0", background: "rgba(255,255,255,0.07)", border: BORDER, borderRadius: 18, color: SUB, fontSize: 14, cursor: "pointer", fontWeight: 600 }}>
+                style={{ flex: 1, padding: "14px 0", background: "rgba(255,255,255,0.12)", border: BORDER, borderRadius: 18, color: SUB, fontSize: 14, cursor: "pointer", fontWeight: 600 }}>
                 Sin color
               </button>
               <button type="button" className="ef-hover-fill"

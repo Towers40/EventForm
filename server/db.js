@@ -161,6 +161,10 @@ export async function initDb() {
     ["users", "code_fail_window",  "INTEGER"],
     ["users", "login_fails",       "INTEGER NOT NULL DEFAULT 0"],
     ["users", "login_fail_window", "INTEGER"],
+    // Datos personales que la persona ya dio (teléfono, ciudad, edad…), para
+    // inscribirse al siguiente evento con un clic. JSON con las claves de
+    // shared/profileFields.js.
+    ["users", "profile", "TEXT"],
   ];
   const tablas = [...new Set(migrations.map(m => m[0]))];
   const columnas = {};

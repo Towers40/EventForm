@@ -6,6 +6,7 @@ import { db, dbReady, initDb, parseEvent, slugify } from "./db.js";
 import { uploadToCloudinary, isDataUrl, cloudinaryEnabled } from "./cloudinary.js";
 import { migrateBase64Avatars } from "./avatarMigration.js";
 import { migrateBase64EventImages } from "./eventImageMigration.js";
+import { extractProfile, sanitizeProfile } from "../shared/profileFields.js";
 
 /**
  * Caché de CDN.
@@ -183,9 +184,31 @@ function requireOwner(req, res, next) {
   return res.status(403).json({ error: "Solo el administrador puede hacer esto." });
 }
 
+function parseProfile(raw) {
+  if (!raw) return {};
+  try { const p = JSON.parse(raw); return p && typeof p === "object" ? p : {}; } catch { return {}; }
+}
+
 function rowToUser(row) {
   if (!row) return null;
-  return { id: row.id, email: row.email, name: row.name, role: row.role, avatar: row.avatar || null, createdAt: row.created_at, isOwner: isOwnerEmail(row.email) };
+  return {
+    id: row.id, email: row.email, name: row.name, role: row.role, avatar: row.avatar || null,
+    createdAt: row.created_at, isOwner: isOwnerEmail(row.email),
+    // Datos para inscribirse con un clic (ver shared/profileFields.js).
+    profile: parseProfile(row.profile),
+  };
+}
+
+/** Mezcla `cambios` en el perfil guardado; null borra la clave. */
+async function mergeProfile(userId, cambios) {
+  if (!cambios || !Object.keys(cambios).length) return;
+  const { rows } = await db.execute({ sql: "SELECT profile FROM users WHERE id = ?", args: [userId] });
+  if (!rows[0]) return;
+  const actual = parseProfile(rows[0].profile);
+  for (const [k, v] of Object.entries(cambios)) {
+    if (v == null || v === "") delete actual[k]; else actual[k] = v;
+  }
+  await db.execute({ sql: "UPDATE users SET profile = ? WHERE id = ?", args: [JSON.stringify(actual), userId] });
 }
 
 async function getRegsForEvent(eventId) {
@@ -503,7 +526,11 @@ app.patch("/api/auth/me", requireDb, authMiddleware, async (req, res) => {
   try {
     const body = req.body || {};
     const { name } = body;
-    if (name?.trim()) await db.execute({ sql: "UPDATE users SET name = ? WHERE id = ?", args: [name.trim(), req.user.sub] });
+    if (name?.trim()) await db.execute({ sql: "UPDATE users SET name = ? WHERE id = ?", args: [name.trim().slice(0, 120), req.user.sub] });
+    // Datos de inscripción rápida: solo claves conocidas; null borra.
+    if (body.profile && typeof body.profile === "object") {
+      await mergeProfile(req.user.sub, sanitizeProfile(body.profile));
+    }
     // Foto de perfil: cadena = guardar, null/"" = eliminar
     if (Object.prototype.hasOwnProperty.call(body, "avatar")) {
       let avatar = body.avatar ? String(body.avatar) : null;
@@ -784,6 +811,17 @@ app.post("/api/public/events/:slug/register", requireDb, optionalAuth, async (re
         if (mine + wanted > maxPerUser) return res.status(403).json({ error: "limit_per_user", maxPerUser, already: mine });
       }
       for (const ins of inserts) await db.execute(ins);
+    }
+
+    // Recordar los datos personales de esta inscripción para la próxima (teléfono,
+    // ciudad…). Solo si quien se inscribe es el dueño de la cuenta: con un
+    // correo distinto está apuntando a otra persona y sus datos no son suyos.
+    if (req.user?.sub && form) {
+      const propio = !recipientEmail || String(recipientEmail).trim().toLowerCase() === accountEmail;
+      if (propio) {
+        try { await mergeProfile(req.user.sub, extractProfile(ev.fields || [], form)); }
+        catch (e) { console.error("[perfil] no se pudo guardar:", e.message); }
+      }
     }
 
     // Correo de confirmación. AWAIT antes de responder: en Vercel serverless la

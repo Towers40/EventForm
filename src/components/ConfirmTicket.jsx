@@ -4,10 +4,13 @@ import SlideToCancel from "./SlideToCancel.jsx";
 import TicketCarousel from "./TicketCarousel.jsx";
 import { IconButton, IcoBack, EventCover, EventTintLayer } from "./ui.jsx";
 import { eventTint } from "../lib/dominantColor.js";
+import { useAuth } from "../context/AuthContext.jsx";
 import { loadEventFont, eventFontProps } from "../lib/fonts.js";
 import "../styles/typeform.css";
 
 export default function ConfirmTicket({ ev, reg, regs, onDone, standalone, tintColor, onCancel, cancelling, onBack }) {
+  // Quien ya tiene cuenta no necesita que le ofrezcan crear una.
+  const { user } = useAuth() || {};
   const [confirmOpen, setConfirmOpen] = useState(false);
   useEffect(() => { loadEventFont(ev?.fontId); }, [ev?.fontId]);
   // `approved` solo llega en false cuando el evento requiere aprobación.
@@ -71,8 +74,8 @@ export default function ConfirmTicket({ ev, reg, regs, onDone, standalone, tintC
         </button>
       )}
 
-      {/* Organizer CTA */}
-      <div style={{
+      {/* Organizer CTA — solo para quien aún no tiene cuenta */}
+      {!user && <div style={{
         marginTop: 28, padding: "18px 20px", borderRadius: 14,
         background: "rgba(52,211,153,0.08)",
         border: "1px solid rgba(52,211,153,0.2)",
@@ -86,7 +89,7 @@ export default function ConfirmTicket({ ev, reg, regs, onDone, standalone, tintC
         }}>
           Crear cuenta de organizador →
         </a>
-      </div>
+      </div>}
 
       {/* Cancel attendance — barra deslizable */}
       {onCancel && (
@@ -99,7 +102,7 @@ export default function ConfirmTicket({ ev, reg, regs, onDone, standalone, tintC
       {confirmOpen && (
         <div onClick={() => setConfirmOpen(false)}
           style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-          <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 380, background: "rgba(18,20,22,0.98)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 22, padding: 24, textAlign: "center", boxShadow: "0 24px 70px rgba(0,0,0,0.55)" }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 380, background: "var(--tf-sheet)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 22, padding: 24, textAlign: "center", boxShadow: "0 24px 70px rgba(0,0,0,0.55)" }}>
             <div style={{ width: 52, height: 52, borderRadius: "50%", background: "rgba(248,113,113,0.15)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
               <svg width={26} height={26} viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             </div>
@@ -107,7 +110,7 @@ export default function ConfirmTicket({ ev, reg, regs, onDone, standalone, tintC
             <p style={{ fontSize: 13.5, color: "rgba(229,238,255,0.6)", margin: "0 0 22px", lineHeight: 1.5 }}>Tu entrada quedará anulada y perderás tu lugar en este evento.</p>
             <div style={{ display: "flex", gap: 10 }}>
               <button type="button" onClick={() => setConfirmOpen(false)} disabled={cancelling}
-                style={{ flex: 1, padding: 13, borderRadius: 14, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.18)", color: "#ffffff", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+                style={{ flex: 1, padding: 13, borderRadius: 14, background: "rgba(255,255,255,0.13)", border: "1px solid rgba(255,255,255,0.18)", color: "#ffffff", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
                 No, volver
               </button>
               <button type="button" onClick={() => { setConfirmOpen(false); onCancel(); }} disabled={cancelling}

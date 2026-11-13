@@ -1,6 +1,6 @@
 import { DISCOVER_CATEGORIES } from "../lib/categories.js";
-import { CAT_ICONS } from "../lib/categoryIcons.jsx";
-import { IcoPin, IcoVideo, ROW_ICON, ROW_BOX, AttendeeStack } from "./ui.jsx";
+import { CAT_ICONS, CategoryIcon, CATEGORY_STYLE } from "../lib/categoryIcons.jsx";
+import { IcoPin, IcoVideo, ROW_BOX, AttendeeStack } from "./ui.jsx";
 
 // La tarjeta de evento del listado. Vive aquí y no dentro de Descubrir porque
 // la usan también el perfil de un organizador y cualquier listado que venga
@@ -33,7 +33,6 @@ const POPULAR_MIN = 8;
 // Caja común para categoría, ubicación y avatar del organizador: sin esto cada
 // uno traía su propio tamaño y la columna de texto quedaba desalineada.
 const ICON_BOX = ROW_BOX;
-const ICON_SIZE = ROW_ICON;
 
 // El listado va TODO con la letra de la app, aunque cada evento tenga la suya.
 // Se probó al revés —cada tarjeta con su tipografía— y una lista de veinte
@@ -64,7 +63,7 @@ export default function EventCard({ ev, destacado = false, duplicado = false }) 
         position: "relative",
         display: "flex", alignItems: "flex-start", gap: 10,
         padding: 10, borderRadius: 18,
-        background: "rgba(255,255,255,0.055)", border: "1px solid rgba(255,255,255,0.1)",
+        background: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.1)",
       }}
     >
       <a
@@ -106,7 +105,7 @@ export default function EventCard({ ev, destacado = false, duplicado = false }) 
               flexShrink: 0, display: "inline-flex", alignItems: "center", justifyContent: "center",
               width: ICON_BOX, height: ICON_BOX, marginTop: 1, color: cat.color,
             }}>
-              {CAT_ICONS[cat.slug](cat.color, ICON_SIZE)}
+              <CategoryIcon slug={cat.slug} size={ICON_BOX + 2} />
             </span>
           )}
           <h3 style={{
@@ -184,11 +183,14 @@ export default function EventCard({ ev, destacado = false, duplicado = false }) 
         ) : (
           <div style={{
             width: "100%", height: "100%",
-            background: cat ? `linear-gradient(135deg, ${cat.color}44, #111)` : "linear-gradient(135deg, #1e3a5f, #0d0e10)",
+            // Sin portada: el color de la categoría, suave, con su baldosa.
+            background: cat
+              ? `linear-gradient(145deg, ${(CATEGORY_STYLE[cat.slug] || CATEGORY_STYLE.otro).from}55, ${(CATEGORY_STYLE[cat.slug] || CATEGORY_STYLE.otro).to}22)`
+              : "linear-gradient(135deg, #2a2b30, #151618)",
             display: "flex", alignItems: "center", justifyContent: "center",
           }}>
             {cat && CAT_ICONS[cat.slug]
-              ? <div style={{ opacity: 0.55 }}>{CAT_ICONS[cat.slug](cat.color, 28)}</div>
+              ? <CategoryIcon slug={cat.slug} size={36} />
               : <span style={{ fontSize: 24, opacity: 0.5 }}>🗓️</span>}
           </div>
         )}

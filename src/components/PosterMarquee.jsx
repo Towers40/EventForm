@@ -84,7 +84,15 @@ function EventPoster({ poster }) {
   );
 }
 
-export default function PosterMarquee() {
+/**
+ * `variante="fondo"` (por defecto): pila girada que tapa toda la pantalla, con
+ * velo en el centro para leer el titular encima (bienvenida).
+ * `variante="cinta"`: franja de `filas` filas rectas, para ponerla como
+ * carrusel dentro de una página (Inicio). Sin velo central —ahí los pósters son
+ * el contenido, no el fondo— y con los bordes desvanecidos.
+ */
+export default function PosterMarquee({ variante = "fondo", filas: filasCinta = 2, card: cardCinta = 104 }) {
+  const esCinta = variante === "cinta";
   const [rej, setRej] = useState(() => rejillaPara(window.innerWidth, window.innerHeight));
 
   useEffect(() => {
@@ -100,7 +108,10 @@ export default function PosterMarquee() {
     return () => window.removeEventListener("resize", alRedimensionar);
   }, []);
 
-  const { card, gap, filas, porFila } = rej;
+  // En cinta el tamaño es fijo; los pósters por fila cubren hasta 1600 px.
+  const { card, gap, filas, porFila } = esCinta
+    ? { card: cardCinta, gap: 10, filas: filasCinta, porFila: Math.max(6, Math.ceil(1600 / (cardCinta + 10))) }
+    : rej;
   const altoCard = card / POSTER_RATIO;
 
   const rows = useMemo(
@@ -119,7 +130,7 @@ export default function PosterMarquee() {
   );
 
   return (
-    <div className="tapin-mq" aria-hidden="true">
+    <div className={esCinta ? "tapin-mq tapin-mq--cinta" : "tapin-mq"} aria-hidden="true">
       <div className="tapin-mq-stack" style={{ gap }}>
         {rows.map((fila, i) => (
           <div className="tapin-mq-row" key={i}>
@@ -150,7 +161,7 @@ export default function PosterMarquee() {
       {/* Velo: apaga el centro para que el titular se lea sobre los pósters y
           difumina arriba y abajo contra el navy de la app, de modo que el
           borde de la pila no se note. */}
-      <div className="tapin-mq-veil" />
+      {!esCinta && <div className="tapin-mq-veil" />}
 
       <style>{`
         .tapin-mq {
@@ -212,6 +223,15 @@ export default function PosterMarquee() {
               rgba(14,15,17,0.08) 80%,
               rgba(14,15,17,0.94) 100%);
         }
+
+        /* Cinta: en el flujo de la página, recta y con bordes desvanecidos. */
+        .tapin-mq--cinta { position: relative; inset: auto; z-index: auto; }
+        .tapin-mq--cinta .tapin-mq-stack {
+          position: static; width: 100%; transform: none; opacity: 1;
+          -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 9%, #000 91%, transparent 100%);
+          mask-image: linear-gradient(90deg, transparent 0, #000 9%, #000 91%, transparent 100%);
+        }
+        .tapin-mq--cinta .tapin-mq-card { border-radius: 16px; box-shadow: 0 10px 24px rgba(0,0,0,0.4); }
 
         /* Quien pide menos movimiento ve el mismo muestrario, quieto. */
         @media (prefers-reduced-motion: reduce) {

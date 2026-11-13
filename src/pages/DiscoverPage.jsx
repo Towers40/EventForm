@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { api } from "../lib/api.js";
 import { BRAND_NAME, CONTACT_EMAIL, TapInMark } from "../lib/brand.jsx";
 import { DISCOVER_CATEGORIES } from "../lib/categories.js";
-import { CAT_ICONS } from "../lib/categoryIcons.jsx";
+import { CAT_ICONS, CategoryIcon } from "../lib/categoryIcons.jsx";
 import EventCard, { FlameIcon } from "../components/EventCard.jsx";
 
 /**
@@ -18,8 +18,9 @@ import EventCard, { FlameIcon } from "../components/EventCard.jsx";
  * Lo seleccionado se marca con el color a plena intensidad, el nombre en
  * blanco y una barra fina debajo; no con un relleno.
  */
-function CategoryPill({ cat, active, onClick }) {
-  const Icon = CAT_ICONS[cat.slug];
+function CategoryPill({ cat, active, dim, onClick }) {
+  // Baldosa de app con su color propio; la elegida lleva un aro blanco y el
+  // resto se atenúa, así se ve de un vistazo qué filtro está puesto.
   return (
     <button
       type="button"
@@ -27,30 +28,20 @@ function CategoryPill({ cat, active, onClick }) {
       title={cat.label}
       aria-pressed={active}
       style={{
-        display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
-        width: 54, padding: "4px 0 0", background: "transparent", border: "none",
-        cursor: "pointer", opacity: active ? 1 : 0.72, transition: "opacity 0.15s",
+        display: "flex", flexDirection: "column", alignItems: "center", gap: 7,
+        width: 66, padding: "4px 0", background: "transparent", border: "none",
+        cursor: "pointer", opacity: dim ? 0.42 : 1, transition: "opacity 0.15s, transform 0.12s",
       }}
     >
+      <CategoryIcon slug={cat.slug} size={50}
+        style={{ outline: active ? "2px solid #ffffff" : "2px solid transparent", outlineOffset: 3, transition: "outline-color .15s" }} />
       <span style={{
-        flexShrink: 0, width: 30, height: 30,
-        display: "flex", alignItems: "center", justifyContent: "center",
-      }}>
-        {Icon ? Icon(cat.color, 24) : <span style={{ fontSize: 20 }}>{cat.emoji}</span>}
-      </span>
-      <span style={{
-        fontSize: 11, lineHeight: 1.2, textAlign: "center", whiteSpace: "nowrap",
-        fontWeight: active ? 700 : 500,
-        color: active ? "#ffffff" : "rgba(229,238,255,0.6)",
+        fontSize: 12, lineHeight: 1.2, textAlign: "center", whiteSpace: "nowrap",
+        fontWeight: active ? 600 : 500,
+        color: active ? "#ffffff" : "rgba(229,238,255,0.72)",
       }}>
         {cat.short || cat.label}
       </span>
-      {/* Barra de selección: ocupa sitio siempre (transparente si no está
-          activa) para que al elegir una categoría la fila no dé un salto. */}
-      <span style={{
-        width: 18, height: 2, borderRadius: 2,
-        background: active ? cat.color : "transparent",
-      }} />
     </button>
   );
 }
@@ -59,10 +50,10 @@ function CategoryPill({ cat, active, onClick }) {
 const chipStyle = (activo) => ({
   flexShrink: 0, whiteSpace: "nowrap", cursor: "pointer",
   padding: "9px 16px", borderRadius: 999, fontSize: 13.5,
-  fontWeight: activo ? 700 : 600,
-  background: activo ? "rgba(52,211,153,0.22)" : "rgba(255,255,255,0.06)",
-  border: activo ? "1px solid rgba(52,211,153,0.5)" : "1px solid rgba(255,255,255,0.1)",
-  color: activo ? "#ffffff" : "rgba(229,238,255,0.65)",
+  fontWeight: 500,
+  background: activo ? "#ffffff" : "transparent",
+  border: activo ? "1px solid #ffffff" : "1px solid rgba(229,238,255,0.24)",
+  color: activo ? "#000000" : "#ffffff",
 });
 
 
@@ -272,7 +263,7 @@ export default function DiscoverPage({ embedded = false }) {
             onChange={e => handleSearch(e.target.value)}
             style={{
               width: "100%", boxSizing: "border-box",
-              background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.11)",
+              background: "rgba(255,255,255,0.13)", border: "1px solid rgba(255,255,255,0.11)",
               borderRadius: 28, padding: "14px 20px 14px 50px",
               fontSize: 15, color: "#ffffff", outline: "none",
               fontFamily: "inherit",
@@ -288,6 +279,7 @@ export default function DiscoverPage({ embedded = false }) {
               key={cat.slug}
               cat={cat}
               active={activeCategory === cat.slug}
+              dim={Boolean(activeCategory) && activeCategory !== cat.slug}
               onClick={() => handleCategory(cat.slug)}
             />
           ))}
@@ -345,7 +337,7 @@ export default function DiscoverPage({ embedded = false }) {
               {activeCat ? (
                 <>
                   {CAT_ICONS[activeCat.slug]
-                    ? <span style={{ display: "inline-flex" }}>{CAT_ICONS[activeCat.slug](activeCat.color, 22)}</span>
+                    ? <CategoryIcon slug={activeCat.slug} size={26} />
                     : <span>{activeCat.emoji}</span>}
                   {activeCat.label}
                 </>
@@ -471,10 +463,11 @@ export default function DiscoverPage({ embedded = false }) {
            que decide cuántas caben por línea; en móvil se baja a 232 px para
            que queden 4 + 3 centradas y no 6 + 1 huérfana. */
         .ef-cats {
-          display: flex; flex-wrap: wrap; justify-content: center;
-          gap: 2px; max-width: 420px; margin: 16px auto 0;
+          display: grid; grid-template-columns: repeat(7, 66px); justify-content: center;
+          gap: 10px 4px; margin: 20px auto 0;
         }
-        @media (max-width: 470px) { .ef-cats { max-width: 232px; } }
+        /* En móvil, 4 + 3 como una rejilla de apps. */
+        @media (max-width: 560px) { .ef-cats { grid-template-columns: repeat(4, 66px); gap: 14px 10px; } }
 
         /* La rejilla del listado (.ef-ev-grid) vive en typeform.css: la
            comparte el perfil del organizador. */
