@@ -14,16 +14,16 @@ function Avatar({ name, src, size = 76 }) {
   if (src) {
     return (
       <img src={src} alt="" width={size} height={size}
-        style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", flexShrink: 0, border: "2px solid rgba(127,179,230,0.4)" }} />
+        style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", flexShrink: 0, border: "2px solid rgba(52,211,153,0.4)" }} />
     );
   }
   const iniciales = (name || "?").split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
   return (
     <div style={{
       width: size, height: size, borderRadius: "50%", flexShrink: 0,
-      background: "rgba(127,179,230,0.28)", border: "2px solid rgba(127,179,230,0.4)",
+      background: "rgba(52,211,153,0.28)", border: "2px solid rgba(52,211,153,0.4)",
       display: "flex", alignItems: "center", justifyContent: "center",
-      fontSize: size * 0.36, fontWeight: 700, color: "#bfd9f2",
+      fontSize: size * 0.36, fontWeight: 700, color: "#a7f3d0",
     }}>
       {iniciales}
     </div>
@@ -33,8 +33,8 @@ function Avatar({ name, src, size = 76 }) {
 function Dato({ n, label }) {
   return (
     <div style={{ textAlign: "center" }}>
-      <div style={{ fontSize: 20, fontWeight: 700, color: "#eef1f7", lineHeight: 1.1 }}>{n}</div>
-      <div style={{ fontSize: 11.5, color: "rgba(238,241,247,0.5)", marginTop: 2 }}>{label}</div>
+      <div style={{ fontSize: 20, fontWeight: 700, color: "#ffffff", lineHeight: 1.1 }}>{n}</div>
+      <div style={{ fontSize: 11.5, color: "rgba(229,238,255,0.5)", marginTop: 2 }}>{label}</div>
     </div>
   );
 }
@@ -65,21 +65,21 @@ export default function OrganizerPage() {
   };
 
   return (
-    <div style={{ minHeight: "100dvh", color: "#eef1f7", fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>
+    <div style={{ minHeight: "100dvh", color: "#ffffff", fontFamily: "'Onest', system-ui, -apple-system, sans-serif" }}>
       {/* Barra: volver a donde se venía (normalmente Descubrir) */}
       <nav style={{
         padding: "0 16px", height: 56,
         display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center",
         borderBottom: "1px solid rgba(255,255,255,0.08)",
         position: "sticky", top: 0, zIndex: 20,
-        background: "rgba(18,20,34,0.82)", backdropFilter: "blur(16px)",
+        background: "rgba(18,20,22,0.82)", backdropFilter: "blur(16px)",
       }}>
         <span style={{ justifySelf: "start" }}>
           <IconButton title="Volver" tone="soft" onClick={volver}><IcoBack /></IconButton>
         </span>
         <a href="/discover" className="ef-hover-fill" style={{ justifySelf: "center", display: "flex", alignItems: "center", gap: 8, textDecoration: "none", padding: "6px 12px", borderRadius: 14 }}>
-          <TapInMark size={20} color="#22c55e" />
-          <span style={{ fontWeight: 800, fontSize: 16, color: "#eef1f7" }}>{BRAND_NAME}</span>
+          <TapInMark size={20} color="#34d399" />
+          <span style={{ fontWeight: 800, fontSize: 16, color: "#ffffff" }}>{BRAND_NAME}</span>
         </a>
         <span />
       </nav>
@@ -88,7 +88,7 @@ export default function OrganizerPage() {
         {cargando ? (
           <div style={{ textAlign: "center", padding: "80px 0", color: "#8fa3b1" }}>
             <div style={{ lineHeight: 1, marginBottom: 14, animation: "ef-logo-pulse 1.3s ease-in-out infinite", display: "inline-block" }}>
-              <TapInMark size={44} color="#22c55e" />
+              <TapInMark size={44} color="#34d399" />
             </div>
             <p style={{ fontSize: 15, margin: 0 }}>Cargando perfil…</p>
           </div>
@@ -96,7 +96,7 @@ export default function OrganizerPage() {
           <div style={{ textAlign: "center", padding: "80px 0" }}>
             <div style={{ fontSize: 40, marginBottom: 14 }}>⚠️</div>
             <p style={{ color: "#8fa3b1", fontSize: 15, marginBottom: 18 }}>{error}</p>
-            <a href="/discover" className="ef-hover-fill" style={{ textDecoration: "none", background: "rgba(127,179,230,0.2)", color: "#eef1f7", border: "1px solid rgba(127,179,230,0.4)", borderRadius: 14, padding: "11px 22px", fontWeight: 700, fontSize: 14 }}>
+            <a href="/discover" className="ef-hover-fill" style={{ textDecoration: "none", background: "rgba(52,211,153,0.2)", color: "#ffffff", border: "1px solid rgba(52,211,153,0.4)", borderRadius: 14, padding: "11px 22px", fontWeight: 700, fontSize: 14 }}>
               Ver todos los eventos
             </a>
           </div>
@@ -120,7 +120,7 @@ export default function OrganizerPage() {
 
             {/* ── Próximos ── */}
             <section style={{ marginBottom: 44 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 500, color: "#eef1f7", margin: "0 0 16px" }}>
+              <h2 style={{ fontSize: 18, fontWeight: 500, color: "#ffffff", margin: "0 0 16px" }}>
                 Próximos eventos
               </h2>
               {proximos.length > 0 ? (
@@ -137,7 +137,7 @@ export default function OrganizerPage() {
             {/* ── Ya pasaron: son el historial, la prueba de que esto va en serio ── */}
             {pasados.length > 0 && (
               <section>
-                <h2 style={{ fontSize: 18, fontWeight: 500, color: "#eef1f7", margin: "0 0 16px" }}>
+                <h2 style={{ fontSize: 18, fontWeight: 500, color: "#ffffff", margin: "0 0 16px" }}>
                   Ya pasaron
                 </h2>
                 {/* Atenuados: se pueden abrir, pero no compiten con lo que

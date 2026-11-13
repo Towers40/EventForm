@@ -1,7 +1,7 @@
 // ─── Tipografías del evento ────────────────────────────────────────────────
 //
 // Cinco alternativas para personalizar un evento, además de la tipografía de
-// la app (Inter). El criterio de la selección: todas son modernas y limpias,
+// la app (Onest). El criterio de la selección: todas son modernas y limpias,
 // pero cada una lleva el evento a un sitio distinto —técnico, artístico,
 // nocturno, editorial o de revista—, que es lo que hace que elegir signifique
 // algo. Ninguna es decorativa "de plantilla": siguen siendo legibles a 13 px
@@ -18,10 +18,10 @@ export const EVENT_FONTS = [
     name: "TapIn",
     tagline: "La de siempre",
     note: "Neutra y clarísima. La que usa toda la app.",
-    family: "'Inter', system-ui, -apple-system, sans-serif",
+    family: "'Onest', system-ui, -apple-system, sans-serif",
     google: null,                 // ya viene cargada en index.html
-    headingWeight: 500,
-    headingSpacing: "-0.5px",
+    headingWeight: 600,
+    headingSpacing: "-0.02em",
     headingScale: 1,
   },
   {
@@ -29,7 +29,7 @@ export const EVENT_FONTS = [
     name: "Neo",
     tagline: "Técnica",
     note: "Geométrica, de ingeniería. Meetups, tech, producto, talleres.",
-    family: "'Space Grotesk', 'Inter', system-ui, sans-serif",
+    family: "'Space Grotesk', 'Onest', system-ui, sans-serif",
     google: "Space+Grotesk:wght@400;500;700",
     headingWeight: 600,
     headingSpacing: "-1px",
@@ -40,7 +40,7 @@ export const EVENT_FONTS = [
     name: "Rebelde",
     tagline: "Disruptiva",
     note: "Formas raras y ancho variable. Arte, música y lo que rompe molde.",
-    family: "'Syne', 'Inter', system-ui, sans-serif",
+    family: "'Syne', 'Onest', system-ui, sans-serif",
     google: "Syne:wght@400;600;800",
     headingWeight: 800,
     headingSpacing: "-0.6px",
@@ -51,7 +51,7 @@ export const EVENT_FONTS = [
     name: "Órbita",
     tagline: "Futurista",
     note: "Redonda y muy presente. Fiestas, lanzamientos, noche.",
-    family: "'Unbounded', 'Inter', system-ui, sans-serif",
+    family: "'Unbounded', 'Onest', system-ui, sans-serif",
     google: "Unbounded:wght@400;600;800",
     headingWeight: 600,
     headingSpacing: "-1.2px",
@@ -62,7 +62,7 @@ export const EVENT_FONTS = [
     name: "Taller",
     tagline: "Creativa",
     note: "Grotesca con carácter, de fanzine. Diseño, comida, comunidad.",
-    family: "'Bricolage Grotesque', 'Inter', system-ui, sans-serif",
+    family: "'Bricolage Grotesque', 'Onest', system-ui, sans-serif",
     google: "Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800",
     headingWeight: 700,
     headingSpacing: "-0.8px",

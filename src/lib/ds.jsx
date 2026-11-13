@@ -1,69 +1,76 @@
 // Sistema de diseño de TapIn — fuente única de verdad.
 //
-// Combinación elegida a partir del estudio de parejas de color y tipografía:
-//   · FORMA   → "Rumba" (1d): radios generosos (22/18/14) y acciones en
-//               píldora, que es lo que da el aire de la app.
-//   · COLOR   → "Navy Refinado" (1a): la misma familia navy sin el velo verde,
-//               acento #7fb3e6 y subtítulos al 64% para que 12–13 px se lean
-//               en móvil.
-//   · TIPO    → "Nocturne" (1b): Inter 500 en titulares y 400 en texto. La
-//               jerarquía la marca el TAMAÑO, no el peso; por eso los
-//               titulares no van en 800.
+// Inspirado en el lenguaje visual de plata.co, adaptado a la marca TapIn:
+//   · COLOR → negro puro (#000) y superficies sólidas carbón (#121416 /
+//             #1b1d21), sin velos de color ni vidrio. UN solo color de acción:
+//             el esmeralda de la marca (#34d399), con texto casi negro encima.
+//             Todo lo demás es blanco o gris frío (229,238,255) con opacidad.
+//   · TIPO  → Onest (grotesca geométrica, la alternativa libre más cercana a la
+//             Rothorn de Plata). Titulares en 600 con tracking negativo; la
+//             jerarquía la marca el tamaño.
+//   · FORMA → tarjetas con radio 24 sin borde; botones de 52 px con radio 14
+//             (no píldora); campos de 56 px con radio 16.
 //
-// Estos valores se publican además como variables CSS en :root (typeform.css)
-// para que las clases globales (.panel-card, .soft-btn, .tf-*) usen los mismos
-// y no haya dos verdades.
+// Los mismos valores se publican como variables CSS en :root (typeform.css),
+// para que las clases globales (.panel-card, .soft-btn, .tf-*) y los estilos
+// en línea compartan una sola verdad. En estilos en línea, preferir
+// "var(--tf-…)" a copiar el valor.
 
 export const DS = {
   // ── Color ────────────────────────────────────────────────────────────────
-  pageBg:       "radial-gradient(120% 80% at 80% -10%, rgba(127,179,230,0.16), transparent 60%), linear-gradient(170deg,#1d2340 0%,#12152a 100%)",
-  bgTop:        "#1d2340",
-  bgBottom:     "#12152a",
+  pageBg:       "#000000",
+  bgTop:        "#000000",
+  bgBottom:     "#000000",
 
-  text:         "#eef1f7",
-  desc:         "rgba(238,241,247,0.84)",
-  sub:          "rgba(238,241,247,0.64)",
-  muted:        "rgba(238,241,247,0.42)",
+  text:         "#ffffff",
+  desc:         "rgba(229,238,255,0.78)",
+  sub:          "rgba(229,238,255,0.64)",
+  muted:        "rgba(229,238,255,0.56)",
+  faint:        "rgba(229,238,255,0.36)",
 
-  accent:       "#7fb3e6",
-  accentSoft:   "#bfd9f2",
+  accent:       "#34d399",
+  accentPress:  "#22c38a",
+  onAccent:     "#03140c",
+  accentSoft:   "#a7f3d0",
 
-  cardBg:       "rgba(255,255,255,0.06)",
-  cardHover:    "rgba(255,255,255,0.09)",
-  panelBg:      "rgba(255,255,255,0.06)",
-  chipBg:       "rgba(255,255,255,0.08)",
-  chipBorder:   "rgba(255,255,255,0.14)",
-  borderColor:  "rgba(255,255,255,0.14)",
-  border:       "1px solid rgba(255,255,255,0.14)",
-  divider:      "1px solid rgba(255,255,255,0.1)",
-  mutedBg:      "rgba(255,255,255,0.06)",
+  surface:      "#121416",
+  surface2:     "#1b1d21",
+  cardBg:       "#121416",
+  cardHover:    "#17191c",
+  panelBg:      "#121416",
+  chipBg:       "#1b1d21",
+  chipBorder:   "rgba(229,238,255,0.12)",
+  borderColor:  "rgba(229,238,255,0.12)",
+  border:       "1px solid rgba(229,238,255,0.12)",
+  divider:      "1px solid rgba(229,238,255,0.08)",
+  mutedBg:      "#121416",
 
-  coverBg:      "linear-gradient(135deg,#222b4c,#12182b)",
-  mapBg:        "linear-gradient(135deg,#1e2643,#141a2e)",
+  coverBg:      "linear-gradient(135deg,#1b1d21,#0e0f11)",
+  mapBg:        "linear-gradient(135deg,#17181b,#0e0f11)",
 
-  softBg:       "rgba(127,179,230,0.2)",
-  softBorder:   "rgba(127,179,230,0.45)",
-  softText:     "#eef1f7",
+  softBg:       "rgba(52,211,153,0.14)",
+  softBorder:   "rgba(52,211,153,0.42)",
+  softText:     "#ffffff",
 
-  iconBtnBg:     "rgba(11,14,26,0.6)",
-  iconBtnBorder: "rgba(255,255,255,0.22)",
-  iconBtnColor:  "#eef1f7",
+  iconBtnBg:     "rgba(18,20,22,0.72)",
+  iconBtnBorder: "rgba(229,238,255,0.14)",
+  iconBtnColor:  "#ffffff",
 
-  avatarBg:     "rgba(127,179,230,0.3)",
-  avatarBorder: "rgba(127,179,230,0.55)",
-  avatarColor:  "#bfd9f2",
+  avatarBg:     "#1b1d21",
+  avatarBorder: "transparent",
+  avatarColor:  "#ffffff",
 
-  mapPillBg:     "rgba(15,19,36,0.88)",
-  mapPillBorder: "rgba(255,255,255,0.18)",
+  mapPillBg:     "rgba(18,20,22,0.9)",
+  mapPillBorder: "rgba(229,238,255,0.16)",
 
-  // Acción principal: relleno claro sobre navy.
-  ctaBg:     "#eef1f7",
-  ctaColor:  "#12152a",
+  // Acción principal: relleno esmeralda sólido, texto casi negro.
+  ctaBg:     "#34d399",
+  ctaColor:  "#03140c",
   ctaWeight: 600,
 
-  ok:          "#5ee07f",
-  okBg:        "rgba(52,199,89,0.16)",
-  okBorder:    "rgba(52,199,89,0.4)",
+  ok:          "#6ee7b7",
+  okBg:        "rgba(52,211,153,0.14)",
+  okBorder:    "rgba(52,211,153,0.4)",
   warn:        "#fbbf24",
   warnBg:      "rgba(251,191,36,0.14)",
   warnBorder:  "rgba(251,191,36,0.38)",
@@ -71,18 +78,19 @@ export const DS = {
   dangerBorder:"rgba(220,38,38,0.35)",
   dangerText:  "#fca5a5",
 
-  // ── Forma (Rumba) ────────────────────────────────────────────────────────
-  rLg:  22,
-  rMd:  18,
-  rSm:  14,
-  rCta: 999, // píldora
+  // ── Forma ────────────────────────────────────────────────────────────────
+  rLg:  24,
+  rMd:  16,
+  rSm:  12,
+  rCta: 14,
+  ctaH: 52,
 
-  // ── Tipografía (Nocturne) ────────────────────────────────────────────────
-  font:        "'Inter', system-ui, -apple-system, sans-serif",
-  hWeight:     500,  // titulares: la jerarquía va por tamaño, no por peso
-  hLetter:     "-0.4px",
+  // ── Tipografía ───────────────────────────────────────────────────────────
+  font:        "'Onest', system-ui, -apple-system, sans-serif",
+  hWeight:     600,
+  hLetter:     "-0.02em",
   bodyWeight:  400,
-  emphWeight:  600,  // lo mínimo para destacar sin volver al 800
+  emphWeight:  600,
 };
 
 /** Estilo de titular coherente en toda la app. */
@@ -93,6 +101,6 @@ export const heading = (size, extra) => ({
   fontSize: size,
   color: DS.text,
   margin: 0,
-  lineHeight: 1.22,
+  lineHeight: 1.12,
   ...extra,
 });

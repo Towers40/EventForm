@@ -133,11 +133,11 @@ export default function LoginPage() {
                 </button>
               </div>
               <div style={{ marginBottom: 24 }}>
-                <button type="button" onClick={() => { setMode("forgot"); setErr(""); }} style={{ background: "none", border: "none", color: "#7fb3e6", fontSize: 13, cursor: "pointer", fontWeight: 700, padding: 0, textDecoration: "underline", textUnderlineOffset: 3 }}>
+                <button type="button" onClick={() => { setMode("forgot"); setErr(""); }} style={{ background: "none", border: "none", color: "#34d399", fontSize: 13, cursor: "pointer", fontWeight: 700, padding: 0, textDecoration: "underline", textUnderlineOffset: 3 }}>
                   ¿Olvidaste tu contraseña?
                 </button>
               </div>
-              {err && <p style={{ color: "#991b1b", fontWeight: 700, marginBottom: 12, fontSize: 14 }}>{err}</p>}
+              {err && <p style={{ color: "#f87171", fontWeight: 700, marginBottom: 12, fontSize: 14 }}>{err}</p>}
               <button type="submit" className="soft-btn soft-btn-primary" style={{ width: "100%", fontSize: 15, padding: "16px" }} disabled={busy}>
                 {busy ? "Entrando…" : "Entrar →"}
               </button>
@@ -145,7 +145,7 @@ export default function LoginPage() {
             <div style={{ marginTop: 28, textAlign: "center" }}>
               <p style={{ color: "#8fa3b1", fontSize: 14 }}>
                 ¿No tienes cuenta?{" "}
-                <Link to="/app?register=1" style={{ color: "#7fb3e6", fontWeight: 700, textDecoration: "underline", textUnderlineOffset: 3 }}>
+                <Link to="/app?register=1" style={{ color: "#34d399", fontWeight: 700, textDecoration: "underline", textUnderlineOffset: 3 }}>
                   Crear una gratis
                 </Link>
               </p>
@@ -160,7 +160,7 @@ export default function LoginPage() {
               ← Volver al login
             </button>
             <h1 className="tf-question">¿Olvidaste tu contraseña?</h1>
-            <p className="tf-hint">Escribe tu correo y te enviamos un código de 4 dígitos para crear una nueva contraseña.</p>
+            <p className="tf-hint">Escribe tu correo y te enviamos un código de 6 dígitos para crear una nueva contraseña.</p>
             <form onSubmit={handleForgot} style={{ marginTop: 24 }}>
               <input
                 className="tf-input-line"
@@ -171,7 +171,7 @@ export default function LoginPage() {
                 required
                 autoFocus
               />
-              {err && <p style={{ color: "#991b1b", fontWeight: 700, margin: "12px 0 0", fontSize: 14 }}>{err}</p>}
+              {err && <p style={{ color: "#f87171", fontWeight: 700, margin: "12px 0 0", fontSize: 14 }}>{err}</p>}
               <button type="submit" className="soft-btn soft-btn-primary" style={{ width: "100%", marginTop: 28, fontSize: 15, padding: "16px" }} disabled={busy}>
                 {busy ? "Enviando…" : "Enviar código →"}
               </button>
@@ -184,17 +184,18 @@ export default function LoginPage() {
           <>
             <div style={{ fontSize: 40, marginBottom: 20 }}>📩</div>
             <h1 className="tf-question">Nueva contraseña</h1>
-            <p className="tf-hint" style={{ marginBottom: 8 }}>Ingresa el código de 4 dígitos enviado a</p>
-            <p style={{ fontWeight: 800, fontSize: 15, color: "#7fb3e6", marginBottom: 28 }}>{email}</p>
+            <p className="tf-hint" style={{ marginBottom: 8 }}>Ingresa el código de 6 dígitos enviado a</p>
+            <p style={{ fontWeight: 600, fontSize: 15, color: "#ffffff", marginBottom: 28, wordBreak: "break-all" }}>{email}</p>
             <form onSubmit={handleReset}>
               <input
                 className="tf-input-line"
                 type="text"
                 inputMode="numeric"
-                placeholder="Código de 4 dígitos"
+                placeholder="Código de 6 dígitos"
+                autoComplete="one-time-code"
                 value={resetCode}
-                onChange={e => setResetCode(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                maxLength={4}
+                onChange={e => setResetCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                maxLength={6}
                 style={{ marginBottom: 24, fontSize: 24, letterSpacing: 8, textAlign: "center" }}
                 autoFocus
               />
@@ -211,20 +212,20 @@ export default function LoginPage() {
                   {showPw ? "Ocultar" : "Ver"}
                 </button>
               </div>
-              <p style={{ fontSize: 12, color: newPw.length >= 8 && /[A-Z]/.test(newPw) ? "#16a34a" : "#8fa3b1", marginBottom: 20 }}>
+              <p style={{ fontSize: 12, color: newPw.length >= 8 && /[A-Z]/.test(newPw) ? "#34d399" : "#8fa3b1", marginBottom: 20 }}>
                 {newPw.length >= 8 && /[A-Z]/.test(newPw) ? "✓ Contraseña válida" : "Mín. 8 caracteres · una mayúscula"}
               </p>
-              {err && <p style={{ color: "#991b1b", fontWeight: 700, marginBottom: 12, fontSize: 14 }}>{err}</p>}
-              <button type="submit" className="soft-btn soft-btn-primary" style={{ width: "100%", fontSize: 15, padding: "16px" }} disabled={busy || resetCode.length < 4 || !newPw}>
+              {err && <p style={{ color: "#f87171", fontWeight: 700, marginBottom: 12, fontSize: 14 }}>{err}</p>}
+              <button type="submit" className="soft-btn soft-btn-primary" style={{ width: "100%", fontSize: 15, padding: "16px" }} disabled={busy || resetCode.length < 6 || !newPw}>
                 {busy ? "Guardando…" : "Establecer nueva contraseña →"}
               </button>
             </form>
             <div style={{ marginTop: 20, textAlign: "center" }}>
-              <button type="button" onClick={handleForgot} style={{ background: "none", border: "none", color: "#7fb3e6", cursor: "pointer", fontSize: 13, fontWeight: 700, textDecoration: "underline", textUnderlineOffset: 3 }} disabled={busy}>
+              <button type="button" onClick={handleForgot} style={{ background: "none", border: "none", color: "#34d399", cursor: "pointer", fontSize: 13, fontWeight: 700, textDecoration: "underline", textUnderlineOffset: 3 }} disabled={busy}>
                 Reenviar código
               </button>
             </div>
-            {msg && <p style={{ fontSize: 13, color: "#16a34a", textAlign: "center", marginTop: 8, fontWeight: 700 }}>{msg}</p>}
+            {msg && <p style={{ fontSize: 13, color: "#34d399", textAlign: "center", marginTop: 8, fontWeight: 700 }}>{msg}</p>}
           </>
         )}
       </div>

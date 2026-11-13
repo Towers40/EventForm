@@ -4,12 +4,12 @@ import "../styles/typeform.css";
 
 const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
-const TEXT   = "#eef1f7";
-const SUB    = "rgba(238,241,247,0.64)";
-const MUTED  = "rgba(238,241,247,0.42)";
-const ACCENT = "#7fb3e6";
-const OK     = "#5ee07f";
-const HOMBRE = "#7fb3e6";
+const TEXT   = "#ffffff";
+const SUB    = "rgba(229,238,255,0.64)";
+const MUTED  = "rgba(229,238,255,0.42)";
+const ACCENT = "#34d399";
+const OK     = "#6ee7b7";
+const HOMBRE = "#34d399";
 const MUJER  = "#f2a2c0";
 const LINEA  = "rgba(255,255,255,0.12)";
 const PISTA  = "rgba(255,255,255,0.08)";
@@ -276,8 +276,8 @@ export default function DashboardView({ events }) {
   // subtítulo de "Tasa de asistencia" estiraba a las cuatro por igual.
   const stat = (label, value, extra) => (
     <div className="panel-card" style={{ padding: "12px 10px", textAlign: "center", ...extra }}>
-      <div style={{ fontSize: 22, fontWeight: 600, color: ACCENT, lineHeight: 1.15, letterSpacing: "-0.5px" }}>{value}</div>
-      <div style={{ fontSize: 11.5, fontWeight: 600, color: TEXT, marginTop: 4, lineHeight: 1.25 }}>{label}</div>
+      <div style={{ fontSize: 28, fontWeight: 600, color: TEXT, lineHeight: 1.1, letterSpacing: "-0.03em" }}>{value}</div>
+      <div style={{ fontSize: 12.5, fontWeight: 500, color: SUB, marginTop: 6, lineHeight: 1.25 }}>{label}</div>
     </div>
   );
 
@@ -303,8 +303,8 @@ export default function DashboardView({ events }) {
 
   return (
     <div style={{ maxWidth: 760, margin: "0 auto" }}>
-      <h1 style={{ fontSize: 24, fontWeight: 500, color: TEXT, margin: "0 0 8px", textAlign: "center" }}>Dashboard</h1>
-      <p style={{ fontSize: 14, color: "#8fa3b1", margin: "0 0 28px", textAlign: "center" }}>
+      <h1 style={{ fontSize: 34, fontWeight: 600, letterSpacing: "-0.03em", color: TEXT, margin: "8px 0 8px" }}>Dashboard</h1>
+      <p style={{ fontSize: 15, color: SUB, margin: "0 0 24px" }}>
         Visión global de tu actividad en TapIn
       </p>
 
@@ -319,13 +319,13 @@ export default function DashboardView({ events }) {
           className="panel-card"
           style={{
             padding: "12px 10px", textAlign: "center", cursor: "pointer", position: "relative",
-            background: verEventos ? "rgba(127,179,230,0.14)" : undefined,
-            borderColor: verEventos ? "rgba(127,179,230,0.45)" : undefined,
+            background: verEventos ? "rgba(52,211,153,0.14)" : undefined,
+            borderColor: verEventos ? "rgba(52,211,153,0.45)" : undefined,
             fontFamily: "inherit",
           }}
         >
-          <div style={{ fontSize: 22, fontWeight: 600, color: ACCENT, lineHeight: 1.15, letterSpacing: "-0.5px" }}>{events.length}</div>
-          <div style={{ fontSize: 11.5, fontWeight: 600, color: TEXT, marginTop: 4, lineHeight: 1.25, display: "inline-flex", alignItems: "center", gap: 4 }}>
+          <div style={{ fontSize: 28, fontWeight: 600, color: TEXT, lineHeight: 1.1, letterSpacing: "-0.03em" }}>{events.length}</div>
+          <div style={{ fontSize: 12.5, fontWeight: 500, color: SUB, marginTop: 6, lineHeight: 1.25, display: "inline-flex", alignItems: "center", gap: 4 }}>
             Eventos creados
             <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={verEventos ? ACCENT : MUTED}
                  strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round"
@@ -400,8 +400,8 @@ export default function DashboardView({ events }) {
                   style={{
                     width: "100%", display: "flex", alignItems: "center", gap: 12,
                     padding: "12px 14px", borderRadius: 16, cursor: "pointer", textAlign: "left",
-                    background: abierto ? "rgba(127,179,230,0.14)" : "rgba(255,255,255,0.04)",
-                    border: `1px solid ${abierto ? "rgba(127,179,230,0.45)" : LINEA}`,
+                    background: abierto ? "rgba(52,211,153,0.14)" : "rgba(255,255,255,0.04)",
+                    border: `1px solid ${abierto ? "rgba(52,211,153,0.45)" : LINEA}`,
                     transition: "background .15s, border-color .15s",
                   }}
                 >

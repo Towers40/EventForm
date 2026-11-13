@@ -22,7 +22,7 @@ const inputBase = {
   background: "rgba(255,255,255,0.04)",
   border: "1px solid rgba(255,255,255,0.15)",
   borderRadius: 14,
-  color: "#eef1f7",
+  color: "#ffffff",
   fontSize: 15,
   boxSizing: "border-box",
   outline: "none",
@@ -41,9 +41,9 @@ function PillSelect({ field, value, onChange }) {
             style={{
               padding: "9px 18px",
               borderRadius: 100,
-              border: `1.5px solid ${active ? "#7fb3e6" : "rgba(255,255,255,0.15)"}`,
-              background: active ? "rgba(26,95,138,0.3)" : "rgba(255,255,255,0.04)",
-              color: active ? "#7fb3e6" : "#b0bac8",
+              border: `1.5px solid ${active ? "#34d399" : "rgba(255,255,255,0.15)"}`,
+              background: active ? "rgba(52,211,153,0.3)" : "rgba(255,255,255,0.04)",
+              color: active ? "#34d399" : "#b0bac8",
               fontWeight: active ? 700 : 400,
               fontSize: 14,
               cursor: "pointer",
@@ -77,9 +77,9 @@ function PillMultiSelect({ field, value, onChange }) {
             style={{
               padding: "9px 18px",
               borderRadius: 100,
-              border: `1.5px solid ${active ? "#7fb3e6" : "rgba(255,255,255,0.15)"}`,
-              background: active ? "rgba(26,95,138,0.3)" : "rgba(255,255,255,0.04)",
-              color: active ? "#7fb3e6" : "#b0bac8",
+              border: `1.5px solid ${active ? "#34d399" : "rgba(255,255,255,0.15)"}`,
+              background: active ? "rgba(52,211,153,0.3)" : "rgba(255,255,255,0.04)",
+              color: active ? "#34d399" : "#b0bac8",
               fontWeight: active ? 700 : 400,
               fontSize: 14,
               cursor: "pointer",
@@ -118,7 +118,7 @@ function FieldWidget({ field, value, onChange }) {
           type="checkbox"
           checked={value === true}
           onChange={(e) => onChange(field.id, e.target.checked)}
-          style={{ width: 18, height: 18, accentColor: "#7fb3e6" }}
+          style={{ width: 18, height: 18, accentColor: "#34d399" }}
         />
         <span style={{ fontSize: 14, color: "#c4cad6" }}>{field.label}</span>
       </label>
@@ -200,7 +200,7 @@ export default function TypeformRegister({ event, tintColor, onSubmit, onBack })
           <h1 className="tf-question">Entradas agotadas</h1>
           <p className="tf-hint">Este evento ya no acepta más inscripciones.</p>
           {onBack && (
-            <button type="button" onClick={onBack} style={{ marginTop: 20, background: "none", border: "none", color: "#7fb3e6", cursor: "pointer", fontSize: 14, fontWeight: 700 }}>
+            <button type="button" onClick={onBack} style={{ marginTop: 20, background: "none", border: "none", color: "#34d399", cursor: "pointer", fontSize: 14, fontWeight: 700 }}>
               ← Volver al evento
             </button>
           )}
@@ -229,7 +229,7 @@ export default function TypeformRegister({ event, tintColor, onSubmit, onBack })
               ← Volver
             </button>
           )}
-          <h1 style={{ fontSize: 22, fontWeight: 500, color: "#eef1f7", margin: 0, lineHeight: 1.2 }}>
+          <h1 style={{ fontSize: 22, fontWeight: 500, color: "#ffffff", margin: 0, lineHeight: 1.2 }}>
             Inscripción
           </h1>
           <p {...eventFontProps(event.fontId, {
@@ -240,24 +240,24 @@ export default function TypeformRegister({ event, tintColor, onSubmit, onBack })
         <form onSubmit={handleSubmit} noValidate>
           {/* Cuántas entradas — solo si el anfitrión permite más de una */}
           {maxPerUser > 1 && (
-            <div style={{ marginBottom: 24, padding: "16px 18px", background: "rgba(127,179,230,0.08)", border: "1px solid rgba(127,179,230,0.22)", borderRadius: 14 }}>
+            <div style={{ marginBottom: 24, padding: "16px 18px", background: "rgba(52,211,153,0.08)", border: "1px solid rgba(52,211,153,0.22)", borderRadius: 14 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: "#eef1f7" }}>¿Cuántas entradas?</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#ffffff" }}>¿Cuántas entradas?</div>
                   <div style={{ fontSize: 12, color: "#8fa3b1", marginTop: 2 }}>Hasta {maxPerUser} por persona · un QR por entrada</div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   <button type="button" aria-label="Una entrada menos"
                     onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                     disabled={quantity <= 1}
-                    style={{ width: 34, height: 34, borderRadius: 14, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)", color: quantity <= 1 ? "rgba(255,255,255,0.25)" : "#eef1f7", fontSize: 19, fontWeight: 700, cursor: quantity <= 1 ? "default" : "pointer", lineHeight: 1 }}>
+                    style={{ width: 34, height: 34, borderRadius: 14, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)", color: quantity <= 1 ? "rgba(255,255,255,0.25)" : "#ffffff", fontSize: 19, fontWeight: 700, cursor: quantity <= 1 ? "default" : "pointer", lineHeight: 1 }}>
                     −
                   </button>
-                  <span aria-live="polite" style={{ minWidth: 28, textAlign: "center", fontSize: 18, fontWeight: 800, color: "#7fb3e6" }}>{quantity}</span>
+                  <span aria-live="polite" style={{ minWidth: 28, textAlign: "center", fontSize: 18, fontWeight: 800, color: "#34d399" }}>{quantity}</span>
                   <button type="button" aria-label="Una entrada más"
                     onClick={() => setQuantity((q) => Math.min(maxPerUser, q + 1))}
                     disabled={quantity >= maxPerUser}
-                    style={{ width: 34, height: 34, borderRadius: 14, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)", color: quantity >= maxPerUser ? "rgba(255,255,255,0.25)" : "#eef1f7", fontSize: 19, fontWeight: 700, cursor: quantity >= maxPerUser ? "default" : "pointer", lineHeight: 1 }}>
+                    style={{ width: 34, height: 34, borderRadius: 14, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)", color: quantity >= maxPerUser ? "rgba(255,255,255,0.25)" : "#ffffff", fontSize: 19, fontWeight: 700, cursor: quantity >= maxPerUser ? "default" : "pointer", lineHeight: 1 }}>
                     +
                   </button>
                 </div>
@@ -305,11 +305,11 @@ export default function TypeformRegister({ event, tintColor, onSubmit, onBack })
                 type="checkbox"
                 checked={Boolean(form[CONSENT_PRIVACY_ID])}
                 onChange={(e) => setField(CONSENT_PRIVACY_ID, e.target.checked)}
-                style={{ width: 18, height: 18, marginTop: 1, accentColor: "#7fb3e6", flexShrink: 0 }}
+                style={{ width: 18, height: 18, marginTop: 1, accentColor: "#34d399", flexShrink: 0 }}
               />
               <span style={{ fontSize: 13, color: "#8fa3b1", lineHeight: 1.5 }}>
                 Acepto la{" "}
-                <a href="/privacidad" target="_blank" rel="noopener noreferrer" style={{ color: "#7fb3e6" }}>
+                <a href="/privacidad" target="_blank" rel="noopener noreferrer" style={{ color: "#34d399" }}>
                   política de privacidad y tratamiento de datos
                 </a>{" "}
                 <span style={{ color: "#f87171" }}>*</span>
@@ -320,7 +320,7 @@ export default function TypeformRegister({ event, tintColor, onSubmit, onBack })
                 type="checkbox"
                 checked={Boolean(form[CONSENT_MARKETING_ID])}
                 onChange={(e) => setField(CONSENT_MARKETING_ID, e.target.checked)}
-                style={{ width: 18, height: 18, marginTop: 1, accentColor: "#7fb3e6", flexShrink: 0 }}
+                style={{ width: 18, height: 18, marginTop: 1, accentColor: "#34d399", flexShrink: 0 }}
               />
               <span style={{ fontSize: 13, color: "#8fa3b1", lineHeight: 1.5 }}>
                 Autorizo recibir información, promociones y novedades sobre eventos (opcional).
@@ -343,11 +343,11 @@ export default function TypeformRegister({ event, tintColor, onSubmit, onBack })
             type="submit"
             disabled={submitting}
             style={{
-              width: "100%", marginTop: 28, padding: "16px",
-              background: submitting ? "rgba(26,95,138,0.5)" : "linear-gradient(135deg, #222b4c, #7fb3e6)",
-              color: "#fff", borderRadius: 14, fontWeight: 700, fontSize: 16,
+              width: "100%", marginTop: 28, minHeight: 52, padding: "0 16px",
+              background: submitting ? "var(--tf-surface-2)" : "var(--tf-accent)",
+              color: submitting ? "var(--tf-faint)" : "var(--tf-on-accent)", borderRadius: 14, fontWeight: 600, fontSize: 16,
               border: "none", cursor: submitting ? "not-allowed" : "pointer",
-              letterSpacing: "0.2px",
+              letterSpacing: "-0.01em",
             }}
           >
             {submitting ? "Registrando…" : "Registrarme →"}

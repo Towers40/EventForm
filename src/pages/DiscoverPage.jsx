@@ -41,7 +41,7 @@ function CategoryPill({ cat, active, onClick }) {
       <span style={{
         fontSize: 11, lineHeight: 1.2, textAlign: "center", whiteSpace: "nowrap",
         fontWeight: active ? 700 : 500,
-        color: active ? "#eef1f7" : "rgba(238,241,247,0.6)",
+        color: active ? "#ffffff" : "rgba(229,238,255,0.6)",
       }}>
         {cat.short || cat.label}
       </span>
@@ -60,9 +60,9 @@ const chipStyle = (activo) => ({
   flexShrink: 0, whiteSpace: "nowrap", cursor: "pointer",
   padding: "9px 16px", borderRadius: 999, fontSize: 13.5,
   fontWeight: activo ? 700 : 600,
-  background: activo ? "rgba(127,179,230,0.22)" : "rgba(255,255,255,0.06)",
-  border: activo ? "1px solid rgba(127,179,230,0.5)" : "1px solid rgba(255,255,255,0.1)",
-  color: activo ? "#eef1f7" : "rgba(238,241,247,0.65)",
+  background: activo ? "rgba(52,211,153,0.22)" : "rgba(255,255,255,0.06)",
+  border: activo ? "1px solid rgba(52,211,153,0.5)" : "1px solid rgba(255,255,255,0.1)",
+  color: activo ? "#ffffff" : "rgba(229,238,255,0.65)",
 });
 
 
@@ -216,8 +216,8 @@ export default function DiscoverPage({ embedded = false }) {
 
   return (
     <div style={embedded
-      ? { color: "#eef1f7", fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }
-      : { minHeight: "100vh", background: "transparent", color: "#eef1f7", fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>
+      ? { color: "#ffffff", fontFamily: "'Onest', system-ui, -apple-system, sans-serif" }
+      : { minHeight: "100vh", background: "transparent", color: "#ffffff", fontFamily: "'Onest', system-ui, -apple-system, sans-serif" }}>
 
       {/* ── Nav (solo en página independiente) ── */}
       {!embedded && (
@@ -226,26 +226,26 @@ export default function DiscoverPage({ embedded = false }) {
           display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center",
           borderBottom: "1px solid rgba(255,255,255,0.08)",
           position: "sticky", top: 0, zIndex: 20,
-          background: "rgba(18,20,34,0.82)", backdropFilter: "blur(16px)",
+          background: "rgba(18,20,22,0.82)", backdropFilter: "blur(16px)",
         }}>
           {/* Inicio: círculo con icono de casa */}
           <a href="/app" className="ef-hover-fill" title="Inicio" aria-label="Inicio" style={{
             justifySelf: "start",
             display: "inline-flex", alignItems: "center", justifyContent: "center",
             width: 40, height: 40, borderRadius: "50%", textDecoration: "none",
-            background: "rgba(127,179,230,0.25)", color: "#eef1f7",
-            border: "1px solid rgba(127,179,230,0.4)",
+            background: "rgba(52,211,153,0.25)", color: "#ffffff",
+            border: "1px solid rgba(52,211,153,0.4)",
           }}>
             <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M3 9.5 12 3l9 6.5" /><path d="M5 10v10h14V10" /><path d="M9 20v-6h6v6" /></svg>
           </a>
           <a href="/" className="ef-hover-fill" style={{ justifySelf: "center", display: "flex", alignItems: "center", gap: 8, textDecoration: "none", padding: "6px 12px", borderRadius: 14 }}>
-            <TapInMark size={20} color="#22c55e" />
-            <span style={{ fontWeight: 800, fontSize: 16, color: "#eef1f7" }}>{BRAND_NAME}</span>
+            <TapInMark size={20} color="#34d399" />
+            <span style={{ fontWeight: 800, fontSize: 16, color: "#ffffff" }}>{BRAND_NAME}</span>
           </a>
           {/* Empieza gratis: solo texto, sin óvalo, sin flecha, sin relleno */}
           <a href="/app" style={{
             justifySelf: "end",
-            color: "#eef1f7", textDecoration: "none",
+            color: "#ffffff", textDecoration: "none",
             fontSize: 14, fontWeight: 700, padding: "6px 4px", background: "transparent", border: "none",
           }}>
             Empieza gratis
@@ -274,7 +274,7 @@ export default function DiscoverPage({ embedded = false }) {
               width: "100%", boxSizing: "border-box",
               background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.11)",
               borderRadius: 28, padding: "14px 20px 14px 50px",
-              fontSize: 15, color: "#eef1f7", outline: "none",
+              fontSize: 15, color: "#ffffff", outline: "none",
               fontFamily: "inherit",
             }}
           />
@@ -317,7 +317,7 @@ export default function DiscoverPage({ embedded = false }) {
         {/* ── Ciudades ── */}
         {cities.length > 1 && (
           <section style={{ marginBottom: 40 }}>
-            <h2 style={{ fontSize: 18, fontWeight: 500, marginBottom: 14, color: "#eef1f7" }}>
+            <h2 style={{ fontSize: 18, fontWeight: 500, marginBottom: 14, color: "#ffffff" }}>
               ¿Dónde?
             </h2>
             {/* En móvil se desliza a los lados: con 20 ciudades, apiladas
@@ -341,7 +341,7 @@ export default function DiscoverPage({ embedded = false }) {
         {/* ── Events grid ── */}
         <section>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 8 }}>
-            <h2 style={{ fontSize: 18, fontWeight: 500, color: "#eef1f7", margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
+            <h2 style={{ fontSize: 18, fontWeight: 500, color: "#ffffff", margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
               {activeCat ? (
                 <>
                   {CAT_ICONS[activeCat.slug]
@@ -365,7 +365,7 @@ export default function DiscoverPage({ embedded = false }) {
                   type="button"
                   className="ef-hover-fill"
                   onClick={limpiarFiltros}
-                  style={{ background: "transparent", color: "#7fb3e6", border: "1px solid #7fb3e6", borderRadius: 22, padding: "5px 12px", fontSize: 12, cursor: "pointer", fontWeight: 600 }}
+                  style={{ background: "transparent", color: "#34d399", border: "1px solid #34d399", borderRadius: 22, padding: "5px 12px", fontSize: 12, cursor: "pointer", fontWeight: 600 }}
                 >
                   × Quitar filtros
                 </button>
@@ -375,7 +375,7 @@ export default function DiscoverPage({ embedded = false }) {
 
           {loading ? (
             <div style={{ textAlign: "center", padding: "60px 0", color: "#8fa3b1" }}>
-              <div style={{ lineHeight: 1, marginBottom: 14, animation: "ef-logo-pulse 1.3s ease-in-out infinite", display: "inline-block" }}><TapInMark size={44} color="#22c55e" /></div>
+              <div style={{ lineHeight: 1, marginBottom: 14, animation: "ef-logo-pulse 1.3s ease-in-out infinite", display: "inline-block" }}><TapInMark size={44} color="#34d399" /></div>
               <p style={{ fontSize: 15, margin: 0 }}>Cargando eventos…</p>
             </div>
           ) : error ? (
@@ -385,7 +385,7 @@ export default function DiscoverPage({ embedded = false }) {
               <button
                 className="ef-hover-fill"
                 onClick={() => fetchEvents(search, activeCategory, 1, false, activeCity)}
-                style={{ background: "rgba(127,179,230,0.22)", color: "#eef1f7", border: "1px solid rgba(127,179,230,0.4)", borderRadius: 14, padding: "11px 22px", cursor: "pointer", fontWeight: 700, fontSize: 14 }}
+                style={{ background: "rgba(52,211,153,0.22)", color: "#ffffff", border: "1px solid rgba(52,211,153,0.4)", borderRadius: 14, padding: "11px 22px", cursor: "pointer", fontWeight: 700, fontSize: 14 }}
               >
                 Reintentar
               </button>
@@ -400,7 +400,7 @@ export default function DiscoverPage({ embedded = false }) {
                 <button
                   className="ef-hover-fill"
                   onClick={limpiarFiltros}
-                  style={{ background: "transparent", color: "#7fb3e6", border: "1px solid #7fb3e6", borderRadius: 14, padding: "10px 20px", cursor: "pointer", fontWeight: 600, fontSize: 14 }}
+                  style={{ background: "transparent", color: "#34d399", border: "1px solid #34d399", borderRadius: 14, padding: "10px 20px", cursor: "pointer", fontWeight: 600, fontSize: 14 }}
                 >
                   Ver todos los eventos
                 </button>
@@ -419,8 +419,8 @@ export default function DiscoverPage({ embedded = false }) {
                     disabled={loadingMore}
                     onClick={() => fetchEvents(search, activeCategory, page + 1, true, activeCity)}
                     style={{
-                      background: "rgba(127,179,230,0.18)", color: "#bfd9f2",
-                      border: "1px solid rgba(127,179,230,0.35)", borderRadius: 14,
+                      background: "rgba(52,211,153,0.18)", color: "#a7f3d0",
+                      border: "1px solid rgba(52,211,153,0.35)", borderRadius: 14,
                       padding: "12px 28px", cursor: loadingMore ? "default" : "pointer",
                       fontWeight: 700, fontSize: 14, opacity: loadingMore ? 0.6 : 1,
                     }}
@@ -436,10 +436,10 @@ export default function DiscoverPage({ embedded = false }) {
         {/* ── Comunícate con nosotros ── */}
         <section style={{ marginTop: 72, paddingTop: 40, borderTop: "1px solid rgba(255,255,255,0.08)", textAlign: "center" }}>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-            <TapInMark size={22} color="#22c55e" />
-            <span style={{ fontWeight: 800, fontSize: 17, color: "#eef1f7" }}>{BRAND_NAME}</span>
+            <TapInMark size={22} color="#34d399" />
+            <span style={{ fontWeight: 800, fontSize: 17, color: "#ffffff" }}>{BRAND_NAME}</span>
           </div>
-          <h3 style={{ fontSize: 18, fontWeight: 500, color: "#eef1f7", margin: "0 0 8px" }}>Comunícate con nosotros</h3>
+          <h3 style={{ fontSize: 18, fontWeight: 500, color: "#ffffff", margin: "0 0 8px" }}>Comunícate con nosotros</h3>
           <p style={{ fontSize: 14, color: "#8fa3b1", margin: "0 0 16px", lineHeight: 1.5 }}>
             ¿Dudas, sugerencias o soporte? Escríbenos y te respondemos.
           </p>
@@ -448,9 +448,9 @@ export default function DiscoverPage({ embedded = false }) {
             className="ef-hover-fill"
             style={{
               display: "inline-flex", alignItems: "center", gap: 8, textDecoration: "none",
-              background: "rgba(34,197,94,0.12)", color: "#5ee07f",
-              border: "1px solid rgba(34,197,94,0.35)", borderRadius: 14,
-              padding: "11px 20px", fontSize: 14, fontWeight: 700,
+              background: "var(--tf-surface-2)", color: "#ffffff",
+              border: "none", borderRadius: 14,
+              padding: "14px 20px", fontSize: 15, fontWeight: 500,
             }}
           >
             <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" /></svg>

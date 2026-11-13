@@ -202,15 +202,15 @@ export default function PosterMarquee() {
           pointer-events: none;
           background:
             radial-gradient(74% 54% at 50% 50%,
-              rgba(9,12,26,0.95) 0%,
-              rgba(9,12,26,0.86) 42%,
-              rgba(9,12,26,0.42) 72%,
-              rgba(9,12,26,0.06) 100%),
+              rgba(8,9,10,0.95) 0%,
+              rgba(8,9,10,0.86) 42%,
+              rgba(8,9,10,0.42) 72%,
+              rgba(8,9,10,0.06) 100%),
             linear-gradient(180deg,
-              rgba(15,18,38,0.9) 0%,
-              rgba(15,18,38,0.08) 20%,
-              rgba(15,18,38,0.08) 80%,
-              rgba(15,18,38,0.94) 100%);
+              rgba(14,15,17,0.9) 0%,
+              rgba(14,15,17,0.08) 20%,
+              rgba(14,15,17,0.08) 80%,
+              rgba(14,15,17,0.94) 100%);
         }
 
         /* Quien pide menos movimiento ve el mismo muestrario, quieto. */

@@ -54,8 +54,8 @@ export default function TicketPage() {
       <div style={{ maxWidth: 460, margin: "0 auto", padding: "32px 16px 60px", position: "relative", zIndex: 1 }}>
         {/* La marca TapIn queda FUERA de la letra del evento: es de la app. */}
         <div style={{ textAlign: "center", marginBottom: 22 }}>
-          <TapInMark size={20} color="#4ade80" />
-          <span style={{ color: "#eef1f7", fontWeight: 800, fontSize: 17, marginLeft: 8 }}>{BRAND_NAME}</span>
+          <TapInMark size={20} color="#6ee7b7" />
+          <span style={{ color: "#ffffff", fontWeight: 800, fontSize: 17, marginLeft: 8 }}>{BRAND_NAME}</span>
         </div>
 
 
@@ -63,11 +63,11 @@ export default function TicketPage() {
           <div style={{ textAlign: "center", marginBottom: 18 }}>
             {/* Solo el nombre lleva la letra del evento. */}
             <h1 {...eventFontProps(ev?.fontId, {
-              extraStyle: { fontSize: 22, fontWeight: 500, color: "#eef1f7", margin: "0 0 6px" },
+              extraStyle: { fontSize: 22, fontWeight: 500, color: "#ffffff", margin: "0 0 6px" },
             })}>{ev.title}</h1>
-            <p style={{ fontSize: 13.5, color: "#bfd9f2", margin: 0 }}>{fmt(ev.startDate || ev.date, ev.startTime)}</p>
+            <p style={{ fontSize: 13.5, color: "#a7f3d0", margin: 0 }}>{fmt(ev.startDate || ev.date, ev.startTime)}</p>
             {(ev.city || ev.location) && (
-              <p style={{ fontSize: 13, color: "rgba(238,241,247,0.55)", margin: "4px 0 0" }}>{[ev.location, ev.city].filter(Boolean).join(" — ")}</p>
+              <p style={{ fontSize: 13, color: "rgba(229,238,255,0.55)", margin: "4px 0 0" }}>{[ev.location, ev.city].filter(Boolean).join(" — ")}</p>
             )}
           </div>
         )}
@@ -79,7 +79,7 @@ export default function TicketPage() {
           ) : (
             <>
               <PendingQr id={id} size={220} approved={approved} />
-              <p style={{ fontFamily: "monospace", fontWeight: 800, fontSize: 13, color: "#7fb3e6", margin: "14px 0 4px", letterSpacing: 1 }}>{id}</p>
+              <p style={{ fontFamily: "monospace", fontWeight: 800, fontSize: 13, color: "#34d399", margin: "14px 0 4px", letterSpacing: 1 }}>{id}</p>
               {approved
                 ? <p style={{ fontSize: 12, color: "#8fa3b1", margin: 0 }}>Presenta este QR en la entrada. Solo permite un ingreso.</p>
                 : <PendingNotice style={{ margin: "10px 0 0" }} />}
@@ -93,7 +93,7 @@ export default function TicketPage() {
         </div>
 
         {ev?.slug && (
-          <a href={`/e/${ev.slug}`} className="soft-btn soft-btn-secondary" style={{ display: "block", textAlign: "center", textDecoration: "none", marginTop: 18, fontSize: 13 }}>Ver evento</a>
+          <a href={`/e/${ev.slug}`} className="soft-btn soft-btn-secondary" style={{ display: "flex", width: "100%", textDecoration: "none", marginTop: 18 }}>Ver evento</a>
         )}
       </div>
     </div>

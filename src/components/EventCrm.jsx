@@ -3,8 +3,8 @@ import { IconButton, IcoBack } from "./ui.jsx";
 import { buildParticipant, groupRegistrations } from "../lib/tickets.js";
 import { capacityLabel, isSoldOut } from "../lib/capacity.js";
 
-const SUB  = "rgba(238,241,247,0.5)";
-const TEXT = "#eef1f7";
+const SUB  = "rgba(229,238,255,0.5)";
+const TEXT = "#ffffff";
 const BORDER = "1px solid rgba(255,255,255,0.09)";
 
 function exportCsv(event, registrations) {
@@ -68,7 +68,7 @@ export default function EventCrm({ event, onBack, onToggleSoldOut, onShare, onSe
             {isSoldOut(event) ? "🔴 Venta cerrada" : "🟢 Venta abierta"}
           </p>
           {needsApproval && (
-            <p style={{ margin: "8px 0 0", fontSize: 13.5, fontWeight: 700, color: pending ? "#fbbf24" : "#86efac" }}>
+            <p style={{ margin: "8px 0 0", fontSize: 13.5, fontWeight: 700, color: pending ? "#fbbf24" : "#a7f3d0" }}>
               {pending
                 ? `⏳ ${pending} solicitud${pending === 1 ? "" : "es"} por aprobar — su QR no funciona hasta que la apruebes`
                 : "✓ Sin solicitudes pendientes"}
@@ -91,9 +91,9 @@ export default function EventCrm({ event, onBack, onToggleSoldOut, onShare, onSe
             className="soft-btn"
             onClick={() => onToggleSoldOut(!event.manualSoldOut)}
             style={{
-              background: event.manualSoldOut ? "rgba(52,199,89,0.15)" : "rgba(220,38,38,0.12)",
-              color: event.manualSoldOut ? "#86efac" : "#fca5a5",
-              border: event.manualSoldOut ? "1px solid rgba(52,199,89,0.3)" : "1px solid rgba(220,38,38,0.3)",
+              background: event.manualSoldOut ? "rgba(52,211,153,0.15)" : "rgba(220,38,38,0.12)",
+              color: event.manualSoldOut ? "#a7f3d0" : "#fca5a5",
+              border: event.manualSoldOut ? "1px solid rgba(52,211,153,0.3)" : "1px solid rgba(220,38,38,0.3)",
             }}
           >
             {event.manualSoldOut ? "Reabrir venta de entradas" : "Cerrar venta (sold out manual)"}
@@ -112,9 +112,9 @@ export default function EventCrm({ event, onBack, onToggleSoldOut, onShare, onSe
               style={{
                 padding: "8px 16px", borderRadius: 999, cursor: "pointer", fontSize: 13,
                 fontWeight: filtro === f.key ? 700 : 600,
-                background: filtro === f.key ? "rgba(127,179,230,0.22)" : "rgba(255,255,255,0.05)",
-                border: filtro === f.key ? "1px solid rgba(127,179,230,0.45)" : BORDER,
-                color: filtro === f.key ? "#eef1f7" : SUB,
+                background: filtro === f.key ? "rgba(52,211,153,0.22)" : "rgba(255,255,255,0.05)",
+                border: filtro === f.key ? "1px solid rgba(52,211,153,0.45)" : BORDER,
+                color: filtro === f.key ? "#ffffff" : SUB,
               }}>
               {f.label}
             </button>
@@ -150,7 +150,7 @@ export default function EventCrm({ event, onBack, onToggleSoldOut, onShare, onSe
                         {g.email && <div style={{ fontSize: 11.5, color: SUB, marginTop: 2 }}>{g.email}</div>}
                       </td>
                       <td style={{ padding: 12, whiteSpace: "nowrap" }}>
-                        <span style={{ fontWeight: 800, color: g.total > 1 ? "#7fb3e6" : TEXT, fontSize: 14 }}>{g.total}</span>
+                        <span style={{ fontWeight: 800, color: g.total > 1 ? "#34d399" : TEXT, fontSize: 14 }}>{g.total}</span>
                         <span style={{ color: SUB, fontSize: 11.5, marginLeft: 5 }}>{g.total === 1 ? "entrada" : "entradas"}</span>
                         {/* Los códigos solo cuando son pocos: con 5 la celda se vuelve ilegible. */}
                         {g.total <= 3 && (
@@ -162,8 +162,8 @@ export default function EventCrm({ event, onBack, onToggleSoldOut, onShare, onSe
                       <td style={{ padding: 12, color: SUB, whiteSpace: "nowrap" }}>{new Date(g.ts).toLocaleString("es-CO")}</td>
                       <td style={{ padding: 12, whiteSpace: "nowrap" }}>
                         <span style={{
-                          background: g.usadas ? "rgba(127,179,230,0.2)" : "rgba(52,199,89,0.15)",
-                          color: g.usadas ? "#7fb3e6" : "#86efac",
+                          background: g.usadas ? "rgba(52,211,153,0.2)" : "rgba(52,211,153,0.15)",
+                          color: g.usadas ? "#34d399" : "#a7f3d0",
                           padding: "4px 10px", borderRadius: 100, fontSize: 11, fontWeight: 700,
                         }}>
                           {g.usadas === 0 ? "PENDIENTE" : g.usadas === g.total ? "INGRESÓ" : `${g.usadas}/${g.total} INGRESARON`}
@@ -174,12 +174,12 @@ export default function EventCrm({ event, onBack, onToggleSoldOut, onShare, onSe
                         <td style={{ padding: 12, whiteSpace: "nowrap" }}>
                           {g.pendientes > 0 ? (
                             <button type="button" onClick={() => onSetApproval?.(pendientesIds, true)}
-                              style={{ padding: "6px 14px", borderRadius: 8, fontSize: 11.5, fontWeight: 800, cursor: "pointer", background: "rgba(52,199,89,0.16)", color: "#86efac", border: "1px solid rgba(52,199,89,0.35)" }}>
+                              style={{ padding: "6px 14px", borderRadius: 8, fontSize: 11.5, fontWeight: 800, cursor: "pointer", background: "rgba(52,211,153,0.16)", color: "#a7f3d0", border: "1px solid rgba(52,211,153,0.35)" }}>
                               {g.pendientes === g.total ? `Aprobar ${g.total > 1 ? "las " + g.total : ""}` : `Aprobar ${g.pendientes} restantes`}
                             </button>
                           ) : (
                             <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                              <span style={{ background: "rgba(52,199,89,0.15)", color: "#86efac", padding: "4px 10px", borderRadius: 100, fontSize: 11, fontWeight: 700 }}>
+                              <span style={{ background: "rgba(52,211,153,0.15)", color: "#a7f3d0", padding: "4px 10px", borderRadius: 100, fontSize: 11, fontWeight: 700 }}>
                                 APROBADO
                               </span>
                               {g.usadas === 0 && (

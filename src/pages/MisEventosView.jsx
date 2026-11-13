@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { isSoldOut, capacityLabel } from "../lib/capacity.js";
+import { isSoldOut, capacityLabel, getCapacityMax } from "../lib/capacity.js";
 import { groupRegistrations } from "../lib/tickets.js";
 import { DataRow, IcoCalendar, IcoPin } from "../components/ui.jsx";
 import "../styles/typeform.css";
@@ -34,25 +34,27 @@ export default function MisEventosView({ events, loading, error, onRetry, onNew,
   return (
     <div style={{ maxWidth: 1560, margin: "0 auto" }}>
       <style>{GRID_CSS}</style>
-      <h1 style={{ fontSize: 24, fontWeight: 500, margin: "0 0 18px", color: "#eef1f7", textAlign: "center" }}>Mis eventos</h1>
+      <h1 style={{ fontSize: 34, fontWeight: 600, letterSpacing: "-0.03em", margin: "8px 0 18px", color: "#ffffff" }}>Mis eventos</h1>
       {/* Los bloques de estado no se estiran a 1240 px: un mensaje centrado en
           una franja tan ancha queda desangelado. */}
 
-      {/* Filtros centrados, siempre en una sola línea (móvil y escritorio) */}
-      <div style={{ display: "flex", justifyContent: "center", flexWrap: "nowrap", gap: 4, marginBottom: 24 }}>
+      {/* Filtros: control segmentado en píldoras (activo relleno claro, el
+          resto con contorno), siempre en una sola línea. */}
+      <div style={{ display: "flex", flexWrap: "nowrap", gap: 8, marginBottom: 24, overflowX: "auto" }}>
         {FILTERS.map(f => {
           const active = tab === f.key;
           return (
             <button key={f.key} type="button" className="ef-hover-fill" onClick={() => setTab(f.key)}
               style={{
                 display: "inline-flex", alignItems: "center", gap: 6,
-                padding: "8px 14px", borderRadius: 999, cursor: "pointer",
-                fontSize: 13, fontWeight: active ? 700 : 600, whiteSpace: "nowrap",
-                background: "transparent", border: "none",
-                color: active ? "#ffffff" : "rgba(255,255,255,0.6)",
+                height: 40, padding: "0 16px", borderRadius: 999, cursor: "pointer",
+                fontSize: 14.5, fontWeight: 500, whiteSpace: "nowrap", flexShrink: 0,
+                background: active ? "#ffffff" : "transparent",
+                border: active ? "1px solid #ffffff" : "1px solid rgba(229,238,255,0.24)",
+                color: active ? "#000000" : "#ffffff",
               }}>
               {f.label}
-              <span style={{ fontSize: 12, fontWeight: 700, color: active ? "rgba(255,255,255,0.65)" : "rgba(255,255,255,0.38)" }}>{f.count}</span>
+              <span style={{ fontSize: 13, fontWeight: 500, color: active ? "rgba(0,0,0,0.55)" : "var(--tf-muted)" }}>{f.count}</span>
             </button>
           );
         })}
@@ -159,57 +161,56 @@ function EventCard({ ev, onOpen, onEdit, onValidate, onDelete, onShare, onToggle
       ) : ev.coverNeedsMigration ? (
         // La portada estaba guardada dentro del evento y no se envía (hacía
         // que la lista pesara megas). Se sube sola en las próximas cargas.
-        <div style={{ width: "100%", aspectRatio: "16/7", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, background: "linear-gradient(135deg,#222b4c,#12182b)", color: "rgba(238,241,247,0.5)", fontSize: 12, textAlign: "center", padding: "0 20px" }}>
+        <div style={{ width: "100%", aspectRatio: "16/7", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, background: "linear-gradient(135deg,#1b1d21,#101113)", color: "rgba(229,238,255,0.5)", fontSize: 12, textAlign: "center", padding: "0 20px" }}>
           <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-4.35-4.35a2 2 0 0 0-2.83 0L4 20"/></svg>
           Optimizando la portada…
         </div>
-      ) : (
-        <div style={{ width: "100%", height: 6, background: "linear-gradient(90deg, #222b4c, #7fb3e6)" }} />
-      )}
+      ) : null}
 
       {/* Header del evento */}
-      <div style={{ padding: "16px 20px", cursor: "pointer" }} onClick={() => setExpanded(e => !e)}>
+      <div style={{ padding: "18px 20px 16px", cursor: "pointer" }} onClick={() => setExpanded(e => !e)}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
               <span style={{
                 fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 100,
-                background: isPast ? "rgba(220,38,38,0.15)" : sold ? "rgba(220,38,38,0.15)" : "rgba(52,199,89,0.15)",
-                color: isPast ? "#fca5a5" : sold ? "#fca5a5" : "#86efac",
+                background: isPast ? "rgba(220,38,38,0.15)" : sold ? "rgba(220,38,38,0.15)" : "rgba(52,211,153,0.15)",
+                color: isPast ? "#fca5a5" : sold ? "#fca5a5" : "#a7f3d0",
               }}>
                 {isPast ? "Pasado" : sold ? "Sold out" : "Activo"}
               </span>
             </div>
-            <h3 style={{ fontSize: 17, fontWeight: 500, color: "#eef1f7", margin: "0 0 2px", lineHeight: 1.3 }}>
+            <h3 style={{ fontSize: 20, fontWeight: 600, letterSpacing: "-0.02em", color: "#ffffff", margin: "0 0 6px", lineHeight: 1.2 }}>
               {ev.title}
             </h3>
             {dateLabel && (
-              <DataRow icon={<IcoCalendar />} color="#7fb3e6" style={{ marginBottom: 1 }}>{dateLabel}</DataRow>
+              <DataRow icon={<IcoCalendar />} style={{ marginBottom: 1 }}>{dateLabel}</DataRow>
             )}
             {ev.city && <DataRow icon={<IcoPin />}>{ev.city}</DataRow>}
           </div>
           <div style={{ textAlign: "right", flexShrink: 0 }}>
-            <div style={{ fontSize: 26, fontWeight: 800, color: "#7fb3e6" }}>{regs.length}</div>
-            <div style={{ fontSize: 11, color: "#8fa3b1", fontWeight: 700 }}>inscritos</div>
+            <div style={{ fontSize: 34, fontWeight: 600, letterSpacing: "-0.03em", lineHeight: 1, color: "#ffffff" }}>{regs.length}</div>
+            <div style={{ fontSize: 12, color: "var(--tf-muted)", marginTop: 6 }}>inscritos</div>
           </div>
         </div>
 
         {/* Mini stats */}
         <div style={{ display: "flex", gap: 20, marginTop: 10 }}>
-          <span style={{ fontSize: 12, color: "rgba(238,241,247,0.5)" }}>✓ {checkins} check-ins</span>
-          <span style={{ fontSize: 12, color: "rgba(238,241,247,0.5)" }}>{capacityLabel(ev)}</span>
+          <span style={{ fontSize: 13, color: "var(--tf-muted)" }}>✓ {checkins} check-ins</span>
+          <span style={{ fontSize: 13, color: "var(--tf-muted)" }}>{capacityLabel(ev)}</span>
         </div>
       </div>
 
       {/* Barra de progreso de aforo */}
       {ev.capacity && regs.length > 0 && (() => {
-        const maxMap = { "0-50": 50, "50-100": 100, "100-300": 300, "300+": 999 };
-        const max = maxMap[ev.capacity];
+        // getCapacityMax entiende tanto los rangos antiguos como la capacidad
+        // numérica del formulario actual (antes la barra no salía con "80").
+        const max = getCapacityMax(ev.capacity, ev);
         if (!max) return null;
         const pct = Math.min(100, Math.round((regs.length / max) * 100));
         return (
-          <div style={{ height: 3, background: "rgba(255,255,255,0.08)", margin: "0 20px" }}>
-            <div style={{ height: "100%", width: `${pct}%`, background: pct >= 90 ? "#ef4444" : "#7fb3e6", transition: "width 0.3s" }} />
+          <div style={{ height: 4, borderRadius: 4, background: "var(--tf-surface-2)", margin: "0 20px 16px", overflow: "hidden" }}>
+            <div style={{ height: "100%", width: `${pct}%`, background: pct >= 90 ? "#f87171" : "var(--tf-accent)", transition: "width 0.3s" }} />
           </div>
         );
       })()}
@@ -236,28 +237,26 @@ function EventCard({ ev, onOpen, onEdit, onValidate, onDelete, onShare, onToggle
         </button>
       )}
 
-      {/* Acciones — centradas */}
-      <div style={{ padding: "14px 16px", borderTop: "1px solid rgba(255,255,255,0.07)", display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
-        <button type="button" className="soft-btn soft-btn-primary ef-hover-fill" style={{ fontSize: 12, padding: "8px 14px" }} onClick={() => onOpen()}>
-          Inscritos
-        </button>
-        <button type="button" className="soft-btn soft-btn-secondary" title="Compartir" aria-label="Compartir" style={{ fontSize: 12, padding: "8px 12px", display: "inline-flex", alignItems: "center", justifyContent: "center" }} onClick={onShare}>
-          <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg>
-        </button>
-        <button type="button" className="soft-btn soft-btn-secondary" style={{ fontSize: 12, padding: "8px 14px", display: "inline-flex", alignItems: "center", gap: 6 }} onClick={onValidate}>
-          Verificar
-          <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2" /><path d="M3 12h18" /></svg>
-        </button>
-        <button type="button" className="soft-btn soft-btn-secondary" style={{ fontSize: 12, padding: "8px 14px" }} onClick={onEdit}>
-          Editar
-        </button>
-        <button type="button"
-          className="soft-btn ef-hover-fill"
-          style={{ fontSize: 12, padding: "8px 14px", background: "rgba(220,38,38,0.12)", color: "#fca5a5", border: "1px solid rgba(220,38,38,0.3)", borderRadius: 14 }}
-          onClick={onDelete}
-        >
-          Eliminar
-        </button>
+      {/* Acciones: una fila de iconos con etiqueta (estilo Plata). Antes eran
+          cinco botones de texto que en móvil se partían en dos filas. */}
+      <div style={{ padding: "6px 8px 10px", borderTop: "1px solid var(--tf-divider)", display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 2 }}>
+        {[
+          { label: "Inscritos", onClick: () => onOpen(), icon: <><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20a6.5 6.5 0 0 1 13 0" /><path d="M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4-6" /></> },
+          { label: "Compartir", onClick: onShare, icon: <><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4" /></> },
+          { label: "Escanear", onClick: onValidate, icon: <><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2" /><path d="M7 12h10" /></> },
+          { label: "Editar", onClick: onEdit, icon: <><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></> },
+          { label: "Eliminar", onClick: onDelete, danger: true, icon: <><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /></> },
+        ].map((a) => (
+          <button key={a.label} type="button" className="ef-hover-fill" onClick={a.onClick}
+            style={{
+              display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
+              padding: "10px 2px 8px", border: "none", borderRadius: 12, background: "transparent", cursor: "pointer",
+              color: a.danger ? "#fca5a5" : "var(--tf-text)", minWidth: 0,
+            }}>
+            <svg width={21} height={21} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{a.icon}</svg>
+            <span style={{ fontSize: 11.5, fontWeight: 500, color: a.danger ? "#fca5a5" : "var(--tf-muted)", whiteSpace: "nowrap" }}>{a.label}</span>
+          </button>
+        ))}
       </div>
 
       {/* Lista de últimos inscritos */}
@@ -271,23 +270,23 @@ function EventCard({ ev, onOpen, onEdit, onValidate, onDelete, onShare, onToggle
           {grupos.slice(0, 10).map(g => (
             <div key={g.key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
               <div style={{ minWidth: 0 }}>
-                <span style={{ fontSize: 14, fontWeight: 600, color: "#eef1f7" }}>{g.name}</span>
+                <span style={{ fontSize: 14, fontWeight: 600, color: "#ffffff" }}>{g.name}</span>
                 {g.total > 1 && (
-                  <span style={{ fontSize: 11, fontWeight: 800, color: "#7fb3e6", marginLeft: 7, background: "rgba(127,179,230,0.16)", padding: "2px 7px", borderRadius: 100 }}>
+                  <span style={{ fontSize: 11, fontWeight: 800, color: "#34d399", marginLeft: 7, background: "rgba(52,211,153,0.16)", padding: "2px 7px", borderRadius: 100 }}>
                     ×{g.total}
                   </span>
                 )}
                 <span style={{ fontSize: 11, color: "#8fa3b1", marginLeft: 8 }}>{new Date(g.ts).toLocaleString("es-CO")}</span>
               </div>
               <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 100,
-                background: g.pendientes ? "rgba(251,191,36,0.16)" : g.usadas ? "rgba(127,179,230,0.25)" : "rgba(52,199,89,0.15)",
-                color: g.pendientes ? "#fbbf24" : g.usadas ? "#7fb3e6" : "#86efac" }}>
+                background: g.pendientes ? "rgba(251,191,36,0.16)" : g.usadas ? "rgba(52,211,153,0.25)" : "rgba(52,211,153,0.15)",
+                color: g.pendientes ? "#fbbf24" : g.usadas ? "#34d399" : "#a7f3d0" }}>
                 {g.pendientes ? "POR APROBAR" : g.usadas === g.total ? "CHECK-IN" : g.usadas ? `${g.usadas}/${g.total}` : "ACTIVO"}
               </span>
             </div>
           ))}
           {grupos.length > 10 && (
-            <button type="button" className="soft-btn soft-btn-secondary" style={{ fontSize: 12, marginTop: 12, width: "100%" }} onClick={() => onOpen()}>
+            <button type="button" className="soft-btn soft-btn-secondary" style={{ fontSize: 15, marginTop: 12, width: "100%" }} onClick={() => onOpen()}>
               Ver los {grupos.length} inscritos →
             </button>
           )}
@@ -302,10 +301,10 @@ function DraftCard({ ev, onEdit, onDelete }) {
   return (
     <div className="panel-card" style={{ overflow: "hidden" }}>
       <div style={{ padding: "18px 20px" }}>
-        <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 100, background: "#fef3c7", color: "#92400e", display: "inline-block", marginBottom: 8 }}>
+        <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 8px", borderRadius: 100, background: "rgba(251,191,36,0.14)", color: "#fbbf24", display: "inline-block", marginBottom: 8 }}>
           Borrador — sin publicar
         </span>
-        <h3 style={{ fontSize: 16, fontWeight: 500, color: "#eef1f7", margin: "0 0 4px" }}>
+        <h3 style={{ fontSize: 16, fontWeight: 500, color: "#ffffff", margin: "0 0 4px" }}>
           {ev.title || "Sin título"}
         </h3>
         <p style={{ fontSize: 13, color: "#8fa3b1", margin: 0 }}>
@@ -314,10 +313,10 @@ function DraftCard({ ev, onEdit, onDelete }) {
         </p>
       </div>
       <div style={{ padding: "12px 20px", borderTop: "1px solid rgba(255,255,255,0.07)", display: "flex", gap: 8 }}>
-        <button type="button" className="soft-btn soft-btn-primary ef-hover-fill" style={{ fontSize: 13 }} onClick={onEdit}>
-          Continuar editando →
+        <button type="button" className="soft-btn soft-btn-primary" style={{ fontSize: 14, flex: 1 }} onClick={onEdit}>
+          Continuar editando
         </button>
-        <button type="button" className="soft-btn ef-hover-fill" style={{ fontSize: 13, background: "rgba(220,38,38,0.12)", color: "#fca5a5", border: "1px solid rgba(220,38,38,0.3)", borderRadius: 14 }} onClick={onDelete}>
+        <button type="button" className="soft-btn soft-btn-ghost ef-hover-fill" style={{ fontSize: 14, color: "#fca5a5" }} onClick={onDelete}>
           Descartar
         </button>
       </div>

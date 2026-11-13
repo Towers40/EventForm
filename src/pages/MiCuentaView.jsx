@@ -137,23 +137,23 @@ export default function MiCuentaView() {
 
   return (
     <div style={{ maxWidth: 560, margin: "0 auto" }}>
-      <h1 style={{ fontSize: 24, fontWeight: 500, color: "#eef1f7", marginBottom: 28 }}>Mi cuenta</h1>
+      <h1 style={{ fontSize: 34, fontWeight: 600, letterSpacing: "-0.03em", color: "#ffffff", margin: "8px 0 22px" }}>Mi cuenta</h1>
 
       {/* Foto de perfil */}
       <div className="panel-card" style={{ marginBottom: 20 }}>
         <div className="panel-card-header">
-          <h2 style={{ margin: 0, fontSize: 15, fontWeight: 500, color: "#eef1f7" }}>Foto de perfil</h2>
+          <h2 style={{ margin: 0, fontSize: 15, fontWeight: 500, color: "#ffffff" }}>Foto de perfil</h2>
         </div>
         <div style={{ padding: 20, display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap" }}>
-          <div style={{ width: 76, height: 76, borderRadius: "50%", flexShrink: 0, overflow: "hidden", background: avatar ? "transparent" : "linear-gradient(135deg, #222b4c, #7fb3e6)", border: "3px solid rgba(127,179,230,0.4)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, fontWeight: 800, color: "#fff" }}>
+          <div style={{ width: 76, height: 76, borderRadius: "50%", flexShrink: 0, overflow: "hidden", background: avatar ? "transparent" : "var(--tf-surface-2)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, fontWeight: 600, color: "#fff" }}>
             {avatar ? <img src={avatar} alt="avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : initials}
           </div>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <button type="button" className="soft-btn soft-btn-primary ef-hover-fill" style={{ fontSize: 13 }} disabled={avatarBusy} onClick={() => avatarInputRef.current?.click()}>
+            <button type="button" className="soft-btn soft-btn-ghost ef-hover-fill" style={{ fontSize: 15 }} disabled={avatarBusy} onClick={() => avatarInputRef.current?.click()}>
               {avatarBusy ? "Guardando…" : avatar ? "Cambiar foto" : "Subir foto"}
             </button>
             {avatar && (
-              <button type="button" className="soft-btn ef-hover-fill" style={{ fontSize: 13, background: "rgba(220,38,38,0.12)", color: "#fca5a5", border: "1px solid rgba(220,38,38,0.3)", borderRadius: 14 }} disabled={avatarBusy} onClick={handleRemoveAvatar}>
+              <button type="button" className="soft-btn ef-hover-fill" style={{ fontSize: 15, background: "rgba(220,38,38,0.12)", color: "#fca5a5", border: "1px solid rgba(220,38,38,0.3)", borderRadius: 14 }} disabled={avatarBusy} onClick={handleRemoveAvatar}>
                 Quitar foto
               </button>
             )}
@@ -165,7 +165,7 @@ export default function MiCuentaView() {
       {/* Info de cuenta */}
       <div className="panel-card" style={{ marginBottom: 20 }}>
         <div className="panel-card-header">
-          <h2 style={{ margin: 0, fontSize: 15, fontWeight: 500, color: "#eef1f7" }}>Información personal</h2>
+          <h2 style={{ margin: 0, fontSize: 15, fontWeight: 500, color: "#ffffff" }}>Información personal</h2>
         </div>
         <form onSubmit={saveName} style={{ padding: 20 }}>
           <label style={{ fontSize: 11, fontWeight: 800, color: "#8fa3b1", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 8 }}>
@@ -180,20 +180,20 @@ export default function MiCuentaView() {
           <label style={{ fontSize: 11, fontWeight: 800, color: "#8fa3b1", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 8 }}>
             Correo electrónico
           </label>
-          <p style={{ fontSize: 16, color: "rgba(238,241,247,0.5)", marginBottom: 24, paddingBottom: 10, borderBottom: "1px solid rgba(255,255,255,0.15)" }}>
+          <p style={{ fontSize: 16, color: "rgba(229,238,255,0.5)", marginBottom: 24, paddingBottom: 10, borderBottom: "1px solid rgba(255,255,255,0.15)" }}>
             {user?.email}
           </p>
           <label style={{ fontSize: 11, fontWeight: 800, color: "#8fa3b1", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 8 }}>
             Miembro desde
           </label>
-          <p style={{ fontSize: 14, color: "rgba(238,241,247,0.5)", marginBottom: 20 }}>
+          <p style={{ fontSize: 14, color: "rgba(229,238,255,0.5)", marginBottom: 20 }}>
             {user?.createdAt ? new Date(user.createdAt).toLocaleDateString("es-CO", { year: "numeric", month: "long", day: "numeric" }) : "—"}
           </p>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <button type="submit" className="soft-btn soft-btn-primary ef-hover-fill" style={{ fontSize: 13 }} disabled={nameBusy}>
+            <button type="submit" className="soft-btn soft-btn-primary ef-hover-fill" style={{ fontSize: 15 }} disabled={nameBusy}>
               {nameBusy ? "Guardando…" : "Guardar nombre"}
             </button>
-            {nameMsg && <span style={{ fontSize: 13, color: nameMsg.startsWith("✓") ? "#16a34a" : "#e53e3e", fontWeight: 700 }}>{nameMsg}</span>}
+            {nameMsg && <span style={{ fontSize: 13, color: nameMsg.startsWith("✓") ? "#34d399" : "#f87171", fontWeight: 700 }}>{nameMsg}</span>}
           </div>
         </form>
       </div>
@@ -201,7 +201,7 @@ export default function MiCuentaView() {
       {/* Cambiar contraseña */}
       <div className="panel-card" style={{ marginBottom: 20 }}>
         <div className="panel-card-header">
-          <h2 style={{ margin: 0, fontSize: 15, fontWeight: 500, color: "#eef1f7" }}>Cambiar contraseña</h2>
+          <h2 style={{ margin: 0, fontSize: 15, fontWeight: 500, color: "#ffffff" }}>Cambiar contraseña</h2>
         </div>
         <form onSubmit={changePw} style={{ padding: 20 }}>
           <label style={{ fontSize: 11, fontWeight: 800, color: "#8fa3b1", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 8 }}>
@@ -235,10 +235,10 @@ export default function MiCuentaView() {
             {newPw.length >= 8 && /[A-Z]/.test(newPw) ? "✓ Contraseña válida" : "Mínimo 8 caracteres · al menos una mayúscula"}
           </p>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <button type="submit" className="soft-btn soft-btn-primary ef-hover-fill" style={{ fontSize: 13 }} disabled={pwBusy || !curPw || !newPw}>
+            <button type="submit" className="soft-btn soft-btn-primary ef-hover-fill" style={{ fontSize: 15 }} disabled={pwBusy || !curPw || !newPw}>
               {pwBusy ? "Cambiando…" : "Cambiar contraseña"}
             </button>
-            {pwMsg.text && <span style={{ fontSize: 13, color: pwMsg.ok ? "#16a34a" : "#e53e3e", fontWeight: 700 }}>{pwMsg.text}</span>}
+            {pwMsg.text && <span style={{ fontSize: 13, color: pwMsg.ok ? "#34d399" : "#f87171", fontWeight: 700 }}>{pwMsg.text}</span>}
           </div>
         </form>
       </div>
@@ -247,7 +247,7 @@ export default function MiCuentaView() {
       {isSuperAdmin && (
         <div className="panel-card" style={{ marginBottom: 20 }}>
           <div className="panel-card-header">
-            <h2 style={{ margin: 0, fontSize: 15, fontWeight: 500, color: "#eef1f7" }}>Administrador</h2>
+            <h2 style={{ margin: 0, fontSize: 15, fontWeight: 500, color: "#ffffff" }}>Administrador</h2>
           </div>
           <div style={{ padding: 20 }}>
             <p style={{ margin: "0 0 14px", fontSize: 13, color: "#8fa3b1", lineHeight: 1.5 }}>
@@ -258,13 +258,13 @@ export default function MiCuentaView() {
               de Descubrir.
             </p>
             <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-              <button type="button" className="soft-btn soft-btn-primary ef-hover-fill" style={{ fontSize: 13 }} disabled={migrateBusy} onClick={handleMigrateCovers}>
+              <button type="button" className="soft-btn soft-btn-primary ef-hover-fill" style={{ fontSize: 15 }} disabled={migrateBusy} onClick={handleMigrateCovers}>
                 {migrateBusy ? "Migrando…" : "Migrar portadas de eventos"}
               </button>
-              <button type="button" className="soft-btn soft-btn-secondary ef-hover-fill" style={{ fontSize: 13 }} disabled={migrateBusy} onClick={handleMigrateAvatars}>
+              <button type="button" className="soft-btn soft-btn-secondary ef-hover-fill" style={{ fontSize: 15 }} disabled={migrateBusy} onClick={handleMigrateAvatars}>
                 {migrateBusy ? "Migrando…" : "Migrar avatares"}
               </button>
-              {migrateMsg.text && <span style={{ fontSize: 13, color: migrateMsg.ok ? "#16a34a" : "#e53e3e", fontWeight: 700 }}>{migrateMsg.text}</span>}
+              {migrateMsg.text && <span style={{ fontSize: 13, color: migrateMsg.ok ? "#34d399" : "#f87171", fontWeight: 700 }}>{migrateMsg.text}</span>}
             </div>
           </div>
         </div>
@@ -273,10 +273,10 @@ export default function MiCuentaView() {
       {/* Cerrar sesión */}
       <div className="panel-card" style={{ padding: 20, display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
         <div>
-          <p style={{ margin: 0, fontWeight: 600, color: "#eef1f7", fontSize: 14 }}>Cerrar sesión</p>
+          <p style={{ margin: 0, fontWeight: 600, color: "#ffffff", fontSize: 14 }}>Cerrar sesión</p>
           <p style={{ margin: "2px 0 0", fontSize: 12, color: "#8fa3b1" }}>Salir de tu cuenta en este dispositivo</p>
         </div>
-        <button type="button" className="soft-btn ef-hover-fill" style={{ background: "rgba(220,38,38,0.12)", color: "#fca5a5", border: "1px solid rgba(220,38,38,0.3)", borderRadius: 14, fontSize: 13, padding: "10px 18px" }} onClick={logout}>
+        <button type="button" className="soft-btn ef-hover-fill" style={{ background: "rgba(220,38,38,0.14)", color: "#fca5a5", border: "none", borderRadius: 14, fontSize: 15, padding: "0 18px", whiteSpace: "nowrap", flexShrink: 0 }} onClick={logout}>
           Cerrar sesión
         </button>
       </div>
@@ -285,7 +285,7 @@ export default function MiCuentaView() {
       <div className="panel-card" style={{ padding: 20, borderColor: "rgba(220,38,38,0.35)", borderWidth: 1 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
           <div>
-            <p style={{ margin: 0, fontWeight: 600, color: "#991b1b", fontSize: 14 }}>Zona de peligro: Eliminar cuenta</p>
+            <p style={{ margin: 0, fontWeight: 600, color: "#f87171", fontSize: 14 }}>Zona de peligro: Eliminar cuenta</p>
             <p style={{ margin: "4px 0 0", fontSize: 12, color: "#8fa3b1" }}>
               Esta acción eliminará permanentemente tu cuenta, todos tus eventos y registros. No se puede deshacer.
             </p>
@@ -309,7 +309,7 @@ export default function MiCuentaView() {
           zIndex: 1000
         }}>
           <div style={{
-            background: "rgba(20,22,40,0.95)", borderRadius: 22, padding: 28, maxWidth: 380,
+            background: "rgba(18,20,22,0.95)", borderRadius: 22, padding: 28, maxWidth: 380,
             border: "1px solid rgba(220,38,38,0.3)",
             boxShadow: "0 24px 64px rgba(0,0,0,0.7)",
             backdropFilter: "blur(20px)",
@@ -317,15 +317,15 @@ export default function MiCuentaView() {
             <h3 style={{ margin: "0 0 12px", fontSize: 18, fontWeight: 500, color: "#fca5a5" }}>
               ¿Estás seguro?
             </h3>
-            <p style={{ margin: "0 0 20px", fontSize: 14, color: "rgba(238,241,247,0.6)", lineHeight: 1.6 }}>
+            <p style={{ margin: "0 0 20px", fontSize: 14, color: "rgba(229,238,255,0.6)", lineHeight: 1.6 }}>
               Esta acción eliminará:
             </p>
-            <ul style={{ margin: "0 0 20px", paddingLeft: 20, fontSize: 13, color: "rgba(238,241,247,0.5)" }}>
+            <ul style={{ margin: "0 0 20px", paddingLeft: 20, fontSize: 13, color: "rgba(229,238,255,0.5)" }}>
               <li>Tu cuenta de anfitrión</li>
               <li>Todos tus eventos</li>
               <li>Todos los registros e inscripciones</li>
             </ul>
-            <p style={{ margin: "0 0 16px", fontSize: 13, fontWeight: 600, color: "#eef1f7" }}>
+            <p style={{ margin: "0 0 16px", fontSize: 13, fontWeight: 600, color: "#ffffff" }}>
               Escribe "eliminar mi cuenta" para continuar:
             </p>
             <input
@@ -337,7 +337,7 @@ export default function MiCuentaView() {
               style={{ marginBottom: 12, fontSize: 14 }}
             />
             {deleteErr && (
-              <p style={{ color: "#991b1b", fontWeight: 700, fontSize: 13, margin: "0 0 12px" }}>
+              <p style={{ color: "#f87171", fontWeight: 700, fontSize: 13, margin: "0 0 12px" }}>
                 ⚠️ {deleteErr}
               </p>
             )}
@@ -348,7 +348,7 @@ export default function MiCuentaView() {
                 style={{
                   flex: 1, padding: "10px 16px", background: "rgba(255,255,255,0.07)",
                   border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, cursor: "pointer", fontSize: 13,
-                  fontWeight: 600, color: "#eef1f7"
+                  fontWeight: 600, color: "#ffffff"
                 }}
               >
                 Cancelar

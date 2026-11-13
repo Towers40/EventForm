@@ -6,12 +6,13 @@ import { resolveLimit, hoursFor, minutesFor, clampToLimit, MINUTE_VALUES } from 
 import { IconButton, IcoBack, EventTintLayer } from "./ui.jsx";
 
 // ── Tokens ──────────────────────────────────────────────────────────────────
-const CARD   = "rgba(255,255,255,0.08)";
-const BORDER = "1px solid rgba(255,255,255,0.11)";
+// Superficies sólidas sin borde (sistema TapIn, ver src/lib/ds.jsx).
+const CARD   = "var(--tf-surface)";
+const BORDER = "none";
 const RADIUS = 20;
-const TEXT   = "#eef1f7";
-const SUB    = "rgba(238,241,247,0.5)";
-const ACCENT = "#7fb3e6";
+const TEXT   = "#ffffff";
+const SUB    = "rgba(229,238,255,0.5)";
+const ACCENT = "#34d399";
 
 // ── Spanish date formatting ──────────────────────────────────────────────────
 const DAYS_ES   = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
@@ -80,7 +81,7 @@ function LocationModal({ onSelect, onClose }) {
     >
       <div
         onClick={e => e.stopPropagation()}
-        style={{ width: "100%", maxWidth: 420, maxHeight: "76vh", display: "flex", flexDirection: "column", background: "rgba(20,23,40,0.98)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 22, overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}
+        style={{ width: "100%", maxWidth: 420, maxHeight: "76vh", display: "flex", flexDirection: "column", background: "rgba(18,20,22,0.98)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 22, overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}
       >
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", flexShrink: 0 }}>
@@ -89,20 +90,20 @@ function LocationModal({ onSelect, onClose }) {
               ref={inputRef}
               type="text" value={query} onChange={handleChange}
               placeholder="Buscar dirección o lugar…"
-              style={{ width: "100%", boxSizing: "border-box", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 14, padding: "11px 40px 11px 14px", fontSize: 15, color: "#eef1f7", outline: "none", caretColor: "#7fb3e6", fontFamily: "inherit" }}
+              style={{ width: "100%", boxSizing: "border-box", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 14, padding: "11px 40px 11px 14px", fontSize: 15, color: "#ffffff", outline: "none", caretColor: "#34d399", fontFamily: "inherit" }}
             />
-            {loading && <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", fontSize: 13, color: "rgba(238,241,247,0.4)" }}>…</span>}
+            {loading && <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", fontSize: 13, color: "rgba(229,238,255,0.4)" }}>…</span>}
           </div>
-          <button type="button" onClick={onClose} className="ef-hover-fill" style={{ background: "rgba(127,179,230,0.16)", border: "1px solid rgba(127,179,230,0.32)", borderRadius: 999, color: "#bfd9f2", fontSize: 20, lineHeight: 1, width: 36, height: 36, flexShrink: 0, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+          <button type="button" onClick={onClose} className="ef-hover-fill" style={{ background: "rgba(52,211,153,0.16)", border: "1px solid rgba(52,211,153,0.32)", borderRadius: 999, color: "#a7f3d0", fontSize: 20, lineHeight: 1, width: 36, height: 36, flexShrink: 0, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
         </div>
 
         {/* Suggestions */}
         <div style={{ flex: 1, overflowY: "auto" }}>
           {!loading && query.trim().length >= 2 && results.length === 0 && (
-            <p style={{ padding: "20px 20px", color: "rgba(238,241,247,0.4)", fontSize: 14, margin: 0 }}>Sin resultados. Intenta con otro término.</p>
+            <p style={{ padding: "20px 20px", color: "rgba(229,238,255,0.4)", fontSize: 14, margin: 0 }}>Sin resultados. Intenta con otro término.</p>
           )}
           {query.trim().length < 2 && results.length === 0 && (
-            <p style={{ padding: "20px 20px", color: "rgba(238,241,247,0.4)", fontSize: 14, margin: 0 }}>Escribe al menos 2 letras para buscar una dirección o lugar.</p>
+            <p style={{ padding: "20px 20px", color: "rgba(229,238,255,0.4)", fontSize: 14, margin: 0 }}>Escribe al menos 2 letras para buscar una dirección o lugar.</p>
           )}
           {results.map((item) => (
             <button
@@ -112,8 +113,8 @@ function LocationModal({ onSelect, onClose }) {
               className="ef-hover-fill"
               style={{ width: "100%", background: "none", border: "none", borderBottom: "1px solid rgba(255,255,255,0.06)", padding: "14px 18px", textAlign: "left", cursor: "pointer", display: "flex", alignItems: "flex-start", gap: 12 }}
             >
-              <svg style={{ flexShrink: 0, marginTop: 1 }} width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="rgba(127,179,230,0.7)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-              <span style={{ fontSize: 14, color: "#eef1f7", lineHeight: 1.4 }}>{item.label}</span>
+              <svg style={{ flexShrink: 0, marginTop: 1 }} width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="rgba(52,211,153,0.7)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              <span style={{ fontSize: 14, color: "#ffffff", lineHeight: 1.4 }}>{item.label}</span>
             </button>
           ))}
         </div>
@@ -159,7 +160,7 @@ function WheelCol({ items, selectedKey, getKey, getLabel, onChange, flex }) {
   return (
     <div style={{ flex: flex || 1, position: "relative", height: ITEM_H * VISIBLE, overflow: "hidden" }}>
       <div style={{ position: "absolute", inset: 0, zIndex: 2, pointerEvents: "none",
-        background: `linear-gradient(to bottom,rgba(18,20,34,0.92) 0%,rgba(18,20,34,0.4) 22%,transparent 38%,transparent 62%,rgba(18,20,34,0.4) 78%,rgba(18,20,34,0.92) 100%)` }} />
+        background: `linear-gradient(to bottom,rgba(18,20,22,0.92) 0%,rgba(18,20,22,0.4) 22%,transparent 38%,transparent 62%,rgba(18,20,22,0.4) 78%,rgba(18,20,22,0.92) 100%)` }} />
       <div style={{ position: "absolute", left: 6, right: 6, top: ITEM_H * 2, height: ITEM_H, background: "rgba(255,255,255,0.07)", borderRadius: 14, pointerEvents: "none", zIndex: 1 }} />
       <div ref={ref} onScroll={onScroll} className="ce-wheel"
         style={{ height: "100%", overflowY: "scroll", scrollSnapType: "y mandatory", scrollbarWidth: "none", msOverflowStyle: "none" }}>
@@ -231,7 +232,7 @@ function WheelPanel({ date, time, minDate, minTime, onChange, onClose }) {
   }, []);
 
   return (
-    <div style={{ borderRadius: 18, overflow: "hidden", background: "rgba(18,20,34,0.95)", border: "1px solid rgba(255,255,255,0.1)", margin: "8px 0 0" }}>
+    <div style={{ borderRadius: 18, overflow: "hidden", background: "rgba(18,20,22,0.95)", border: "1px solid rgba(255,255,255,0.1)", margin: "8px 0 0" }}>
       <div style={{ display: "flex", borderBottom: "1px solid rgba(255,255,255,0.06)", padding: "8px 0 6px" }}>
         {[["Día",0.8],["Mes",1.2],["Año",1.2],["Hr",0.8],["Min",0.8]].map(([lbl, f]) => (
           <div key={lbl} style={{ flex: f, textAlign: "center", fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: "0.1em", textTransform: "uppercase" }}>{lbl}</div>
@@ -251,7 +252,7 @@ function WheelPanel({ date, time, minDate, minTime, onChange, onClose }) {
           onChange={m => onChange(clampToLimit({ date: curDate, time: `${pad2(hour)}:${pad2(m)}` }, limit))} />
       </div>
       <div style={{ padding: "10px 16px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-        <button type="button" onClick={onClose} style={{ width: "100%", padding: 11, background: "rgba(127,179,230,0.3)", border: "none", borderRadius: 14, color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+        <button type="button" onClick={onClose} style={{ width: "100%", padding: 11, background: "rgba(52,211,153,0.3)", border: "none", borderRadius: 14, color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
           Listo
         </button>
       </div>
@@ -262,7 +263,7 @@ function WheelPanel({ date, time, minDate, minTime, onChange, onClose }) {
 // ── Toggle ───────────────────────────────────────────────────────────────────
 function Toggle({ value, onChange }) {
   return (
-    <div onClick={() => onChange(!value)} style={{ width: 51, height: 30, borderRadius: 15, flexShrink: 0, background: value ? "#34c759" : "rgba(255,255,255,0.18)", position: "relative", cursor: "pointer", transition: "background 0.22s" }}>
+    <div onClick={() => onChange(!value)} style={{ width: 51, height: 30, borderRadius: 15, flexShrink: 0, background: value ? "#34d399" : "rgba(255,255,255,0.18)", position: "relative", cursor: "pointer", transition: "background 0.22s" }}>
       <div style={{ position: "absolute", top: 3, left: value ? 24 : 3, width: 24, height: 24, borderRadius: 14, background: "#fff", transition: "left 0.22s", boxShadow: "0 2px 6px rgba(0,0,0,0.35)" }} />
     </div>
   );
@@ -464,9 +465,9 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
                   <I.Image /><span style={{ fontSize: 13 }}>Portada del evento</span>
                 </div>
             }
-            <label style={{ position: "absolute", bottom: 12, right: 12, width: 42, height: 42, borderRadius: "50%", background: "rgba(255,255,255,0.9)", display: "flex", alignItems: "center", justifyContent: "center", cursor: imgBusy ? "wait" : "pointer", boxShadow: "0 2px 12px rgba(0,0,0,0.4)", color: "#1a1e32" }}>
+            <label style={{ position: "absolute", bottom: 12, right: 12, width: 42, height: 42, borderRadius: "50%", background: "rgba(255,255,255,0.9)", display: "flex", alignItems: "center", justifyContent: "center", cursor: imgBusy ? "wait" : "pointer", boxShadow: "0 2px 12px rgba(0,0,0,0.4)", color: "#17181b" }}>
               {imgBusy ? <span style={{ fontSize: 11 }}>…</span> : <I.Image />}
-              <span style={{ position: "absolute", bottom: 6, right: 6, background: "#1a1e32", borderRadius: "50%", width: 16, height: 16, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff" }}><I.Plus /></span>
+              <span style={{ position: "absolute", bottom: 6, right: 6, background: "#17181b", borderRadius: "50%", width: 16, height: 16, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff" }}><I.Plus /></span>
               <input type="file" accept="image/*" hidden onChange={handleImage} ref={imgRef} />
             </label>
             {draft.headerImage && (
@@ -501,9 +502,9 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
               style={{
                 flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 3,
                 height: 38, padding: "0 8px", borderRadius: 12, cursor: "pointer",
-                background: fontMenu ? "rgba(127,179,230,0.2)" : "rgba(255,255,255,0.06)",
-                border: fontMenu ? "1px solid rgba(127,179,230,0.45)" : BORDER,
-                color: fontMenu ? TEXT : "rgba(238,241,247,0.8)",
+                background: fontMenu ? "rgba(52,211,153,0.2)" : "rgba(255,255,255,0.06)",
+                border: fontMenu ? "1px solid rgba(52,211,153,0.45)" : BORDER,
+                color: fontMenu ? TEXT : "rgba(229,238,255,0.8)",
               }}
             >
               <span style={{
@@ -531,7 +532,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
                   style={{
                     position: "absolute", top: "calc(100% + 6px)", right: 0, zIndex: 41,
                     width: 232, maxWidth: "calc(100vw - 40px)",
-                    background: "rgba(22,25,44,0.98)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
+                    background: "rgba(22,24,27,0.98)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
                     border: "1px solid rgba(255,255,255,0.14)", borderRadius: 18,
                     boxShadow: "0 18px 50px rgba(0,0,0,0.55)", padding: 6, overflow: "hidden",
                   }}
@@ -547,7 +548,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
                         style={{
                           width: "100%", display: "flex", alignItems: "center", gap: 10,
                           padding: "8px 10px", borderRadius: 12, cursor: "pointer", textAlign: "left",
-                          background: activa ? "rgba(127,179,230,0.18)" : "transparent",
+                          background: activa ? "rgba(52,211,153,0.18)" : "transparent",
                           border: "none",
                         }}
                       >
@@ -556,12 +557,12 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
                           fontFamily: f.family, fontWeight: f.headingWeight,
                           letterSpacing: f.headingSpacing,
                           fontSize: 18 * f.headingScale, lineHeight: 1.1,
-                          color: activa ? TEXT : "rgba(238,241,247,0.85)",
+                          color: activa ? TEXT : "rgba(229,238,255,0.85)",
                         }}>
                           Aa
                         </span>
                         <span style={{ flex: 1, minWidth: 0 }}>
-                          <span style={{ display: "block", fontSize: 13.5, fontWeight: 600, color: activa ? TEXT : "rgba(238,241,247,0.9)", lineHeight: 1.25 }}>
+                          <span style={{ display: "block", fontSize: 13.5, fontWeight: 600, color: activa ? TEXT : "rgba(229,238,255,0.9)", lineHeight: 1.25 }}>
                             {f.name}
                           </span>
                           <span style={{ display: "block", fontSize: 10.5, color: SUB, lineHeight: 1.25 }}>
@@ -790,7 +791,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
                 {[{ v: "public", l: "Público" }, { v: "private", l: "Privado" }].map(opt => (
                   <button key={opt.v} type="button" className="ef-hover-fill"
                     onClick={() => { up("visibility", opt.v); setVisSheet(false); }}
-                    style={{ width: "100%", padding: "12px 14px", marginBottom: 6, background: (draft.visibility || "public") === opt.v ? "rgba(127,179,230,0.2)" : "rgba(255,255,255,0.04)", border: (draft.visibility || "public") === opt.v ? "1px solid rgba(127,179,230,0.4)" : BORDER, borderRadius: 14, color: TEXT, fontSize: 15, cursor: "pointer", textAlign: "left" }}>
+                    style={{ width: "100%", padding: "12px 14px", marginBottom: 6, background: (draft.visibility || "public") === opt.v ? "rgba(52,211,153,0.2)" : "rgba(255,255,255,0.04)", border: (draft.visibility || "public") === opt.v ? "1px solid rgba(52,211,153,0.4)" : BORDER, borderRadius: 14, color: TEXT, fontSize: 15, cursor: "pointer", textAlign: "left" }}>
                     {opt.l}
                   </button>
                 ))}
@@ -847,7 +848,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
           )}
 
           {/* Bottom CTA */}
-          <button type="button" className="ef-hover-fill" onClick={handleSubmit} style={{ width: "100%", marginTop: 20, padding: 16, background: "rgba(52,199,89,0.18)", border: "1px solid rgba(52,199,89,0.45)", borderRadius: RADIUS, color: "#5ee07f", fontWeight: 800, fontSize: 16, cursor: "pointer", letterSpacing: "0.02em" }}>
+          <button type="button" className="ef-hover-fill" onClick={handleSubmit} style={{ width: "100%", marginTop: 20, padding: 16, background: "rgba(52,211,153,0.18)", border: "1px solid rgba(52,211,153,0.45)", borderRadius: RADIUS, color: "#6ee7b7", fontWeight: 800, fontSize: 16, cursor: "pointer", letterSpacing: "0.02em" }}>
             Continuar →
           </button>
         </div>
@@ -856,7 +857,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
       {/* ── Price bottom sheet ── */}
       {showPrice && (
         <div style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.55)" }} onClick={() => setShowPrice(false)}>
-          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, maxWidth: 540, margin: "0 auto", background: "rgba(18,20,38,0.98)", borderRadius: "24px 24px 0 0", padding: "28px 20px 44px", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", border: "1px solid rgba(255,255,255,0.11)", borderBottom: "none" }}
+          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, maxWidth: 540, margin: "0 auto", background: "rgba(18,20,22,0.98)", borderRadius: "24px 24px 0 0", padding: "28px 20px 44px", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", border: "1px solid rgba(255,255,255,0.11)", borderBottom: "none" }}
             onClick={e => e.stopPropagation()}>
             <div style={{ width: 36, height: 4, background: "rgba(255,255,255,0.18)", borderRadius: 2, margin: "0 auto 24px" }} />
             <p style={{ fontSize: 17, fontWeight: 700, color: TEXT, margin: "0 0 6px" }}>Precio de entrada</p>
@@ -877,7 +878,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
               </button>
               <button type="button" className="ef-hover-fill"
                 onClick={() => setShowPrice(false)}
-                style={{ flex: 2, padding: "14px 0", background: "rgba(127,179,230,0.25)", border: "1px solid rgba(127,179,230,0.4)", borderRadius: 18, color: TEXT, fontSize: 14, cursor: "pointer", fontWeight: 700 }}>
+                style={{ flex: 2, padding: "14px 0", background: "rgba(52,211,153,0.25)", border: "1px solid rgba(52,211,153,0.4)", borderRadius: 18, color: TEXT, fontSize: 14, cursor: "pointer", fontWeight: 700 }}>
                 Confirmar
               </button>
             </div>
@@ -888,7 +889,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
       {/* ── Capacity bottom sheet ── */}
       {showCap && (
         <div style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.55)" }} onClick={() => setShowCap(false)}>
-          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, maxWidth: 540, margin: "0 auto", background: "rgba(18,20,38,0.98)", borderRadius: "24px 24px 0 0", padding: "28px 20px 44px", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", border: "1px solid rgba(255,255,255,0.11)", borderBottom: "none" }}
+          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, maxWidth: 540, margin: "0 auto", background: "rgba(18,20,22,0.98)", borderRadius: "24px 24px 0 0", padding: "28px 20px 44px", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", border: "1px solid rgba(255,255,255,0.11)", borderBottom: "none" }}
             onClick={e => e.stopPropagation()}>
             <div style={{ width: 36, height: 4, background: "rgba(255,255,255,0.18)", borderRadius: 2, margin: "0 auto 24px" }} />
             <p style={{ fontSize: 17, fontWeight: 700, color: TEXT, margin: "0 0 6px" }}>Capacidad del evento</p>
@@ -912,7 +913,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
               </button>
               <button type="button" className="ef-hover-fill"
                 onClick={() => setShowCap(false)}
-                style={{ flex: 2, padding: "14px 0", background: "rgba(127,179,230,0.25)", border: "1px solid rgba(127,179,230,0.4)", borderRadius: 18, color: TEXT, fontSize: 14, cursor: "pointer", fontWeight: 700 }}>
+                style={{ flex: 2, padding: "14px 0", background: "rgba(52,211,153,0.25)", border: "1px solid rgba(52,211,153,0.4)", borderRadius: 18, color: TEXT, fontSize: 14, cursor: "pointer", fontWeight: 700 }}>
                 Confirmar
               </button>
             </div>
@@ -923,7 +924,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
       {/* ── Color del evento ── */}
       {showColor && (
         <div style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.55)" }} onClick={() => setShowColor(false)}>
-          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, maxWidth: 540, margin: "0 auto", background: "rgba(18,20,38,0.98)", borderRadius: "24px 24px 0 0", padding: "28px 20px 44px", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", border: "1px solid rgba(255,255,255,0.11)", borderBottom: "none" }}
+          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, maxWidth: 540, margin: "0 auto", background: "rgba(18,20,22,0.98)", borderRadius: "24px 24px 0 0", padding: "28px 20px 44px", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", border: "1px solid rgba(255,255,255,0.11)", borderBottom: "none" }}
             onClick={e => e.stopPropagation()}>
             <div style={{ width: 36, height: 4, background: "rgba(255,255,255,0.18)", borderRadius: 2, margin: "0 auto 24px" }} />
             <p style={{ fontSize: 17, fontWeight: 700, color: TEXT, margin: "0 0 6px" }}>Color del evento</p>
@@ -939,8 +940,8 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
                 style={{
                   width: "100%", display: "flex", alignItems: "center", gap: 12,
                   padding: "12px 14px", marginBottom: 14, borderRadius: 16, cursor: "pointer", textAlign: "left",
-                  background: !draft.themeColorManual && draft.themeColor ? "rgba(127,179,230,0.18)" : "rgba(255,255,255,0.05)",
-                  border: !draft.themeColorManual && draft.themeColor ? "1px solid rgba(127,179,230,0.45)" : BORDER,
+                  background: !draft.themeColorManual && draft.themeColor ? "rgba(52,211,153,0.18)" : "rgba(255,255,255,0.05)",
+                  border: !draft.themeColorManual && draft.themeColor ? "1px solid rgba(52,211,153,0.45)" : BORDER,
                 }}>
                 <span style={{ width: 30, height: 30, borderRadius: "50%", flexShrink: 0, background: colorPortada, border: "1px solid rgba(255,255,255,0.25)" }} />
                 <span style={{ flex: 1, fontSize: 14.5, color: TEXT, fontWeight: 600 }}>
@@ -965,7 +966,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
                     style={{
                       width: 40, height: 40, borderRadius: "50%", cursor: "pointer", flexShrink: 0,
                       background: c, padding: 0,
-                      border: activo ? "2px solid #eef1f7" : "1px solid rgba(255,255,255,0.2)",
+                      border: activo ? "2px solid #ffffff" : "1px solid rgba(255,255,255,0.2)",
                       boxShadow: activo ? `0 0 0 4px ${c}55` : "none",
                       display: "flex", alignItems: "center", justifyContent: "center", color: "#fff",
                     }}>
@@ -980,7 +981,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
                 background: "conic-gradient(#e0574a,#d4b02f,#5aad4f,#2fa89c,#3d8ad9,#6a5ae0,#db5a94,#e0574a)",
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>
-                <span style={{ width: 16, height: 16, borderRadius: "50%", background: "rgba(18,20,38,0.9)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 13, lineHeight: 1 }}>+</span>
+                <span style={{ width: 16, height: 16, borderRadius: "50%", background: "rgba(18,20,22,0.9)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 13, lineHeight: 1 }}>+</span>
                 <input type="color" value={draft.themeColor || "#3d8ad9"} hidden
                   onChange={e => setDraft(p => ({ ...p, themeColor: e.target.value, themeColorManual: true }))} />
               </label>
@@ -994,7 +995,7 @@ export default function CreateEventForm({ draft, setDraft, onDone, onCancel, use
               </button>
               <button type="button" className="ef-hover-fill"
                 onClick={() => setShowColor(false)}
-                style={{ flex: 2, padding: "14px 0", background: "rgba(127,179,230,0.25)", border: "1px solid rgba(127,179,230,0.4)", borderRadius: 18, color: TEXT, fontSize: 14, cursor: "pointer", fontWeight: 700 }}>
+                style={{ flex: 2, padding: "14px 0", background: "rgba(52,211,153,0.25)", border: "1px solid rgba(52,211,153,0.4)", borderRadius: 18, color: TEXT, fontSize: 14, cursor: "pointer", fontWeight: 700 }}>
                 Listo
               </button>
             </div>

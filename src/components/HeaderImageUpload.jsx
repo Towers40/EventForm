@@ -49,7 +49,7 @@ export default function HeaderImageUpload({ image, onChange }) {
       {image
         ? <img src={image} alt="portada" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
         : (
-          <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, color: "rgba(238,241,247,0.35)" }}>
+          <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, color: "rgba(229,238,255,0.35)" }}>
             <ImageIcon />
             <span style={{ fontSize: 13 }}>Portada del evento</span>
           </div>
@@ -64,13 +64,13 @@ export default function HeaderImageUpload({ image, onChange }) {
         display: "flex", alignItems: "center", justifyContent: "center",
         cursor: busy ? "wait" : "pointer",
         boxShadow: "0 2px 12px rgba(0,0,0,0.5)",
-        color: "#1a1e32",
+        color: "#17181b",
         flexShrink: 0,
       }}>
         {busy ? <span style={{ fontSize: 11, fontWeight: 700 }}>…</span> : <ImageIcon />}
         <span style={{
           position: "absolute", bottom: 4, right: 4,
-          background: "#1a1e32", borderRadius: "50%",
+          background: "#17181b", borderRadius: "50%",
           width: 14, height: 14,
           display: "flex", alignItems: "center", justifyContent: "center",
           color: "#fff", fontSize: 11, lineHeight: 1,

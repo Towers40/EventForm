@@ -1,11 +1,12 @@
-import { useState, useEffect, useLayoutEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useLayoutEffect, useCallback, useRef, lazy, Suspense } from "react";
+// El escáner arrastra html5-qrcode (~330 KB): se descarga solo al abrir la
+// cámara, no en cada carga del panel.
+const QrScanner = lazy(() => import("./components/QrScanner.jsx"));
 import FieldInput, { FieldError } from "./components/FieldInput.jsx";
-import QrScanner from "./components/QrScanner.jsx";
 import EventHeader from "./components/EventHeader.jsx";
 import ColombiaAddressPicker from "./components/ColombiaAddressPicker.jsx";
 import HeaderImageUpload from "./components/HeaderImageUpload.jsx";
 import LocationMap from "./components/LocationMap.jsx";
-import NavigateButtons from "./components/NavigateButtons.jsx";
 import EventCrm from "./components/EventCrm.jsx";
 import ShareEventModal from "./components/ShareEventModal.jsx";
 import ConfirmTicket from "./components/ConfirmTicket.jsx";
@@ -19,7 +20,7 @@ import DiscoverPage from "./pages/DiscoverPage.jsx";
 import DashboardView from "./pages/DashboardView.jsx";
 import MiCuentaView from "./pages/MiCuentaView.jsx";
 import { useAuth } from "./context/AuthContext.jsx";
-import { api, apiEnabled } from "./lib/api.js";
+import { api } from "./lib/api.js";
 import { loadEvents, saveEvents } from "./lib/storage.js";
 import {
   performCheckIn,
@@ -32,11 +33,6 @@ import { isSoldOut, capacityLabel, getCapacityMax } from "./lib/capacity.js";
 import { publicBaseUrl } from "./lib/platform.js";
 import SlideToCancel from "./components/SlideToCancel.jsx";
 import { IconButton, DataRow, IcoCalendar, IcoPin, EventTintLayer } from "./components/ui.jsx";
-import {
-  EVENT_TYPE_OTHER,
-  EVENT_TYPE_PRESETS,
-  formatEventType,
-} from "./lib/colombia.js";
 import { DISCOVER_CATEGORIES } from "./lib/categories.js";
 import { CAT_ICONS } from "./lib/categoryIcons.jsx";
 import { eventFontProps, getEventFont, loadEventFont } from "./lib/fonts.js";
@@ -48,8 +44,6 @@ import {
   NEGRO_MUTED_70,
   NEGRO_MUTED_50,
   BLANCO_CONTRASTE,
-  ROJO_SUAVE,
-  inputStyle,
 } from "./lib/theme.js";
 
 const uid = () => Math.random().toString(36).slice(2, 10).toUpperCase();
@@ -78,15 +72,12 @@ const svgBase = (s = 18) => ({ width: s, height: s, viewBox: "0 0 24 24", fill: 
 function IconHome({ size }) { return <svg {...svgBase(size)}><path d="M3 9.5 12 3l9 6.5" /><path d="M5 10v10h14V10" /><path d="M9 20v-6h6v6" /></svg>; }
 function IconCalendar({ size }) { return <svg {...svgBase(size)}><rect x="3" y="4.5" width="18" height="16" rx="2" /><path d="M3 9h18M8 2.5v4M16 2.5v4" /></svg>; }
 function IconChart({ size }) { return <svg {...svgBase(size)}><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></svg>; }
-function IconGear({ size }) { return <svg {...svgBase(size)}><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.2a1.6 1.6 0 0 0-2.7-1.1l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 4.6 15H4.5a2 2 0 1 1 0-4h.2a1.6 1.6 0 0 0 1.1-2.7l-.1-.1A2 2 0 1 1 8.5 5.4l.1.1A1.6 1.6 0 0 0 11 4.6V4.5a2 2 0 1 1 4 0v.2a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8 1.6 1.6 0 0 0 1.5 1h.1a2 2 0 1 1 0 4h-.2a1.6 1.6 0 0 0-1.5 1z" /></svg>; }
 function IconSearch({ size }) { return <svg {...svgBase(size)}><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg>; }
 function IconPlus({ size }) { return <svg {...svgBase(size)}><path d="M12 5v14M5 12h14" /></svg>; }
-function IconPencil({ size = 11 }) { return <svg {...svgBase(size)}><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" /></svg>; }
 function IconCamera({ size }) { return <svg {...svgBase(size)}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-3h8l2 3h3a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg>; }
 function IconKeyboard({ size }) { return <svg {...svgBase(size)}><rect x="2" y="5" width="20" height="14" rx="2" /><path d="M6 9h0M10 9h0M14 9h0M18 9h0M6 13h0M10 13h0M14 13h0M18 13h0M8 17h8" /></svg>; }
 function IconScan({ size = 16 }) { return <svg {...svgBase(size)}><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2" /><path d="M3 12h18" /></svg>; }
 function IconTicket({ size }) { return <svg {...svgBase(size)}><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2 2 2 0 0 0 0 4 2 2 0 0 1-2 2H5a2 2 0 0 1-2-2 2 2 0 0 0 0-4z" /><path d="M13 7v10" strokeDasharray="2 2" /></svg>; }
-function IconUser({ size }) { return <svg {...svgBase(size)}><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></svg>; }
 function IconCompass({ size }) { return <svg {...svgBase(size)}><circle cx="12" cy="12" r="10" /><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" /></svg>; }
 
 // Iconos del catálogo de campos (adaptados a cada tipo)
@@ -135,20 +126,11 @@ const animationStyles = `
 
 function Lbl({ children, top }) {
   return (
-    <div style={{ fontSize: 12, fontWeight: 800, color: NEGRO_PURO, marginBottom: 6, marginTop: top ? 16 : 0, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+    <div style={{ fontSize: 13, fontWeight: 500, color: "var(--tf-muted)", marginBottom: 8, marginTop: top ? 16 : 0 }}>
       {children}
     </div>
   );
 }
-
-const tfLabel = {
-  fontSize: 11,
-  fontWeight: 800,
-  color: "#5c6b7a",
-  marginBottom: 8,
-  textTransform: "uppercase",
-  letterSpacing: "0.08em",
-};
 
 function makeSlug(title) {
   const base = String(title || "evento")
@@ -161,10 +143,6 @@ function makeSlug(title) {
   return `${base}-${Math.random().toString(36).slice(2, 6)}`;
 }
 
-function publicUrl(ev) {
-  return ev.publicUrl || `${publicBaseUrl()}/e/${ev.slug || ev.id}`;
-}
-
 function formatEventSchedule(ev) {
   if (ev?.startDate && ev?.startTime) {
     const start = `${ev.startDate} ${ev.startTime}`;
@@ -174,17 +152,9 @@ function formatEventSchedule(ev) {
   return ev?.date || "Sin fecha";
 }
 
-const CAPACITY_OPTIONS = [
-  { label: "Menos de 50 personas", value: "under-50" },
-  { label: "Pequeño (hasta 50 personas)", value: "0-50" },
-  { label: "Mediano (50 a 100 personas)", value: "50-100" },
-  { label: "Grande (100 a 300 personas)", value: "100-300" },
-  { label: "Masivo (más de 300 personas)", value: "300+" },
-];
-
 // ─── COMPONENTE PRINCIPAL ──────────────────────────────────────────────────────
 export default function HostApp({ initialDraft = null, onDraftConsumed }) {
-  const { user, token, logout, isSuperAdmin, apiEnabled: apiOn, patchUser } = useAuth();
+  const { user, token, isSuperAdmin, apiEnabled: apiOn } = useAuth();
 
   const _pendingSaved = localStorage.getItem("ef_pending_draft");
   const _pendingParsed = _pendingSaved ? (() => { try { return JSON.parse(_pendingSaved); } catch { return null; } })() : null;
@@ -212,7 +182,6 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
   const [errors, setErrors] = useState({});
   const [vCode, setVCode] = useState("");
   const [vResult, setVResult] = useState(null);
-  const [wizardStep, setWizardStep] = useState(1);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [createReturn, setCreateReturn] = useState("inicio");
@@ -405,12 +374,6 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
     setEvents((p) =>
       p.map((e) => (e.id === id ? { ...e, manualSoldOut } : e))
     );
-  };
-
-  const tryRegister = (id) => {
-    const target = events.find((e) => e.id === id);
-    if (target && isSoldOut(target)) return;
-    go("register", id);
   };
 
   const startNew = () => {
@@ -663,8 +626,6 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
   const confirmEv = events.find((e) => e.id === evId);
   const confirmReg = confirmEv?.registrations.find((r) => r.id === regId);
 
-  const showScannerNav = ["inicio", "mis_eventos", "detail", "validate"].includes(view);
-
   const initials = user?.name
     ? user.name.split(" ").slice(0, 2).map(w => w[0]).join("").toUpperCase()
     : "?";
@@ -699,12 +660,12 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
         fontFamily: "system-ui, -apple-system, sans-serif",
         minHeight: "100vh",
         background: "transparent",
-        color: "#eef1f7",
+        color: "#ffffff",
         textAlign: "left",
       }}
     >
       {/* ── ENCABEZADO ── avatar+logo (izq) · navegación centrada (escritorio) · Nuevo evento (der) */}
-      <nav className={`ef-topbar${["inicio", "stats", "create_wizard", "builder"].includes(view) ? " ef-topbar-open" : ""}`} style={{ background: "rgba(18,20,34,0.82)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderBottom: "1px solid rgba(255,255,255,0.08)", padding: "0 20px", height: 60, alignItems: "center", gap: 12, position: "sticky", top: 0, zIndex: 10, boxShadow: "0 1px 8px rgba(0,0,0,0.4)" }}>
+      <nav className={`ef-topbar${["inicio", "stats", "create_wizard", "builder"].includes(view) ? " ef-topbar-open" : ""}`} style={{ background: "rgba(18,20,22,0.82)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderBottom: "1px solid rgba(255,255,255,0.08)", padding: "0 20px", height: 60, alignItems: "center", gap: 12, position: "sticky", top: 0, zIndex: 10, boxShadow: "0 1px 8px rgba(0,0,0,0.4)" }}>
         {/* Izquierda: avatar (Mi cuenta) + logo */}
         <div style={{ justifySelf: "start", display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
           <button
@@ -717,16 +678,15 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
             style={{
               width: 42, height: 42, borderRadius: "50%",
               boxSizing: "border-box",
-              backgroundColor: "#222b4c",
-              backgroundImage: avatarUrl ? `url("${avatarUrl}")` : "linear-gradient(135deg, #222b4c, #7fb3e6)",
+              backgroundColor: "#1b1d21",
+              backgroundImage: avatarUrl ? `url("${avatarUrl}")` : "none",
               backgroundSize: "cover",
               backgroundPosition: "center",
               backgroundRepeat: "no-repeat",
-              border: "2px solid rgba(127,179,230,0.35)",
+              border: "none",
               cursor: "pointer", overflow: "hidden",
               display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 15, fontWeight: 800, color: "#fff",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+              fontSize: 14, fontWeight: 600, color: "#fff",
               flexShrink: 0,
               padding: 0,
             }}
@@ -734,7 +694,7 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
           >
             {!avatarUrl && initials}
           </button>
-          <button type="button" className="ef-hover-fill ef-logo-text" onClick={() => go("inicio")} style={{ background: "none", border: "none", borderRadius: 14, padding: "6px 10px", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontWeight: 800, fontSize: 17, color: "#eef1f7", whiteSpace: "nowrap" }}>
+          <button type="button" className="ef-hover-fill ef-logo-text" onClick={() => go("inicio")} style={{ background: "none", border: "none", borderRadius: 14, padding: "6px 10px", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontWeight: 600, fontSize: 18, letterSpacing: "-0.02em", color: "#ffffff", whiteSpace: "nowrap" }}>
             <TapInMark size={22} color={VERDE_CORPORATIVO} />
             <span className="ef-logo-word">{BRAND_NAME}</span>
           </button>
@@ -751,11 +711,11 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
                 className="ef-hover-fill"
                 onClick={() => go(item.key)}
                 style={{
-                  background: active ? "rgba(127,179,230,0.18)" : "transparent",
-                  border: active ? "1px solid rgba(127,179,230,0.35)" : "1px solid transparent",
-                  borderRadius: 14, padding: "8px 14px", whiteSpace: "nowrap",
-                  fontSize: 13.5, fontWeight: active ? 700 : 600,
-                  color: active ? "#bfd9f2" : "rgba(238,241,247,0.65)",
+                  background: active ? "rgba(229,238,255,0.12)" : "transparent",
+                  border: "1px solid transparent",
+                  borderRadius: 12, padding: "8px 14px", whiteSpace: "nowrap",
+                  fontSize: 14, fontWeight: active ? 600 : 500,
+                  color: active ? "#ffffff" : "rgba(229,238,255,0.64)",
                   cursor: "pointer",
                 }}
               >
@@ -874,11 +834,11 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
       </main>
 
       {view !== "create_wizard" && (
-        <footer style={{ background: "transparent", borderTop: "1px solid rgba(255,255,255,0.07)", padding: 20, textAlign: "center", fontSize: 12, color: "rgba(238,241,247,0.3)", marginTop: 48, paddingBottom: 110 }}>
+        <footer style={{ background: "transparent", borderTop: "1px solid rgba(255,255,255,0.07)", padding: 20, textAlign: "center", fontSize: 12, color: "rgba(229,238,255,0.3)", marginTop: 48, paddingBottom: 110 }}>
           {BRAND_NAME} Colombia © 2026
           {/* Versión del build. Si aquí pone "preview", estás en una URL
               congelada en un commit viejo y no verás los últimos cambios. */}
-          <span style={{ display: "block", marginTop: 6, fontSize: 10.5, letterSpacing: "0.04em", color: __BUILD_ENV__ === "production" ? "rgba(238,241,247,0.22)" : "#fbbf24" }}>
+          <span style={{ display: "block", marginTop: 6, fontSize: 10.5, letterSpacing: "0.04em", color: __BUILD_ENV__ === "production" ? "rgba(229,238,255,0.22)" : "#fbbf24" }}>
             {__BUILD_ENV__ === "production" ? `v ${__BUILD_ID__}` : `${__BUILD_ENV__} · ${__BUILD_ID__} — no es producción`}
           </span>
         </footer>
@@ -891,25 +851,25 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
             pointerEvents: "auto",
             display: "flex", alignItems: "stretch", gap: 4,
             width: "100%",
-            background: "rgba(28,32,54,0.55)",
-            backdropFilter: "blur(22px) saturate(160%)", WebkitBackdropFilter: "blur(22px) saturate(160%)",
-            border: "1px solid rgba(255,255,255,0.14)",
-            borderRadius: 24, padding: 8,
-            boxShadow: "0 8px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.12)",
+            background: "rgba(18,20,22,0.88)",
+            backdropFilter: "blur(20px) saturate(140%)", WebkitBackdropFilter: "blur(20px) saturate(140%)",
+            border: "1px solid rgba(229,238,255,0.1)",
+            borderRadius: 24, padding: 6,
+            boxShadow: "0 12px 40px rgba(0,0,0,0.6)",
           }}>
-            {BOTTOM_NAV.map(({ key, label, icon, to }) => {
+            {BOTTOM_NAV.map(({ key, label, icon }) => {
               const active = view === key;
               return (
                 <button key={key} type="button" className="ef-hover-fill" onClick={() => go(key)}
                   style={{
                     flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3,
-                    background: active ? "rgba(127,179,230,0.22)" : "transparent",
-                    border: active ? "1px solid rgba(127,179,230,0.35)" : "1px solid transparent",
+                    background: active ? "rgba(229,238,255,0.12)" : "transparent",
+                    border: "1px solid transparent",
                     borderRadius: 18, padding: "9px 4px", cursor: "pointer",
-                    color: active ? "#bfd9f2" : "rgba(238,241,247,0.6)",
+                    color: active ? "#ffffff" : "rgba(229,238,255,0.56)",
                   }}>
                   <span style={{ display: "flex" }}>{icon}</span>
-                  <span className="ef-dock-label" style={{ fontSize: 10.5, fontWeight: active ? 700 : 600, letterSpacing: "0.01em" }}>{label}</span>
+                  <span className="ef-dock-label" style={{ fontSize: 11, fontWeight: active ? 600 : 500 }}>{label}</span>
                 </button>
               );
             })}
@@ -919,10 +879,10 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
               style={{
                 flex: "0 0 auto", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3,
                 background: "transparent", border: "1px solid transparent", borderRadius: 18, padding: "9px 4px", cursor: "pointer",
-                color: "rgba(238,241,247,0.6)",
+                color: "rgba(229,238,255,0.56)",
               }}>
               <span style={{ display: "flex" }}><IconSearch /></span>
-              <span className="ef-dock-label" style={{ fontSize: 10.5, fontWeight: 600 }}>Buscar</span>
+              <span className="ef-dock-label" style={{ fontSize: 11, fontWeight: 500 }}>Buscar</span>
             </button>
           </div>
         </div>
@@ -932,27 +892,27 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
       {searchOpen && (
         <div onClick={() => setSearchOpen(false)}
           style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "10vh 16px 16px" }}>
-          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 460, maxHeight: "78vh", display: "flex", flexDirection: "column", background: "rgba(20,23,40,0.98)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 22, overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 460, maxHeight: "78vh", display: "flex", flexDirection: "column", background: "rgba(18,20,22,0.98)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 22, overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-              <span style={{ display: "flex", color: "#7fb3e6" }}><IconSearch /></span>
+              <span style={{ display: "flex", color: "#34d399" }}><IconSearch /></span>
               <input autoFocus type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Buscar mis eventos…"
-                style={{ flex: 1, background: "none", border: "none", outline: "none", color: "#eef1f7", fontSize: 16, fontFamily: "inherit" }} />
+                style={{ flex: 1, background: "none", border: "none", outline: "none", color: "#ffffff", fontSize: 16, fontFamily: "inherit" }} />
               <button type="button" className="ef-hover-fill" onClick={() => setSearchOpen(false)} style={{ background: "none", border: "none", borderRadius: "50%", color: "#8fa3b1", cursor: "pointer", fontSize: 20, lineHeight: 1, padding: 4 }}>×</button>
             </div>
             <div style={{ overflowY: "auto", padding: 8 }}>
               {searchResults.length === 0 ? (
-                <p style={{ textAlign: "center", color: "rgba(238,241,247,0.5)", fontSize: 14, padding: "28px 12px" }}>Sin resultados.</p>
+                <p style={{ textAlign: "center", color: "rgba(229,238,255,0.5)", fontSize: 14, padding: "28px 12px" }}>Sin resultados.</p>
               ) : (
                 searchResults.map((e) => (
                   <button key={e.id} type="button" className="ef-hover-fill"
                     onClick={() => { setSearchOpen(false); if (e.isDraft) editEvent(e); else go("crm", e.id); }}
-                    style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 12, padding: "11px 12px", borderRadius: 14, background: "transparent", border: "none", cursor: "pointer", color: "#eef1f7" }}>
-                    <span style={{ width: 38, height: 38, borderRadius: 9, flexShrink: 0, overflow: "hidden", background: "rgba(127,179,230,0.18)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 12, padding: "11px 12px", borderRadius: 14, background: "transparent", border: "none", cursor: "pointer", color: "#ffffff" }}>
+                    <span style={{ width: 38, height: 38, borderRadius: 9, flexShrink: 0, overflow: "hidden", background: "rgba(52,211,153,0.18)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                       {e.headerImage ? <img src={e.headerImage} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <IconCalendar />}
                     </span>
                     <span style={{ flex: 1, minWidth: 0 }}>
                       <span style={{ display: "block", fontWeight: 700, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{e.title || "Sin título"}</span>
-                      <span style={{ display: "block", fontSize: 12, color: "rgba(238,241,247,0.5)" }}>{e.isDraft ? "Borrador" : (e.city || e.location || "Evento")}</span>
+                      <span style={{ display: "block", fontSize: 12, color: "rgba(229,238,255,0.5)" }}>{e.isDraft ? "Borrador" : (e.city || e.location || "Evento")}</span>
                     </span>
                   </button>
                 ))
@@ -968,486 +928,21 @@ export default function HostApp({ initialDraft = null, onDraftConsumed }) {
 // ─── DASHBOARD ────────────────────────────────────────────────────────────────
 function SoldOutView({ ev, onBack }) {
   return (
-    <div style={{ border: `2px solid ${NEGRO_PURO}`, borderRadius: 18, padding: 24, textAlign: "center" }}>
+    <div className="panel-card" style={{ padding: 24, textAlign: "center" }}>
       <EventHeader event={ev} compact />
       <span className="sold-out-badge" style={{ fontSize: 14, padding: "8px 16px", display: "inline-block", marginBottom: 16 }}>
         Sold out — cupos agotados
       </span>
-      <p style={{ fontSize: 15, fontWeight: 600, color: NEGRO_MUTED_70, marginBottom: 20 }}>
+      <p style={{ fontSize: 15, color: "var(--tf-muted)", marginBottom: 20 }}>
         Este evento alcanzó su aforo máximo ({capacityLabel(ev)}). No se aceptan más inscripciones.
       </p>
-      <button type="button" className="touch-target" onClick={onBack} style={{ background: NEGRO_PURO, color: BLANCO_CONTRASTE, border: "none", padding: "12px 24px", borderRadius: 8, fontWeight: 800, cursor: "pointer", width: "100%" }}>
+      <button type="button" className="soft-btn soft-btn-ghost" onClick={onBack} style={{ width: "100%" }}>
         Volver
       </button>
     </div>
   );
 }
 
-function Dashboard({ events, onNew, onOpen, onRegister, onValidate, onAdmin }) {
-  return (
-    <div>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 36,
-          flexWrap: "wrap",
-          gap: 12,
-        }}
-      >
-        <div>
-          <h1
-            style={{
-              fontSize: 32,
-              fontWeight: 500,
-              margin: 0,
-              color: NEGRO_PURO,
-              letterSpacing: "-0.02em",
-            }}
-          >
-            Tus eventos
-          </h1>
-          <p style={{ fontSize: 14, color: NEGRO_MUTED_70, marginTop: 4 }}>
-            {events.length} eventos · Colombia
-          </p>
-        </div>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        {events.length > 0 && (
-          <button type="button" onClick={onAdmin} style={{ background: VERDE_CORPORATIVO, color: BLANCO_CONTRASTE, border: `2px solid ${NEGRO_PURO}`, borderRadius: 14, padding: "14px 18px", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
-            Administración
-          </button>
-        )}
-        <button
-          type="button"
-          onClick={onNew}
-          style={{
-            background: NEGRO_PURO,
-            color: BLANCO_CONTRASTE,
-            border: "none",
-            borderRadius: 14,
-            padding: "14px 24px",
-            fontSize: 14,
-            fontWeight: 700,
-            cursor: "pointer",
-          }}
-        >
-          + Crear evento
-        </button>
-        </div>
-      </div>
-
-      {events.length === 0 && (
-        <div
-          style={{
-            padding: "72px 24px",
-            textAlign: "center",
-            borderRadius: 22,
-            background: VERDE_PASTEL_BG,
-            border: `2px solid ${NEGRO_PURO}`,
-          }}
-        >
-          <span style={{ display: "block", marginBottom: 20 }}>
-            <TapInMark size={40} color={VERDE_CORPORATIVO} />
-          </span>
-          <h2
-            style={{
-              fontSize: 26,
-              fontWeight: 300,
-              color: NEGRO_PURO,
-              marginBottom: 10,
-              lineHeight: 1.3,
-            }}
-          >
-            Empecemos a crear<br />
-            <strong style={{ fontWeight: 800 }}>tu próximo evento</strong>
-          </h2>
-          <p
-            style={{
-              fontSize: 14,
-              color: NEGRO_MUTED_70,
-              marginBottom: 28,
-              maxWidth: 340,
-              margin: "0 auto 28px",
-              lineHeight: 1.6,
-            }}
-          >
-            Configura en minutos, inscribe asistentes y gestiona el acceso
-            con QR el día del evento.
-          </p>
-          <button
-            type="button"
-            onClick={onNew}
-            style={{
-              background: NEGRO_PURO,
-              color: BLANCO_CONTRASTE,
-              border: "none",
-              borderRadius: 14,
-              padding: "14px 32px",
-              fontWeight: 700,
-              fontSize: 15,
-              cursor: "pointer",
-            }}
-          >
-            Empezar →
-          </button>
-        </div>
-      )}
-
-      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        {events.map((e) => (
-          <div
-            key={e.id}
-            onClick={() => onOpen(e.id)}
-            style={{
-              border: `2px solid ${NEGRO_PURO}`,
-              borderRadius: 18,
-              overflow: "hidden",
-              cursor: "pointer",
-              background: BLANCO_CONTRASTE,
-            }}
-          >
-            <div
-              style={{
-                background: NEGRO_PURO,
-                color: BLANCO_CONTRASTE,
-                padding: 24,
-              }}
-            >
-              <div
-                style={{
-                  fontSize: 12,
-                  fontWeight: 800,
-                  color: VERDE_CORPORATIVO,
-                  textTransform: "uppercase",
-                  marginBottom: 6,
-                }}
-              >
-                {e.date || "Fecha pendiente"}
-              </div>
-              <h2 style={{ fontSize: 22, fontWeight: 500, margin: 0 }}>{e.title}</h2>
-              {formatEventType(e) && (
-                <p style={{ fontSize: 13, margin: "8px 0 0", opacity: 0.85 }}>
-                  {formatEventType(e)}
-                </p>
-              )}
-              {isSoldOut(e) && (
-                <span className="sold-out-badge" style={{ marginTop: 8, display: "inline-block" }}>Sold out</span>
-              )}
-            </div>
-            <div
-              style={{
-                padding: "16px 24px",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                flexWrap: "wrap",
-                gap: 8,
-              }}
-            >
-              <span style={{ fontSize: 14, fontWeight: 700, color: NEGRO_MUTED_70 }}>
-                {capacityLabel(e)} · {e.registrations.filter((r) => r.used).length} check-in
-              </span>
-              <div style={{ display: "flex", gap: 8 }} onClick={(ev) => ev.stopPropagation()}>
-                <button
-                  type="button"
-                  onClick={() => onRegister(e.id)}
-                  disabled={isSoldOut(e)}
-                  style={{
-                    background: BLANCO_CONTRASTE,
-                    color: NEGRO_PURO,
-                    border: `2px solid ${NEGRO_PURO}`,
-                    borderRadius: 8,
-                    padding: "8px 12px",
-                    fontSize: 12,
-                    fontWeight: 700,
-                    cursor: isSoldOut(e) ? "not-allowed" : "pointer",
-                    opacity: isSoldOut(e) ? 0.4 : 1,
-                  }}
-                >
-                  Inscripción
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onValidate(e.id)}
-                  style={{
-                    background: VERDE_CORPORATIVO,
-                    color: BLANCO_CONTRASTE,
-                    border: `2px solid ${NEGRO_PURO}`,
-                    borderRadius: 8,
-                    padding: "8px 12px",
-                    fontSize: 12,
-                    fontWeight: 700,
-                    cursor: "pointer",
-                  }}
-                >
-                  Check-in
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ─── WIZARD CORREGIDO (VALIDACIÓN DE BOTÓN FINAL CORREGIDA) ───────────────────
-function CreateEventWizard({ draft, setDraft, step, setStep, onDone, onCancel }) {
-  const totalSteps = 6;
-  const progressPercentage = (step / totalSteps) * 100;
-  const [animClass, setAnimClass] = useState("animate-fade-in");
-
-  const updateDraft = (key, value) => setDraft((prev) => ({ ...prev, [key]: value }));
-
-  const handleNextStep = () => {
-    setAnimClass("animate-fade-out");
-    setTimeout(() => {
-      let updatedDate = draft.date;
-      
-      if (step === 4 && draft.startDate) {
-        updatedDate = draft.startDate;
-      }
-
-      const updatedDraft = { ...draft, date: updatedDate };
-      setDraft(updatedDraft);
-      
-      if (step === totalSteps) {
-        onDone(updatedDraft); // Salta al Constructor Preliminar directamente
-      } else {
-        setStep(step + 1);
-        setAnimClass("animate-fade-in");
-      }
-    }, 250);
-  };
-
-  const handleBackStep = () => {
-    setAnimClass("animate-fade-out");
-    setTimeout(() => {
-      if (step > 1) {
-        setStep(step - 1);
-        setAnimClass("animate-fade-in");
-      } else {
-        onCancel();
-      }
-    }, 250);
-  };
-
-  const canProceed =
-    (step === 1 && draft.title.trim()) ||
-    (step === 2 &&
-      (draft.eventType || draft.desc) &&
-      !(draft.eventType === EVENT_TYPE_OTHER && !draft.eventTypeCustom?.trim())) ||
-    (step === 3 &&
-      draft.capacity &&
-      (draft.capacity !== "under-50" ||
-        (Number(draft.capacityCustom) > 0 && Number(draft.capacityCustom) < 50))) ||
-    (step === 4 && draft.startDate && draft.startTime && draft.endDate && draft.endTime) ||
-    (step === 5 && draft.city && draft.address?.trim()) ||
-    step === 6;
-
-  return (
-    <div className="host-tf-wizard">
-      <div className="tf-progress host-tf-progress">
-        <div className="tf-progress-fill" style={{ width: `${progressPercentage}%` }} />
-      </div>
-
-      <div className={`host-tf-body ${animClass}`}>
-        {step === 1 && (
-          <>
-            <div className="tf-step-num">1</div>
-            <h2 className="tf-question">¿Qué nombre llevará tu evento?</h2>
-            <p className="tf-hint">Elige un nombre memorable para tus asistentes.</p>
-            <input
-              className="tf-input-line"
-              type="text"
-              placeholder="Ej. Congreso de Innovación 2026"
-              value={draft.title}
-              onChange={(e) => updateDraft("title", e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && canProceed && handleNextStep()}
-              autoFocus
-            />
-          </>
-        )}
-
-        {step === 2 && (
-          <>
-            <div className="tf-step-num">2</div>
-            <h2 className="tf-question">¿Qué tipo de evento vas a realizar?</h2>
-            <p className="tf-hint">Selecciona la categoría que mejor lo describe.</p>
-            {[...EVENT_TYPE_PRESETS, "Otro (especificar)"].map((type) => {
-              const isOtro = type === "Otro (especificar)";
-              const isSelected = isOtro
-                ? draft.eventType === EVENT_TYPE_OTHER
-                : (draft.eventType || draft.desc) === type;
-              return (
-                <button
-                  key={type}
-                  type="button"
-                  className={`tf-choice${isSelected ? " selected" : ""}`}
-                  onClick={() => {
-                    if (isOtro) updateDraft("eventType", EVENT_TYPE_OTHER);
-                    else setDraft((p) => ({ ...p, eventType: type, eventTypeCustom: "" }));
-                  }}
-                >
-                  {type}
-                </button>
-              );
-            })}
-            {draft.eventType === EVENT_TYPE_OTHER && (
-              <input
-                className="tf-input-line"
-                style={{ marginTop: 16 }}
-                placeholder="Describe el tipo de evento"
-                value={draft.eventTypeCustom || ""}
-                onChange={(e) => updateDraft("eventTypeCustom", e.target.value)}
-                autoFocus
-              />
-            )}
-          </>
-        )}
-
-        {step === 3 && (
-          <>
-            <div className="tf-step-num">3</div>
-            <h2 className="tf-question">¿Cuál es el aforo aproximado?</h2>
-            <p className="tf-hint">Esto nos ayuda a preparar el formulario adecuado para tu evento.</p>
-            {CAPACITY_OPTIONS.map((opt) => (
-              <button
-                key={opt.value}
-                type="button"
-                className={`tf-choice${draft.capacity === opt.value ? " selected" : ""}`}
-                onClick={() =>
-                  setDraft((p) => ({
-                    ...p,
-                    capacity: opt.value,
-                    capacityCustom: opt.value === "under-50" ? p.capacityCustom : "",
-                  }))
-                }
-              >
-                {opt.label}
-              </button>
-            ))}
-            <input
-              className="tf-input-line"
-              type="number"
-              min="1"
-              max="49"
-              inputMode="numeric"
-              placeholder="Cantidad exacta de asistentes"
-              value={draft.capacityCustom || ""}
-              disabled={draft.capacity !== "under-50"}
-              onChange={(e) => updateDraft("capacityCustom", e.target.value)}
-              style={{ marginTop: 12, opacity: draft.capacity === "under-50" ? 1 : 0.35 }}
-            />
-            {draft.capacity === "under-50" && (
-              <p className="tf-hint" style={{ marginTop: 10, fontSize: 13 }}>
-                Escribe un número entre 1 y 49.
-              </p>
-            )}
-          </>
-        )}
-
-        {step === 4 && (
-          <>
-            <div className="tf-step-num">4</div>
-            <h2 className="tf-question">¿Cuándo será tu evento?</h2>
-            <p className="tf-hint">Selecciona fecha y hora de inicio y de finalización.</p>
-            <div style={{ display: "grid", gap: 28 }}>
-              <div>
-                <DateTimePicker
-                  label="Inicio del evento"
-                  date={draft.startDate}
-                  time={draft.startTime}
-                  minDate={new Date().toISOString().split("T")[0]}
-                  onChange={({ date, time }) =>
-                    setDraft(p => ({ ...p, startDate: date, startTime: time, date: date, endDate: p.endDate || date }))
-                  }
-                />
-              </div>
-              <div>
-                <DateTimePicker
-                  label="Fin del evento"
-                  date={draft.endDate}
-                  time={draft.endTime}
-                  minDate={draft.startDate || new Date().toISOString().split("T")[0]}
-                  onChange={({ date, time }) =>
-                    setDraft(p => ({ ...p, endDate: date, endTime: time }))
-                  }
-                />
-              </div>
-            </div>
-          </>
-        )}
-
-        {step === 5 && (
-          <>
-            <div className="tf-step-num">5</div>
-            <h2 className="tf-question">¿Dónde será el evento?</h2>
-            <p className="tf-hint">Selecciona ciudad, lugar o dirección. Puedes añadir instrucciones si la llegada necesita más contexto.</p>
-            <div className="host-tf-location">
-              <ColombiaAddressPicker
-                value={{
-                  city: draft.city,
-                  address: draft.address,
-                  lat: draft.lat,
-                  lng: draft.lng,
-                }}
-                onChange={(loc) =>
-                  setDraft((p) => ({
-                    ...p,
-                    city: loc.city,
-                    address: loc.address,
-                    location: loc.location,
-                    lat: loc.lat,
-                    lng: loc.lng,
-                  }))
-                }
-              />
-            </div>
-            <div style={{ marginTop: 28 }}>
-              <p style={tfLabel}>Instrucciones adicionales opcionales</p>
-              <textarea
-                className="tf-input-line"
-                rows={3}
-                placeholder="Ej. Entrada por la portería norte, preguntar por recepción…"
-                value={draft.locationInstructions || ""}
-                onChange={(e) => updateDraft("locationInstructions", e.target.value)}
-                style={{ resize: "vertical", minHeight: 92, lineHeight: 1.4 }}
-              />
-            </div>
-          </>
-        )}
-
-        {step === 6 && (
-          <>
-            <div className="tf-step-num">6</div>
-            <h2 className="tf-question">Agrega una imagen para tu evento</h2>
-            <p className="tf-hint">Será la portada del enlace público y del pase QR. Puedes continuar sin imagen si aún no la tienes.</p>
-            <HeaderImageUpload
-              image={draft.headerImage}
-              onChange={(headerImage) => updateDraft("headerImage", headerImage)}
-            />
-          </>
-        )}
-      </div>
-
-      <div className="host-tf-footer">
-        <button type="button" className="tf-btn-back" onClick={handleBackStep} aria-label={step === 1 ? "Cancelar" : "Atrás"}>
-          ↑
-        </button>
-        <button type="button" className="tf-btn-ok" onClick={handleNextStep} disabled={!canProceed}>
-          {step === totalSteps ? "Continuar" : "OK ✓"}
-        </button>
-        <span style={{ fontSize: 12, color: "#9B9B9B", userSelect: "none" }}>
-          Presiona Enter ↵
-        </span>
-      </div>
-    </div>
-  );
-}
-
-// ─── BUILDER ──────────────────────────────────────────────────────────────────
 function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDelete, onMove, onPublish }) {
   // Al editar un evento ya publicado se entra aquí directamente: su tipografía
   // hay que descargarla, o el título se escribiría en Inter.
@@ -1644,7 +1139,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
               fontSize: 24 * getEventFont(draft.fontId).headingScale,
               fontWeight: getEventFont(draft.fontId).headingWeight,
               letterSpacing: getEventFont(draft.fontId).headingSpacing,
-              color: "#eef1f7",
+              color: "#ffffff",
               background: "transparent", boxSizing: "border-box",
               textAlign: "center",
             }}
@@ -1658,7 +1153,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
             rows={3}
             style={{
               width: "100%", border: "none", outline: "none", resize: "none",
-              fontSize: 14, color: "rgba(238,241,247,0.5)", lineHeight: 1.7,
+              fontSize: 14, color: "rgba(229,238,255,0.5)", lineHeight: 1.7,
               background: "transparent", boxSizing: "border-box",
             }}
           />
@@ -1731,7 +1226,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
 
       {/* ── Encabezado de campos ── */}
       <div style={{ marginBottom: 16 }}>
-        <h2 style={{ fontSize: 17, fontWeight: 500, margin: 0, color: "#eef1f7" }}>
+        <h2 style={{ fontSize: 17, fontWeight: 500, margin: 0, color: "#ffffff" }}>
           Campos del formulario
         </h2>
         <p style={{ fontSize: 13, color: "#8fa3b1", margin: "3px 0 0" }}>
@@ -1755,7 +1250,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
               // imperativa (ver useLayoutEffect). No ponerlos aquí: React los
               // sobrescribiría en cada repintado y cortaría la animación.
               ...(dragId === f.id
-                ? { outline: "2px solid rgba(127,179,230,0.55)", boxShadow: "0 14px 34px rgba(0,0,0,0.5)", zIndex: 3, position: "relative" }
+                ? { outline: "2px solid rgba(52,211,153,0.55)", boxShadow: "0 14px 34px rgba(0,0,0,0.5)", zIndex: 3, position: "relative" }
                 : null),
             }}
           >
@@ -1767,7 +1262,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
               style={{
                 position: "absolute", top: 8, right: 8,
                 width: 24, height: 24, borderRadius: "50%",
-                border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.07)", color: "rgba(238,241,247,0.6)",
+                border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.07)", color: "rgba(229,238,255,0.6)",
                 cursor: "pointer", fontSize: 14, fontWeight: 700,
                 display: "flex", alignItems: "center", justifyContent: "center",
                 lineHeight: 1, zIndex: 1,
@@ -1781,7 +1276,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
               style={{
                 padding: "14px 44px 14px 20px",
                 cursor: "pointer",
-                background: editFid === f.id ? "rgba(127,179,230,0.1)" : "transparent",
+                background: editFid === f.id ? "rgba(52,211,153,0.1)" : "transparent",
               }}
               onClick={() => setEditFid(editFid === f.id ? null : f.id)}
             >
@@ -1802,8 +1297,8 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
                   style={{
                     display: "inline-flex", alignItems: "center", justifyContent: "center",
                     width: 30, height: 30, marginLeft: -6, flexShrink: 0, borderRadius: 8,
-                    color: dragId === f.id ? "#7fb3e6" : "#b8c5d4", fontSize: 14,
-                    background: dragId === f.id ? "rgba(127,179,230,0.16)" : "transparent",
+                    color: dragId === f.id ? "#34d399" : "#b8c5d4", fontSize: 14,
+                    background: dragId === f.id ? "rgba(52,211,153,0.16)" : "transparent",
                     cursor: dragId === f.id ? "grabbing" : "grab",
                     touchAction: "none", // sin esto el móvil hace scroll en vez de arrastrar
                     userSelect: "none",
@@ -1811,7 +1306,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
                 >
                   ⣿
                 </span>
-                <span style={{ fontWeight: 700, fontSize: 15, color: "#eef1f7" }}>
+                <span style={{ fontWeight: 700, fontSize: 15, color: "#ffffff" }}>
                   {f.label}
                 </span>
               </div>
@@ -1875,7 +1370,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
                     </button>
                   </div>
                 )}
-                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "rgba(238,241,247,0.5)", cursor: "pointer" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "rgba(229,238,255,0.5)", cursor: "pointer" }}>
                   <input type="checkbox" checked={f.required}
                     onChange={(e) => onUpdate(f.id, { required: e.target.checked })}
                     style={{ width: 16, height: 16 }} />
@@ -1906,7 +1401,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
                 onClick={() => { onAdd(ft.type); setShowTools(false); }}
                 className="soft-btn soft-btn-secondary"
                 style={{ textAlign: "left", fontSize: 13, padding: "10px 14px", display: "inline-flex", alignItems: "center", gap: 8 }}>
-                <span style={{ display: "inline-flex", color: "#7fb3e6" }}>{ft.icon}</span> {ft.label}
+                <span style={{ display: "inline-flex", color: "#34d399" }}>{ft.icon}</span> {ft.label}
               </button>
             ))}
           </div>
@@ -1915,7 +1410,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
 
       {/* ── Publicación ── */}
       <div className="panel-card" style={{ marginTop: 20, padding: "20px 24px" }}>
-        <h3 style={{ fontSize: 13, fontWeight: 500, color: "rgba(238,241,247,0.5)", marginBottom: 20, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+        <h3 style={{ fontSize: 13, fontWeight: 500, color: "rgba(229,238,255,0.5)", marginBottom: 20, textTransform: "uppercase", letterSpacing: "0.08em" }}>
           Publicación
         </h3>
 
@@ -1935,7 +1430,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
                   type="button"
                   title={opt.title}
                   onClick={() => setDraft(p => ({ ...p, visibility: opt.value }))}
-                  style={{ fontSize: 11, flex: 1, padding: "10px 6px", cursor: "pointer", fontWeight: 700, borderRadius: 14, background: active ? "rgba(127,179,230,0.22)" : "rgba(255,255,255,0.06)", border: `1px solid ${active ? "rgba(127,179,230,0.4)" : "rgba(255,255,255,0.1)"}`, color: active ? "#eef1f7" : "rgba(238,241,247,0.5)" }}
+                  style={{ fontSize: 11, flex: 1, padding: "10px 6px", cursor: "pointer", fontWeight: 700, borderRadius: 14, background: active ? "rgba(52,211,153,0.22)" : "rgba(255,255,255,0.06)", border: `1px solid ${active ? "rgba(52,211,153,0.4)" : "rgba(255,255,255,0.1)"}`, color: active ? "#ffffff" : "rgba(229,238,255,0.5)" }}
                 >
                   {opt.label}
                 </button>
@@ -1960,10 +1455,10 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
                     padding: "12px 6px", borderRadius: 14, cursor: "pointer",
                     background: active ? `${c.color}22` : "rgba(255,255,255,0.06)",
                     border: `1px solid ${active ? c.color : "rgba(255,255,255,0.1)"}`,
-                    color: active ? "#eef1f7" : "rgba(238,241,247,0.7)",
+                    color: active ? "#ffffff" : "rgba(229,238,255,0.7)",
                   }}
                 >
-                  <span style={{ display: "flex" }}>{CAT_ICONS[c.slug]?.(active ? c.color : "rgba(238,241,247,0.7)", 24)}</span>
+                  <span style={{ display: "flex" }}>{CAT_ICONS[c.slug]?.(active ? c.color : "rgba(229,238,255,0.7)", 24)}</span>
                   <span style={{ fontSize: 11.5, fontWeight: active ? 700 : 600 }}>{c.label}</span>
                 </button>
               );
@@ -1983,7 +1478,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
               return (
                 <button key={String(opt.key)} type="button"
                   onClick={() => opt.key ? setDraft(p => ({ ...p, isPaid: true })) : setDraft(p => ({ ...p, isPaid: false, price: null }))}
-                  style={{ fontSize: 13, flex: 1, padding: "11px 8px", cursor: "pointer", fontWeight: 700, borderRadius: 14, background: active ? "rgba(127,179,230,0.22)" : "rgba(255,255,255,0.06)", border: `1px solid ${active ? "rgba(127,179,230,0.4)" : "rgba(255,255,255,0.1)"}`, color: active ? "#eef1f7" : "rgba(238,241,247,0.5)" }}
+                  style={{ fontSize: 13, flex: 1, padding: "11px 8px", cursor: "pointer", fontWeight: 700, borderRadius: 14, background: active ? "rgba(52,211,153,0.22)" : "rgba(255,255,255,0.06)", border: `1px solid ${active ? "rgba(52,211,153,0.4)" : "rgba(255,255,255,0.1)"}`, color: active ? "#ffffff" : "rgba(229,238,255,0.5)" }}
                 >
                   {opt.label}
                 </button>
@@ -1992,7 +1487,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
           </div>
           {draft.isPaid && (
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <span style={{ fontSize: 14, fontWeight: 700, color: "rgba(238,241,247,0.5)", whiteSpace: "nowrap" }}>COP</span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: "rgba(229,238,255,0.5)", whiteSpace: "nowrap" }}>COP</span>
               <input
                 type="number"
                 min="0"
@@ -2002,7 +1497,7 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
                 onChange={e => setDraft(p => ({ ...p, price: e.target.value ? Number(e.target.value) : null }))}
                 style={{
                   flex: 1, border: "1px solid rgba(255,255,255,0.11)", borderRadius: 14,
-                  padding: "11px 14px", fontSize: 14, color: "#eef1f7",
+                  padding: "11px 14px", fontSize: 14, color: "#ffffff",
                   background: "rgba(255,255,255,0.06)", outline: "none", fontFamily: "inherit",
                 }}
               />
@@ -2016,9 +1511,9 @@ function Builder({ draft, setDraft, editFid, setEditFid, onAdd, onUpdate, onDele
         <SlideToCancel
           onComplete={onPublish}
           label="Publicar"
-          accent="#34c759"
-          bg="rgba(52,199,89,0.14)"
-          border="rgba(52,199,89,0.4)"
+          accent="#34d399"
+          bg="rgba(52,211,153,0.14)"
+          border="rgba(52,211,153,0.4)"
         />
       </div>
     </div>
@@ -2032,7 +1527,7 @@ function iconBtn() {
     borderRadius: "50%",
     border: "1px solid rgba(255,255,255,0.1)",
     background: "rgba(255,255,255,0.07)",
-    color: "rgba(238,241,247,0.6)",
+    color: "rgba(229,238,255,0.6)",
     cursor: "pointer",
     fontSize: 14,
     fontWeight: 900,
@@ -2077,13 +1572,13 @@ function Detail({ ev, onEdit, onValidate, onCrm, onShare, onSetApproval, publicU
           <button type="button" className="soft-btn soft-btn-primary" onClick={() => onCrm()}>CRM inscritos</button>
           {porAprobar.length > 0 && (
             <button type="button" className="soft-btn ef-hover-fill" onClick={() => onCrm("pendientes")}
-              style={{ background: "rgba(251,191,36,0.16)", color: "#92400e", border: "1px solid rgba(251,191,36,0.5)", fontWeight: 800 }}>
+              style={{ background: "rgba(251,191,36,0.16)", color: "#fbbf24", border: "none", fontWeight: 600 }}>
               Aprobar {porAprobar.length} {porAprobar.length === 1 ? "solicitud" : "solicitudes"}
             </button>
           )}
-          <button type="button" className="soft-btn soft-btn-secondary" onClick={onShare}>Compartir enlace</button>
-          <button type="button" className="soft-btn soft-btn-secondary" onClick={onEdit}>Editar formulario</button>
-          <button type="button" className="soft-btn soft-btn-secondary" onClick={onValidate} style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>Verificar <IconScan size={16} /></button>
+          <button type="button" className="soft-btn soft-btn-ghost" onClick={onShare}>Compartir enlace</button>
+          <button type="button" className="soft-btn soft-btn-ghost" onClick={onEdit}>Editar formulario</button>
+          <button type="button" className="soft-btn soft-btn-ghost" onClick={onValidate} style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>Verificar <IconScan size={16} /></button>
         </div>
         </div>
       </div>
@@ -2172,56 +1667,17 @@ function Register({ ev, form, setFormField, errors, onSubmit, onBack }) {
   );
 }
 
-// ─── CONFIRMACIÓN (BOLETA TICKETMASTER) ────────────────────────────────────────
-function Confirm({ ev, reg, onDone }) {
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(reg.id)}&margin=10`;
-
-  return (
-    <div style={{ border: `2px solid ${NEGRO_PURO}`, borderRadius: 22, overflow: "hidden", background: BLANCO_CONTRASTE, textAlign: "center" }}>
-      {ev.headerImage && (
-        <img src={ev.headerImage} alt="" style={{ width: "100%", height: 120, objectFit: "cover", display: "block" }} />
-      )}
-      <div style={{ background: NEGRO_PURO, color: BLANCO_CONTRASTE, padding: "20px" }}>
-        <div style={{ fontSize: 11, fontWeight: 800, color: VERDE_CORPORATIVO }}>PASE DIGITAL DE ACCESO</div>
-        <h2 style={{ fontSize: 22, fontWeight: 500, margin: "4px 0 0" }}>{ev.title}</h2>
-        {ev.city && (
-          <p style={{ fontSize: 13, margin: "8px 0 0", opacity: 0.9 }}>{ev.city} · {ev.location || ev.address}</p>
-        )}
-      </div>
-
-      <div style={{ padding: "32px 24px", background: VERDE_PASTEL_BG }}>
-        {ev.lat != null && <LocationMap lat={ev.lat} lng={ev.lng} height={160} />}
-        <NavigateButtons lat={ev.lat} lng={ev.lng} label={ev.address || ev.location} />
-        <div style={{ display: "inline-block", background: BLANCO_CONTRASTE, padding: "16px", borderRadius: 18, border: `2px solid ${NEGRO_PURO}`, marginBottom: 16 }}>
-          <img src={qrUrl} alt="Código QR de Validación" style={{ display: "block", width: 160, height: 160 }} />
-        </div>
-
-        <div style={{ fontSize: 14, fontWeight: 800, fontFamily: "monospace", color: NEGRO_PURO, marginBottom: 6 }}>
-          CÓDIGO: {reg.id}
-        </div>
-        
-        <p style={{ fontSize: 13, color: NEGRO_MUTED_70, maxWidth: 400, margin: "0 auto 24px", fontWeight: 600 }}>
-          Guarda una captura de pantalla de este QR. En la entrada se escaneará una sola vez; un segundo uso del mismo código será rechazado.
-        </p>
-
-        <button type="button" onClick={onDone} style={{ background: NEGRO_PURO, color: BLANCO_CONTRASTE, border: "none", padding: "12px 24px", borderRadius: 8, fontWeight: 800, fontSize: 14, cursor: "pointer", width: "100%" }}>
-          Volver al evento
-        </button>
-      </div>
-    </div>
-  );
-}
-
 function Validate({ event, scopeLabel, code, setCode, result, onCheck, onScan, onReset, onClose }) {
   const [mode, setMode] = useState("camera");
   const cameraActive = mode === "camera" && !result;
 
-  const AZUL_TXT = "#bfd9f2";
+  const AZUL_TXT = "#ffffff";
+  // Control segmentado: activo relleno claro, inactivo superficie gris.
   const tabStyle = (active) => ({
-    flex: 1, padding: 11, fontWeight: 800, fontSize: 13,
-    border: `1px solid rgba(127,179,230,${active ? 0.5 : 0.3})`, borderRadius: 8,
-    background: active ? "rgba(127,179,230,0.22)" : "rgba(255,255,255,0.05)",
-    color: AZUL_TXT, cursor: "pointer",
+    flex: 1, height: 44, padding: "0 12px", fontWeight: 600, fontSize: 15,
+    border: "none", borderRadius: 12,
+    background: active ? "#ffffff" : "var(--tf-surface-2)",
+    color: active ? "#000000" : "#ffffff", cursor: "pointer",
     display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
   });
 
@@ -2235,19 +1691,19 @@ function Validate({ event, scopeLabel, code, setCode, result, onCheck, onScan, o
   const scanPct = fillBase > 0 ? Math.min(100, Math.round((scanned / fillBase) * 100)) : 0;
 
   return (
-    <div style={{ position: "relative", border: "1px solid rgba(127,179,230,0.3)", borderRadius: 18, padding: 24, background: "rgba(127,179,230,0.10)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}>
+    <div className="panel-card" style={{ position: "relative", padding: "24px 20px", overflow: "visible" }}>
       {onClose && (
         <button
           type="button"
           onClick={onClose}
           aria-label="Cerrar escáner"
-          style={{ position: "absolute", top: 14, right: 14, width: 34, height: 34, borderRadius: "50%", border: "1px solid rgba(127,179,230,0.3)", background: "rgba(255,255,255,0.06)", color: AZUL_TXT, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", padding: 0 }}
+          style={{ position: "absolute", top: 14, right: 14, width: 34, height: 34, borderRadius: "50%", border: "none", background: "var(--tf-surface-2)", color: AZUL_TXT, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", padding: 0 }}
         >
           <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
         </button>
       )}
-      <h2 style={{ fontSize: 22, fontWeight: 500, marginBottom: 8, color: AZUL_TXT, textAlign: "center" }}>Check-in con QR</h2>
-      <p style={{ fontSize: 13, color: "rgba(200,223,240,0.6)", marginBottom: 20, fontWeight: 600, textAlign: "center" }}>{scopeLabel}</p>
+      <h2 style={{ fontSize: 26, fontWeight: 600, letterSpacing: "-0.025em", marginBottom: 6, color: AZUL_TXT }}>Check-in con QR</h2>
+      <p style={{ fontSize: 14, color: "var(--tf-muted)", marginBottom: 20 }}>{scopeLabel}</p>
 
       {!result && (
         <>
@@ -2260,18 +1716,23 @@ function Validate({ event, scopeLabel, code, setCode, result, onCheck, onScan, o
             </button>
           </div>
 
-          {mode === "camera" && <QrScanner active={cameraActive} onScan={onScan} />}
+          {mode === "camera" && (
+            <Suspense fallback={<div style={{ minHeight: 280, display: "grid", placeItems: "center", color: "var(--tf-muted)", fontSize: 14 }}>Abriendo cámara…</div>}>
+              <QrScanner active={cameraActive} onScan={onScan} />
+            </Suspense>
+          )}
 
           {mode === "manual" && (
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               <input
                 type="text"
                 placeholder="TICKET-XXXXXXXX o pega código QR"
-                style={{ ...inputStyle, fontSize: 16, fontWeight: 800, textTransform: "uppercase" }}
+                className="tf-input-line"
+                style={{ fontSize: 17, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.02em" }}
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
               />
-              <button type="button" onClick={onCheck} style={{ background: "linear-gradient(135deg, #222b4c, #7fb3e6)", color: "#fff", border: "none", padding: 14, borderRadius: 8, fontWeight: 800, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+              <button type="button" onClick={onCheck} style={{ background: "var(--tf-accent)", color: "var(--tf-on-accent)", border: "none", minHeight: 52, padding: "0 14px", fontSize: 16, borderRadius: 14, fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
                 Verificar boleto <IconScan size={16} />
               </button>
             </div>
@@ -2284,9 +1745,9 @@ function Validate({ event, scopeLabel, code, setCode, result, onCheck, onScan, o
         // Pendiente de aprobación no es un error del asistente: se pinta ámbar,
         // no rojo, para que el portero entienda que falta aprobarlo.
         const pending = result.s === "pending";
-        const accent = ok ? "#4ade80" : pending ? "#fbbf24" : "#f87171";
-        const cardBg = ok ? "rgba(52,199,89,0.15)" : pending ? "rgba(251,191,36,0.15)" : "rgba(220,38,38,0.15)";
-        const cardBorder = ok ? "rgba(52,199,89,0.5)" : pending ? "rgba(251,191,36,0.5)" : "rgba(220,38,38,0.5)";
+        const accent = ok ? "#6ee7b7" : pending ? "#fbbf24" : "#f87171";
+        const cardBg = ok ? "rgba(52,211,153,0.15)" : pending ? "rgba(251,191,36,0.15)" : "rgba(220,38,38,0.15)";
+        const cardBorder = ok ? "rgba(52,211,153,0.5)" : pending ? "rgba(251,191,36,0.5)" : "rgba(220,38,38,0.5)";
         return (
         <div style={{ textAlign: "center" }}>
           <div
@@ -2307,33 +1768,33 @@ function Validate({ event, scopeLabel, code, setCode, result, onCheck, onScan, o
             {result.s === "nf" && "✕ BOLETO NO ENCONTRADO"}
           </div>
           {pending && (
-            <p style={{ fontSize: 13, color: "rgba(238,241,247,0.7)", margin: "-6px 0 16px", lineHeight: 1.5 }}>
+            <p style={{ fontSize: 13, color: "rgba(229,238,255,0.7)", margin: "-6px 0 16px", lineHeight: 1.5 }}>
               Esta inscripción está pendiente de aprobación. Apruébala en
               <strong style={{ color: "#fbbf24" }}> Inscritos</strong> y el QR queda activo al instante.
             </p>
           )}
 
           {result.participant && result.s !== "nf" && (
-            <div style={{ textAlign: "left", border: `1.5px solid ${cardBorder}`, borderRadius: 14, padding: 16, marginBottom: 16, background: cardBg, color: "#eef1f7" }}>
+            <div style={{ textAlign: "left", border: `1.5px solid ${cardBorder}`, borderRadius: 14, padding: 16, marginBottom: 16, background: cardBg, color: "#ffffff" }}>
               <div style={{ fontWeight: 900, fontSize: 18, marginBottom: 8, color: "#fff" }}>{result.participant.name}</div>
               {result.event && (
-                <p style={{ fontSize: 13, color: "rgba(238,241,247,0.85)", margin: "0 0 12px" }}>
+                <p style={{ fontSize: 13, color: "rgba(229,238,255,0.85)", margin: "0 0 12px" }}>
                   Evento: <strong style={{ color: "#fff" }}>{result.event.title}</strong>
                 </p>
               )}
               {result.participant.rows.map((row) => (
-                <div key={row.label} style={{ fontSize: 13, marginBottom: 6, borderBottom: "1px solid rgba(255,255,255,0.15)", paddingBottom: 4, color: "rgba(238,241,247,0.9)" }}>
+                <div key={row.label} style={{ fontSize: 13, marginBottom: 6, borderBottom: "1px solid rgba(255,255,255,0.15)", paddingBottom: 4, color: "rgba(229,238,255,0.9)" }}>
                   <span style={{ fontWeight: 800, color: "#fff" }}>{row.label}:</span> {row.value}
                 </div>
               ))}
-              <div style={{ fontSize: 12, fontFamily: "monospace", marginTop: 12, color: "rgba(238,241,247,0.6)" }}>{result.ticketId}</div>
+              <div style={{ fontSize: 12, fontFamily: "monospace", marginTop: 12, color: "rgba(229,238,255,0.6)" }}>{result.ticketId}</div>
               {result.s === "used" && result.reg?.checkedInAt && (
-                <p style={{ fontSize: 12, marginTop: 8, color: "rgba(238,241,247,0.7)" }}>
+                <p style={{ fontSize: 12, marginTop: 8, color: "rgba(229,238,255,0.7)" }}>
                   Primer ingreso: {new Date(result.reg.checkedInAt).toLocaleString("es-MX")}
                 </p>
               )}
               {ok && result.checkedInAt && (
-                <p style={{ fontSize: 12, marginTop: 8, color: "#4ade80", fontWeight: 700 }}>
+                <p style={{ fontSize: 12, marginTop: 8, color: "#6ee7b7", fontWeight: 700 }}>
                   Registrado: {new Date(result.checkedInAt).toLocaleString("es-MX")}
                 </p>
               )}
@@ -2341,12 +1802,12 @@ function Validate({ event, scopeLabel, code, setCode, result, onCheck, onScan, o
           )}
 
           {result.s === "nf" && (
-            <p style={{ fontSize: 13, color: "rgba(238,241,247,0.6)", marginBottom: 16 }}>
+            <p style={{ fontSize: 13, color: "rgba(229,238,255,0.6)", marginBottom: 16 }}>
               Verifica que el código sea del evento correcto{event ? ` (${event.title})` : ""} y que la inscripción exista.
             </p>
           )}
 
-          <button type="button" onClick={onReset} style={{ background: "rgba(52,199,89,0.16)", color: "#5ee07f", padding: "16px 24px", border: "1px solid rgba(52,199,89,0.45)", borderRadius: 14, cursor: "pointer", fontWeight: 800, fontSize: 15, width: "auto", maxWidth: 240, margin: "0 auto", display: "block" }}>
+          <button type="button" onClick={onReset} style={{ background: "rgba(52,211,153,0.16)", color: "#6ee7b7", padding: "16px 24px", border: "1px solid rgba(52,211,153,0.45)", borderRadius: 14, cursor: "pointer", fontWeight: 800, fontSize: 15, width: "auto", maxWidth: 240, margin: "0 auto", display: "block" }}>
             Escanear
           </button>
         </div>
@@ -2355,17 +1816,17 @@ function Validate({ event, scopeLabel, code, setCode, result, onCheck, onScan, o
 
       {/* ── Conteo de escaneados y aforo ── */}
       {event && (
-        <div style={{ marginTop: 22, paddingTop: 18, borderTop: "1px solid rgba(127,179,230,0.2)" }}>
+        <div style={{ marginTop: 22, paddingTop: 18, borderTop: "1px solid rgba(52,211,153,0.2)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(200,223,240,0.7)" }}>Escaneados</span>
-            <span style={{ fontSize: 16, fontWeight: 900, color: "#bfd9f2" }}>{scanned} / {total}</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(229,238,255,0.7)" }}>Escaneados</span>
+            <span style={{ fontSize: 16, fontWeight: 900, color: "#a7f3d0" }}>{scanned} / {total}</span>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 12, marginBottom: 7 }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(200,223,240,0.7)" }}>Aforo</span>
-            <span style={{ fontSize: 14, fontWeight: 800, color: "#bfd9f2" }}>{capMax != null ? `${total} / ${capMax}` : `${total} inscritos`}</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(229,238,255,0.7)" }}>Aforo</span>
+            <span style={{ fontSize: 14, fontWeight: 800, color: "#a7f3d0" }}>{capMax != null ? `${total} / ${capMax}` : `${total} inscritos`}</span>
           </div>
           <div style={{ height: 10, borderRadius: 6, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
-            <div style={{ height: "100%", width: `${scanPct}%`, background: "linear-gradient(90deg, #16a34a, #4ade80)", borderRadius: 6, transition: "width 0.4s" }} />
+            <div style={{ height: "100%", width: `${scanPct}%`, background: "linear-gradient(90deg, #34d399, #6ee7b7)", borderRadius: 6, transition: "width 0.4s" }} />
           </div>
         </div>
       )}

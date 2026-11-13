@@ -1,84 +1,98 @@
 import { useNavigate } from "react-router-dom";
 import "../styles/typeform.css";
-import { VERDE_CORPORATIVO } from "../lib/theme.js";
-import { BRAND_NAME, TapInMark } from "../lib/brand.jsx";
+import { TapInMark } from "../lib/brand.jsx";
+
+// Inicio del anfitrión, con la estructura de plata.co: titular grande alineado
+// a la izquierda, una sola acción principal, cifras grandes y una lista de
+// pasos "icono + título + una línea" sin cajas alrededor.
+
+const ico = (d) => (
+  <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d}</svg>
+);
 
 const STEPS = [
-  { n: "1", title: "Crea tu evento", desc: "Responde 4 preguntas rápidas: nombre, tipo, aforo y lugar. En menos de 3 minutos." },
-  { n: "2", title: "Personaliza el formulario", desc: "Añade campos a medida: nombre, correo, teléfono, selección múltiple, checkboxes y más." },
-  { n: "3", title: "Comparte el enlace", desc: "Un link público para WhatsApp, Instagram o email. Los asistentes se inscriben solos." },
-  { n: "4", title: "Check-in con QR", desc: "El día del evento escanea el código QR de cada asistente desde tu celular en segundos." },
+  { icon: ico(<><rect x="3" y="4" width="18" height="17" rx="3" /><path d="M8 2v4M16 2v4M3 10h18M12 14v4M10 16h4" /></>),
+    title: "Crea tu evento", desc: "Nombre, fecha, lugar y aforo. Listo en menos de 3 minutos." },
+  { icon: ico(<><path d="M9 5h11M9 12h11M9 19h11" /><circle cx="4.5" cy="5" r="1.5" /><circle cx="4.5" cy="12" r="1.5" /><circle cx="4.5" cy="19" r="1.5" /></>),
+    title: "Arma el formulario", desc: "Pide solo lo que necesitas: nombre, correo, teléfono u opciones." },
+  { icon: ico(<><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4" /></>),
+    title: "Comparte el enlace", desc: "Por WhatsApp o Instagram. La gente se inscribe sola." },
+  { icon: ico(<><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2" /><path d="M7 12h10" /></>),
+    title: "Escanea en la puerta", desc: "Valida cada QR con la cámara de tu celular, en segundos." },
 ];
 
 export default function InicioView({ events, onNew, onGoTo }) {
-  const totalRegs = events.reduce((n, e) => n + (e.registrations?.length || 0), 0);
   const nav = useNavigate();
+  const totalRegs = events.reduce((n, e) => n + (e.registrations?.length || 0), 0);
+  const totalCheckins = events.reduce((n, e) => n + (e.registrations?.filter((r) => r.used).length || 0), 0);
 
   return (
-    <div style={{ maxWidth: 720, margin: "0 auto" }}>
+    <div style={{ maxWidth: 640, margin: "0 auto", padding: "0 4px" }}>
 
       {/* Hero */}
-      <div style={{ textAlign: "center", padding: "48px 24px 40px" }}>
-        <span style={{ display: "block", marginBottom: 12 }}><TapInMark size={44} color={VERDE_CORPORATIVO} /></span>
-        <h1 className="tf-question" style={{ fontSize: "clamp(26px,5vw,38px)", fontWeight: 300, margin: "0 0 16px" }}>
-          Bienvenido a <strong style={{ fontWeight: 700 }}>{BRAND_NAME}</strong>
+      <section style={{ padding: "28px 0 36px" }}>
+        <TapInMark size={30} color="var(--tf-accent)" />
+        <h1 style={{ fontSize: "clamp(34px, 9vw, 52px)", lineHeight: 1.05, letterSpacing: "-0.035em", fontWeight: 600, margin: "18px 0 14px" }}>
+          Crea tu evento en minutos
         </h1>
-        <p className="tf-hint" style={{ maxWidth: 400, margin: "0 auto 32px" }}>
-          Gestiona inscripciones, controla el acceso con QR y analiza tus eventos — todo desde un solo lugar.
+        <p style={{ fontSize: 17, lineHeight: 1.5, color: "var(--tf-desc)", margin: "0 0 28px", maxWidth: 460 }}>
+          Inscripciones, entradas con QR y control de acceso desde tu celular.
         </p>
-        <button type="button" className="soft-btn soft-btn-primary ef-hover-fill" onClick={onNew} style={{ fontSize: 16, padding: "16px 40px", borderRadius: 14 }}>
-          + Crear nuevo evento
-        </button>
-        <div style={{ marginTop: 16 }}>
-          <button type="button" className="ef-hover-fill" onClick={() => nav("/discover")} style={{ background: "none", border: "none", borderRadius: 8, padding: "6px 10px", color: "#7fb3e6", fontWeight: 700, cursor: "pointer", fontSize: 14, textDecoration: "underline", textUnderlineOffset: 3 }}>
-            Descubrir eventos →
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, maxWidth: 420 }}>
+          <button type="button" className="soft-btn soft-btn-primary" onClick={onNew} style={{ width: "100%" }}>
+            Crear evento
+          </button>
+          <button type="button" className="soft-btn soft-btn-secondary" onClick={() => nav("/discover")} style={{ width: "100%" }}>
+            Descubrir eventos
           </button>
         </div>
-      </div>
+      </section>
 
-      {/* Stats rápidas si hay eventos */}
+      {/* Cifras: grandes y sin cajas, como las de Plata. */}
       {events.length > 0 && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, marginBottom: 40, padding: "0 8px" }}>
+        <section className="panel-card" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", marginBottom: 40 }}>
           {[
-            { label: "Eventos",   value: events.length,  nav: "mis_eventos" },
-            { label: "Inscritos", value: totalRegs,       nav: "mis_eventos" },
-            { label: "Check-ins", value: events.reduce((n, e) => n + (e.registrations?.filter(r => r.used).length || 0), 0), nav: "stats" },
-          ].map(s => (
+            { label: "Eventos",   value: events.length, to: "mis_eventos" },
+            { label: "Inscritos", value: totalRegs,     to: "mis_eventos" },
+            { label: "Check-ins", value: totalCheckins, to: "stats" },
+          ].map((s, i) => (
             <button
               key={s.label}
               type="button"
-              onClick={() => onGoTo?.(s.nav)}
-              className="panel-card"
-              style={{ padding: "20px 16px", textAlign: "center", cursor: "pointer", border: "none", width: "100%", transition: "opacity 0.15s" }}
-              onMouseEnter={e => e.currentTarget.style.opacity = "0.8"}
-              onMouseLeave={e => e.currentTarget.style.opacity = "1"}
+              className="ef-hover-fill"
+              onClick={() => onGoTo?.(s.to)}
+              style={{
+                padding: "20px 16px 18px", textAlign: "left", cursor: "pointer", border: "none",
+                background: "transparent", color: "inherit", borderRadius: 0,
+                borderLeft: i ? "1px solid var(--tf-divider)" : "none",
+              }}
             >
-              <div style={{ fontSize: 28, fontWeight: 800, color: "#7fb3e6" }}>{s.value}</div>
-              <div style={{ fontSize: 12, color: "#8fa3b1", fontWeight: 700, marginTop: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>{s.label}</div>
+              <div style={{ fontSize: 34, fontWeight: 600, letterSpacing: "-0.03em", lineHeight: 1 }}>{s.value}</div>
+              <div style={{ fontSize: 13, color: "var(--tf-muted)", marginTop: 8 }}>{s.label}</div>
             </button>
           ))}
-        </div>
+        </section>
       )}
 
       {/* Cómo funciona */}
-      <div style={{ padding: "0 8px 48px" }}>
-        <h2 style={{ fontSize: 16, fontWeight: 500, color: "#8fa3b1", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 20 }}>
+      <section style={{ paddingBottom: 48 }}>
+        <h2 style={{ fontSize: 26, fontWeight: 600, letterSpacing: "-0.025em", margin: "0 0 22px" }}>
           Cómo funciona
         </h2>
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {STEPS.map(s => (
-            <div key={s.n} className="panel-card" style={{ padding: "18px 20px", display: "flex", gap: 16, alignItems: "flex-start" }}>
-              <div style={{ width: 32, height: 32, borderRadius: 8, background: "#7fb3e6", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14, flexShrink: 0 }}>
-                {s.n}
+        <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
+          {STEPS.map((s) => (
+            <div key={s.title} style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: "var(--tf-surface-2)", color: "var(--tf-text)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+                {s.icon}
               </div>
-              <div>
-                <div style={{ fontWeight: 700, fontSize: 15, color: "#eef1f7", marginBottom: 4 }}>{s.title}</div>
-                <div style={{ fontSize: 13, color: "#8fa3b1", lineHeight: 1.5 }}>{s.desc}</div>
+              <div style={{ paddingTop: 2 }}>
+                <div style={{ fontWeight: 600, fontSize: 17, letterSpacing: "-0.01em", marginBottom: 3 }}>{s.title}</div>
+                <div style={{ fontSize: 15, color: "var(--tf-muted)", lineHeight: 1.45 }}>{s.desc}</div>
               </div>
             </div>
           ))}
         </div>
-      </div>
+      </section>
     </div>
   );
 }

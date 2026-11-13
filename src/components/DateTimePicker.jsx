@@ -174,9 +174,9 @@ export default function DateTimePicker({ date, time, onChange, minDate, minTime,
 
   const triggerStyle = (filled) => ({
     minHeight: 58, flexShrink: 0,
-    border: `1.5px solid ${filled ? "#7fb3e6" : "rgba(255,255,255,0.13)"}`,
+    border: `1.5px solid ${filled ? "#34d399" : "rgba(255,255,255,0.13)"}`,
     borderRadius: 14,
-    background: filled ? "rgba(26,95,138,0.18)" : "rgba(255,255,255,0.04)",
+    background: filled ? "rgba(52,211,153,0.18)" : "rgba(255,255,255,0.04)",
     cursor: "pointer", padding: "0 16px",
     display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8,
   });
@@ -201,7 +201,7 @@ export default function DateTimePicker({ date, time, onChange, minDate, minTime,
           onClick={(e) => openPicker(e.currentTarget)}
           style={{ ...triggerStyle(!!date), flex: 1 }}
         >
-          <span style={{ fontSize: 15, fontWeight: date ? 700 : 400, color: date ? "#eef1f7" : "#7fb3e6", whiteSpace: "nowrap" }}>
+          <span style={{ fontSize: 15, fontWeight: date ? 700 : 400, color: date ? "#ffffff" : "#34d399", whiteSpace: "nowrap" }}>
             {dateFmt || "Fecha"}
           </span>
           <span style={{ fontSize: 11, color: "#8fa3b1" }}>▾</span>
@@ -212,7 +212,7 @@ export default function DateTimePicker({ date, time, onChange, minDate, minTime,
           onClick={(e) => openPicker(e.currentTarget)}
           style={{ ...triggerStyle(!!time), width: 110 }}
         >
-          <span style={{ fontSize: 15, fontWeight: time ? 700 : 400, color: time ? "#eef1f7" : "#7fb3e6", whiteSpace: "nowrap" }}>
+          <span style={{ fontSize: 15, fontWeight: time ? 700 : 400, color: time ? "#ffffff" : "#34d399", whiteSpace: "nowrap" }}>
             {timeFmt || "Hora"}
           </span>
           <span style={{ fontSize: 11, color: "#8fa3b1" }}>▾</span>
@@ -287,7 +287,7 @@ export default function DateTimePicker({ date, time, onChange, minDate, minTime,
               onClick={() => setOpen(false)}
               style={{
                 width: "100%", padding: "11px",
-                background: "rgba(26,95,138,0.5)",
+                background: "rgba(52,211,153,0.5)",
                 border: "none", borderRadius: 14,
                 color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer",
               }}

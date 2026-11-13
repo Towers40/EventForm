@@ -239,7 +239,7 @@ export default function ColombiaAddressPicker({ value, onChange }) {
                 padding: "12px 16px",
                 borderRadius: 14,
                 border: "none",
-                background: "#222b4c",
+                background: "#1b1d21",
                 color: "#fff",
                 fontWeight: 700,
                 fontSize: 13,
@@ -258,7 +258,7 @@ export default function ColombiaAddressPicker({ value, onChange }) {
           )}
 
           {error && (
-            <p style={{ fontSize: 12, color: "#991b1b", marginTop: 8, fontWeight: 700 }}>
+            <p style={{ fontSize: 12, color: "#f87171", marginTop: 8, fontWeight: 700 }}>
               {error}
             </p>
           )}

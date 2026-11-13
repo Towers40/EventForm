@@ -35,7 +35,7 @@ export default function ConfirmTicket({ ev, reg, regs, onDone, standalone, tintC
 
       {/* Ticket header */}
       <div style={{ textAlign: "center", marginBottom: 20, lineHeight: 1.32 }}>
-        <div style={{ fontSize: 11, fontWeight: 800, color: approved ? "#4ade80" : "#fbbf24", letterSpacing: 2, marginBottom: 6 }}>
+        <div style={{ fontSize: 11, fontWeight: 800, color: approved ? "#6ee7b7" : "#fbbf24", letterSpacing: 2, marginBottom: 6 }}>
           {approved
             ? (varias ? `✓ ${tickets.length} ENTRADAS CONFIRMADAS` : "✓ INSCRIPCIÓN CONFIRMADA")
             : "⏳ SUJETO A APROBACIÓN"}
@@ -43,7 +43,7 @@ export default function ConfirmTicket({ ev, reg, regs, onDone, standalone, tintC
         {/* El nombre del evento conserva su letra; el resto de la entrada
             (QR, instrucciones, acciones) es de la app. */}
         <h2 {...eventFontProps(ev?.fontId, {
-          extraStyle: { fontSize: 22, fontWeight: 500, color: "#eef1f7", margin: 0 },
+          extraStyle: { fontSize: 22, fontWeight: 500, color: "#ffffff", margin: 0 },
         })}>{ev.title}</h2>
         {varias && (
           <p style={{ fontSize: 13, color: "#8fa3b1", margin: "8px 0 0", lineHeight: 1.5 }}>
@@ -74,15 +74,15 @@ export default function ConfirmTicket({ ev, reg, regs, onDone, standalone, tintC
       {/* Organizer CTA */}
       <div style={{
         marginTop: 28, padding: "18px 20px", borderRadius: 14,
-        background: "rgba(127,179,230,0.08)",
-        border: "1px solid rgba(127,179,230,0.2)",
+        background: "rgba(52,211,153,0.08)",
+        border: "1px solid rgba(52,211,153,0.2)",
         textAlign: "center",
       }}>
         <p style={{ fontSize: 13, color: "#8fa3b1", margin: "0 0 12px" }}>¿Quieres organizar tus propios eventos?</p>
         <a href="/app" style={{
-          display: "inline-block", padding: "11px 22px",
-          background: "#7fb3e6", color: "#fff",
-          borderRadius: 14, fontWeight: 700, fontSize: 14, textDecoration: "none",
+          display: "inline-block", padding: "14px 22px",
+          background: "var(--tf-accent)", color: "var(--tf-on-accent)",
+          borderRadius: 14, fontWeight: 600, fontSize: 15, textDecoration: "none",
         }}>
           Crear cuenta de organizador →
         </a>
@@ -99,15 +99,15 @@ export default function ConfirmTicket({ ev, reg, regs, onDone, standalone, tintC
       {confirmOpen && (
         <div onClick={() => setConfirmOpen(false)}
           style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-          <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 380, background: "rgba(20,23,40,0.98)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 22, padding: 24, textAlign: "center", boxShadow: "0 24px 70px rgba(0,0,0,0.55)" }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 380, background: "rgba(18,20,22,0.98)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 22, padding: 24, textAlign: "center", boxShadow: "0 24px 70px rgba(0,0,0,0.55)" }}>
             <div style={{ width: 52, height: 52, borderRadius: "50%", background: "rgba(248,113,113,0.15)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
               <svg width={26} height={26} viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             </div>
-            <h3 style={{ fontSize: 18, fontWeight: 500, color: "#eef1f7", margin: "0 0 8px" }}>¿Estás seguro que quieres cancelar tu participación?</h3>
-            <p style={{ fontSize: 13.5, color: "rgba(238,241,247,0.6)", margin: "0 0 22px", lineHeight: 1.5 }}>Tu entrada quedará anulada y perderás tu lugar en este evento.</p>
+            <h3 style={{ fontSize: 18, fontWeight: 500, color: "#ffffff", margin: "0 0 8px" }}>¿Estás seguro que quieres cancelar tu participación?</h3>
+            <p style={{ fontSize: 13.5, color: "rgba(229,238,255,0.6)", margin: "0 0 22px", lineHeight: 1.5 }}>Tu entrada quedará anulada y perderás tu lugar en este evento.</p>
             <div style={{ display: "flex", gap: 10 }}>
               <button type="button" onClick={() => setConfirmOpen(false)} disabled={cancelling}
-                style={{ flex: 1, padding: 13, borderRadius: 14, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.18)", color: "#eef1f7", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+                style={{ flex: 1, padding: 13, borderRadius: 14, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.18)", color: "#ffffff", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
                 No, volver
               </button>
               <button type="button" onClick={() => { setConfirmOpen(false); onCancel(); }} disabled={cancelling}

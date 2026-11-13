@@ -1,6 +1,14 @@
-/* ─── Tipografía global ────────────────────────────────────────────────────── */
+/* ─── Tipografía global ──────────────────────────────────────────────────────
+   Onest: grotesca geométrica, ancha y de x-height alta (la alternativa libre más
+   cercana a la Rothorn de plata.co). Se lee bien a 13–15 px en móvil. */
 *, *::before, *::after {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: var(--font);
+}
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* ─── Tipografía de UN evento ──────────────────────────────────────────────
@@ -19,7 +27,7 @@
 .ef-event-font *,
 .ef-event-font *::before,
 .ef-event-font *::after {
-  font-family: var(--ef-font, 'Inter', system-ui, -apple-system, sans-serif);
+  font-family: var(--ef-font, var(--font));
 }
 
 /* Vuelta a la letra de la app dentro de un evento. Va DESPUÉS para ganar el
@@ -32,55 +40,68 @@
    el contexto la desambigua y la personalización se mantiene. */
 .ef-app-font,
 .ef-app-font * {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: var(--font);
 }
 
-/* ─── Tema oscuro — base de todas las vistas públicas ─────────────────────── */
+/* ─── Sistema TapIn (inspirado en plata.co) ────────────────────────────────
+   · Fondo NEGRO puro y superficies sólidas gris carbón, sin velos de color.
+   · UN solo color de acción (esmeralda de la marca) para el botón principal;
+     todo lo demás es blanco o gris. El color se gana su sitio.
+   · Titulares grandes, peso 600 y tracking negativo; texto secundario frío
+     (229,238,255) con opacidad.
+   · Botones de 52 px con radio 14 (no píldora), campos de 56 px con radio 16.
+   Mismos valores que src/lib/ds.jsx. */
 :root {
-  /* Sistema TapIn: color de "Navy Refinado", forma de "Rumba", tipo de
-     "Nocturne". Mismos valores que src/lib/ds.jsx. */
-  --tf-bg:        #12152a;
-  --tf-card:      rgba(255,255,255,0.06);
-  --tf-border:    rgba(255,255,255,0.14);
-  --tf-text:      #eef1f7;
-  --tf-desc:      rgba(238,241,247,0.84);
-  --tf-muted:     rgba(238,241,247,0.64);
-  --tf-accent:    #7fb3e6;
-  --tf-accent-lt: #bfd9f2;
-  --tf-accent-a:  rgba(127,179,230,0.2);
-  --tf-accent-b:  rgba(127,179,230,0.45);
-  --tf-divider:   rgba(255,255,255,0.1);
-  /* Radios de "Rumba": generosos, y acciones en píldora. */
-  --r-lg: 22px;
-  --r-md: 18px;
-  --r-sm: 14px;
-  --r-cta: 999px;
-  /* Tipografía de "Nocturne": la jerarquía la marca el tamaño, no el peso. */
-  --h-weight: 500;
-  --h-letter: -0.4px;
+  --font:         'Onest', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --tf-bg:        #000000;
+  --tf-surface:   #121416;
+  --tf-surface-2: #1b1d21;
+  --tf-field:     #1b1d21;
+  --tf-card:      #121416;
+  --tf-border:    rgba(229,238,255,0.12);
+  --tf-divider:   rgba(229,238,255,0.08);
+
+  --tf-text:      #ffffff;
+  --tf-desc:      rgba(229,238,255,0.78);
+  --tf-muted:     rgba(229,238,255,0.56);
+  --tf-faint:     rgba(229,238,255,0.36);
+
+  --tf-accent:    #34d399;
+  --tf-accent-press: #22c38a;
+  --tf-on-accent: #03140c;
+  --tf-accent-lt: #a7f3d0;
+  --tf-accent-a:  rgba(52,211,153,0.14);
+  --tf-accent-b:  rgba(52,211,153,0.42);
+
+  --r-lg: 24px;
+  --r-md: 16px;
+  --r-sm: 12px;
+  --r-cta: 14px;
+
+  --h-weight: 600;
+  --h-letter: -0.02em;
   --scroll-tint:  0; /* 0–1, lo actualiza src/lib/scrollTint.js al desplazarse */
+  color-scheme: dark;
 }
 
-/* ─── Fondo global de la app (todas las páginas) ───────────────────────────
-   Base navy con verde oscuro difuminado + capa verde más oscura que gana
-   opacidad al hacer scroll (variable --scroll-tint). Se usan pseudo-elementos
-   fijos porque background-attachment: fixed no funciona en iOS. */
+/* ─── Fondo global ─────────────────────────────────────────────────────────
+   Negro puro. Se mantienen los pseudo-elementos fijos (iOS no soporta
+   background-attachment: fixed) para que el tinte por evento siga funcionando. */
 :root {
-  background: #12152a; /* respaldo bajo las capas fijas */
+  background: #000;
 }
 body {
-  /* body debe quedar transparente: un fondo opaco aquí taparía los
-     pseudo-elementos ::before/::after de z-index negativo */
+  /* transparente: un fondo opaco aquí taparía los pseudo-elementos */
   background: transparent;
+  color: var(--tf-text);
 }
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   z-index: -2;
-  background:
-    radial-gradient(120% 80% at 80% -10%, rgba(127, 179, 230, 0.16), transparent 60%),
-    linear-gradient(170deg, #1d2340 0%, #12152a 100%);
+  background: #000;
 }
 body::after {
   content: "";
@@ -88,10 +109,16 @@ body::after {
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  /* Al bajar, el navy se profundiza. Antes viraba a verde. */
-  background: linear-gradient(180deg, rgba(13, 16, 32, 0.5) 0%, rgba(8, 10, 22, 0.92) 100%);
-  opacity: calc(var(--scroll-tint) * 0.85);
-  transition: opacity 0.25s ease-out;
+  background: transparent;
+  opacity: 0;
+}
+
+::selection { background: rgba(52,211,153,0.35); color: #fff; }
+
+/* Foco visible y consistente para teclado (accesibilidad). */
+:focus-visible {
+  outline: 2px solid var(--tf-accent);
+  outline-offset: 2px;
 }
 
 .tf-screen {
@@ -109,7 +136,7 @@ body::after {
 
 .tf-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #7fb3e6, #7fb3e6);
+  background: var(--tf-accent);
   transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -137,19 +164,19 @@ body::after {
   justify-content: center;
   width: 28px;
   height: 28px;
-  background: #7fb3e6;
-  color: #fff;
-  font-weight: 800;
+  background: var(--tf-surface-2);
+  color: var(--tf-text);
+  font-weight: 600;
   font-size: 14px;
-  border-radius: 4px;
+  border-radius: 8px;
   margin-bottom: 20px;
 }
 
 .tf-question {
-  font-size: clamp(23px, 5vw, 30px);
+  font-size: clamp(26px, 6.4vw, 34px);
   font-weight: var(--h-weight);
   letter-spacing: var(--h-letter);
-  line-height: 1.28;
+  line-height: 1.12;
   color: var(--tf-text);
   margin: 0 0 12px;
 }
@@ -166,31 +193,33 @@ h1, h2, h3, .ef-title {
 }
 
 .tf-hint {
-  font-size: 15px;
-  color: var(--tf-muted);
-  margin: 0 0 28px;
+  font-size: 16px;
   line-height: 1.5;
+  color: var(--tf-muted);
+  margin: 0 0 24px;
 }
 
 .tf-input-line {
   width: 100%;
   border: none;
-  border-bottom: 2px solid rgba(255,255,255,0.15);
-  padding: 12px 0;
-  font-size: 20px;
-  font-weight: 300;
-  color: var(--tf-accent-lt);
-  background: transparent;
+  border-radius: var(--r-md);
+  padding: 16px 18px;
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--tf-text);
+  background: var(--tf-field);
   outline: none;
-  transition: border-color 0.2s;
+  box-sizing: border-box;
+  transition: box-shadow 0.15s;
 }
 
 .tf-input-line:focus {
-  border-bottom-color: var(--tf-accent-lt);
+  box-shadow: inset 0 0 0 1.5px var(--tf-accent);
 }
 
 .tf-input-line::placeholder {
-  color: rgba(255,255,255,0.22);
+  color: var(--tf-faint);
 }
 
 .tf-footer {
@@ -203,18 +232,18 @@ h1, h2, h3, .ef-title {
   gap: 12px;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(transparent, rgba(8, 14, 12, 0.9) 45%);
+  background: linear-gradient(transparent, rgba(0,0,0,0.9) 45%);
   max-width: 720px;
   margin: 0 auto;
   box-sizing: border-box;
 }
 
 .tf-btn-back {
-  width: 48px;
-  height: 48px;
+  width: 52px;
+  height: 52px;
   border: none;
-  border-radius: 6px;
-  background: rgba(255,255,255,0.1);
+  border-radius: var(--r-cta);
+  background: var(--tf-surface-2);
   color: var(--tf-text);
   font-size: 20px;
   cursor: pointer;
@@ -223,43 +252,47 @@ h1, h2, h3, .ef-title {
 
 .tf-btn-ok {
   flex: 1;
-  max-width: 200px;
-  height: 48px;
+  height: 52px;
   border: none;
-  border-radius: 6px;
-  background: #7fb3e6;
-  color: #fff;
-  font-weight: 700;
-  font-size: 15px;
-  letter-spacing: 0.05em;
+  border-radius: var(--r-cta);
+  background: var(--tf-accent);
+  color: var(--tf-on-accent);
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: -0.01em;
   cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
 }
 
 .tf-btn-ok:disabled {
-  opacity: 0.3;
+  background: var(--tf-surface-2);
+  color: var(--tf-faint);
   cursor: not-allowed;
 }
 
 .tf-choice {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 12px;
   width: 100%;
-  text-align: left;
-  padding: 14px 18px;
+  padding: 16px 18px;
   margin-bottom: 8px;
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 10px;
-  background: rgba(255,255,255,0.04);
+  border: 1.5px solid transparent;
+  border-radius: var(--r-md);
+  background: var(--tf-surface);
   font-size: 16px;
   font-weight: 500;
   color: var(--tf-text);
+  text-align: left;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: border-color 0.15s, background 0.15s;
+  box-sizing: border-box;
 }
 
-.tf-choice:hover,
+.tf-choice:hover { background: var(--tf-surface-2); }
 .tf-choice.selected {
-  border-color: var(--tf-accent-lt);
-  background: rgba(127,179,230,0.12);
+  border-color: var(--tf-accent);
+  background: var(--tf-accent-a);
   color: var(--tf-text);
 }
 
@@ -277,7 +310,7 @@ h1, h2, h3, .ef-title {
   grid-template-columns: minmax(240px, 380px) 1fr;
   gap: 36px;
   align-items: start;
-  background: #0f1a1f;
+  background: #0e0f11;
   color: #fff;
   padding: clamp(20px, 4vw, 38px);
   border-radius: 18px;
@@ -303,7 +336,7 @@ h1, h2, h3, .ef-title {
 }
 
 .tf-event-cover-placeholder {
-  color: #222b4c;
+  color: #1b1d21;
   font-size: 96px;
   font-weight: 900;
 }
@@ -362,12 +395,12 @@ h1, h2, h3, .ef-title {
 .tf-event-cover-btn {
   width: 100%;
   border: none;
-  border-radius: 8px;
-  background: #7fb3e6;
-  color: #fff;
-  padding: 14px 20px;
+  border-radius: var(--r-cta);
+  background: var(--tf-accent);
+  color: var(--tf-on-accent);
+  padding: 15px 20px;
   font-size: 16px;
-  font-weight: 900;
+  font-weight: 600;
   cursor: pointer;
 }
 
@@ -381,7 +414,7 @@ h1, h2, h3, .ef-title {
 .tf-upload-drop {
   width: 100%;
   min-height: 220px;
-  border: 2px dashed rgba(127,179,230,0.5);
+  border: 2px dashed rgba(52,211,153,0.5);
   border-radius: 12px;
   background: rgba(255,255,255,0.03);
   color: var(--tf-accent-lt);
@@ -439,7 +472,7 @@ h1, h2, h3, .ef-title {
 .host-tf-body .tf-choice.selected,
 .host-tf-body .tf-choice:hover {
   border-color: var(--tf-accent-lt);
-  background: rgba(127,179,230,0.12);
+  background: rgba(52,211,153,0.12);
   color: var(--tf-text);
 }
 
@@ -463,7 +496,7 @@ h1, h2, h3, .ef-title {
   gap: 12px;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(transparent, rgba(8, 14, 12, 0.9) 45%);
+  background: linear-gradient(transparent, rgba(0,0,0,0.9) 45%);
   box-sizing: border-box;
   z-index: 9;
 }
@@ -501,27 +534,33 @@ h1, h2, h3, .ef-title {
 /* Panel admin — glass dark */
 .panel-card {
   border-radius: var(--r-lg);
-  border: 1px solid var(--tf-border);
-  background: var(--tf-card);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  border: none;
+  background: var(--tf-surface);
   overflow: hidden;
 }
 
 .panel-card-header {
-  padding: 18px 24px;
-  background: rgba(255,255,255,0.03);
+  padding: 18px 20px;
+  background: transparent;
   border-bottom: 1px solid var(--tf-divider);
 }
 
 .soft-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
   border-radius: var(--r-cta);
-  padding: 11px 22px;
+  padding: 0 22px;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 16px;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
   cursor: pointer;
   border: none;
-  transition: transform 0.1s, box-shadow 0.15s;
+  box-sizing: border-box;
+  transition: transform 0.1s, background 0.15s, opacity 0.15s;
 }
 
 .soft-btn:active {
@@ -529,19 +568,34 @@ h1, h2, h3, .ef-title {
 }
 
 .soft-btn-primary {
-  background: var(--tf-accent-a);
-  color: var(--tf-text);
-  border: 1px solid var(--tf-accent-b);
+  min-height: 52px;
+  background: var(--tf-accent);
+  color: var(--tf-on-accent);
+  border: none;
 }
 
 .soft-btn-secondary {
-  background: rgba(255,255,255,0.06);
-  color: var(--tf-accent-lt);
-  border: 1px solid var(--tf-border);
+  background: transparent;
+  color: var(--tf-text);
+  border: 1.5px solid rgba(229,238,255,0.9);
 }
 
 .soft-btn-secondary:hover {
-  background: rgba(255,255,255,0.12);
+  background: rgba(229,238,255,0.08);
+}
+.soft-btn-primary:hover { background: var(--tf-accent-press); }
+/* Tercer nivel: superficie gris, para acciones que no compiten con la principal. */
+.soft-btn-ghost {
+  background: var(--tf-surface-2);
+  color: var(--tf-text);
+}
+.soft-btn-ghost:hover { background: #24272c; }
+.soft-btn:disabled, .soft-btn[disabled] {
+  background: var(--tf-surface-2);
+  color: var(--tf-faint);
+  border-color: transparent;
+  cursor: not-allowed;
+  transform: none;
 }
 
 /* ─── Relleno blanco translúcido al pasar el cursor ───────────────────────────
@@ -559,8 +613,7 @@ h1, h2, h3, .ef-title {
   box-shadow: inset 0 0 0 999px rgba(255,255,255,0.16);
 }
 .soft-btn.ef-hover-fill:hover {
-  background: transparent;
-  box-shadow: inset 0 0 0 999px rgba(255,255,255,0.10);
+  box-shadow: inset 0 0 0 999px rgba(255,255,255,0.08);
 }
 
 /* ─── Encabezado: escritorio con texto · móvil solo con iconos ────────────────
@@ -612,7 +665,7 @@ h1, h2, h3, .ef-title {
   display: inline-flex; align-items: center; justify-content: center;
   height: 36px; padding: 0 8px; flex-shrink: 0;
   border: none; border-radius: 999px; cursor: pointer; overflow: hidden;
-  background: rgba(255,255,255,0.08); color: rgba(238,241,247,0.78);
+  background: var(--tf-surface-2); color: rgba(229,238,255,0.82);
   transition: background 0.25s ease, color 0.25s ease, padding 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .ef-pill:hover { background: rgba(255,255,255,0.14); }
@@ -620,14 +673,14 @@ h1, h2, h3, .ef-title {
 .ef-pill-label {
   max-width: 0; opacity: 0; margin-left: 0;
   overflow: hidden; white-space: nowrap;
-  font-size: 13.5px; font-weight: 700; letter-spacing: -0.01em;
+  font-size: 14px; font-weight: 600; letter-spacing: -0.01em;
   transition: max-width 0.28s cubic-bezier(0.4, 0, 0.2, 1),
               opacity 0.18s ease, margin-left 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 }
 /* Abierta: verde de acción con texto oscuro (blanco sobre este verde no llega
    al contraste mínimo de WCAG AA). */
-.ef-pill-on { background: #34c759; color: #07260f; padding: 0 14px; }
-.ef-pill-on:hover { background: #45d16a; }
+.ef-pill-on { background: #ffffff; color: #000000; padding: 0 14px; }
+.ef-pill-on:hover { background: #e9edf5; }
 .ef-pill-on .ef-pill-label { max-width: 160px; opacity: 1; margin-left: 7px; }
 
 /* Con una píldora abierta el encabezado necesita sitio. Hasta 400px el logo se

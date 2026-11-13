@@ -5,13 +5,15 @@ import { COLOMBIA_CITIES } from "../lib/colombia.js";
 import { EVENT_TYPE_OTHER, EVENT_TYPE_PRESETS } from "../lib/colombia.js";
 import { searchPlacesInColombia } from "../lib/geocoding.js";
 import { VERDE_CORPORATIVO } from "../lib/theme.js";
-import { DS } from "../lib/ds.jsx";
 import { TapInMark } from "../lib/brand.jsx";
 import { api } from "../lib/api.js";
 import { dominantColorFromFile } from "../lib/dominantColor.js";
 import DateTimePicker from "./DateTimePicker.jsx";
 import PosterMarquee from "./PosterMarquee.jsx";
 import CreateEventForm from "./CreateEventForm.jsx";
+
+// Longitud del código de verificación (debe coincidir con el servidor).
+const CODE_LEN = 6;
 import "../styles/typeform.css";
 
 const uid = () => Math.random().toString(36).slice(2, 10).toUpperCase();
@@ -114,7 +116,7 @@ function TFLocationPicker({ value, onChange }) {
         onChange={(e) => onCityChange(e.target.value)}
         style={{
           width: "100%", border: "none", borderBottom: "2px solid #b8c5d4",
-          padding: "10px 0", fontSize: 18, color: city ? "#222b4c" : "#a8b8c8",
+          padding: "10px 0", fontSize: 18, color: city ? "#1b1d21" : "#a8b8c8",
           background: "transparent", outline: "none", marginBottom: 28,
           cursor: "pointer", appearance: "none",
           backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23b8c5d4' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E\")",
@@ -170,7 +172,7 @@ function TFLocationPicker({ value, onChange }) {
                     onMouseEnter={(e) => (e.currentTarget.style.background = "#f8fafc")}
                     onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                   >
-                    <span style={{ fontSize: 14, fontWeight: 600, color: "#222b4c", display: "block" }}>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: "#1b1d21", display: "block" }}>
                       {s.shortLabel}
                     </span>
                     {s.subtitle && (
@@ -185,7 +187,7 @@ function TFLocationPicker({ value, onChange }) {
           </div>
 
           {confirmed && (
-            <p style={{ marginTop: 10, fontSize: 13, color: "#16a34a", fontWeight: 700 }}>
+            <p style={{ marginTop: 10, fontSize: 13, color: "#34d399", fontWeight: 700 }}>
               ✓ Ubicación confirmada
             </p>
           )}
@@ -263,7 +265,7 @@ function PasswordStrength({ password }) {
           style={{
             fontSize: 11,
             fontWeight: 700,
-            color: c.ok ? "#16a34a" : "#a0aec0",
+            color: c.ok ? "#34d399" : "#a0aec0",
             display: "flex",
             alignItems: "center",
             gap: 4,
@@ -327,12 +329,12 @@ export default function OnboardingFlow({ onDraftReady }) {
   const [acErr, setAcErr] = useState("");
   const [busy, setBusy] = useState(false);
   const [pendingEmail, setPendingEmail] = useState("");
-  const [digits, setDigits] = useState(["", "", "", ""]);
+  const [digits, setDigits] = useState(() => Array(CODE_LEN).fill(""));
   const [codeErr, setCodeErr] = useState("");
   const [codeBusy, setCodeBusy] = useState(false);
   const [resendStatus, setResendStatus] = useState("idle");
   const [dateErr, setDateErr] = useState("");
-  const digitRefs = [useRef(), useRef(), useRef(), useRef()];
+  const digitRefs = useRef([]);
 
   const go = (next) => {
     setAnimClass("tf-fade-out");
@@ -453,17 +455,25 @@ export default function OnboardingFlow({ onDraftReady }) {
   };
 
   const handleDigitChange = (i, val) => {
-    const v = val.replace(/\D/g, "").slice(-1);
+    const clean = val.replace(/\D/g, "");
     const next = [...digits];
-    next[i] = v;
+    if (clean.length > 1) {
+      // Pegado o autocompletado del SMS/correo ("one-time-code"): llega el
+      // código entero en una sola caja y hay que repartirlo. Antes solo se
+      // quedaba la última cifra.
+      clean.slice(0, CODE_LEN - i).split("").forEach((c, k) => { next[i + k] = c; });
+    } else {
+      next[i] = clean;
+    }
     setDigits(next);
     setCodeErr("");
-    if (v && i < 3) digitRefs[i + 1].current?.focus();
+    const firstEmpty = next.findIndex((d) => !d);
+    if (clean && firstEmpty !== -1) digitRefs.current[firstEmpty]?.focus();
     if (next.every((d) => d !== "")) handleVerifyCode(next.join(""));
   };
 
   const handleDigitKey = (i, e) => {
-    if (e.key === "Backspace" && !digits[i] && i > 0) digitRefs[i - 1].current?.focus();
+    if (e.key === "Backspace" && !digits[i] && i > 0) digitRefs.current[i - 1]?.focus();
   };
 
   const handleVerifyCode = async (code) => {
@@ -474,8 +484,8 @@ export default function OnboardingFlow({ onDraftReady }) {
       // Draft already in localStorage, HostApp lo cargará
     } catch (ex) {
       setCodeErr(ex.message || "Código incorrecto. Intenta de nuevo.");
-      setDigits(["", "", "", ""]);
-      setTimeout(() => digitRefs[0].current?.focus(), 50);
+      setDigits(Array(CODE_LEN).fill(""));
+      setTimeout(() => digitRefs.current[0]?.focus(), 50);
     } finally {
       setCodeBusy(false);
     }
@@ -485,14 +495,19 @@ export default function OnboardingFlow({ onDraftReady }) {
     setResendStatus("sending");
     try {
       const res = await api.resendCode(pendingEmail);
-      // If server auto-verified (no email configured or email failed) → log in directly
+      // Solo en desarrollo local (sin correo) el servidor auto-verifica.
       if (res.token) {
         loginWithToken(res.token, res.user);
         return;
       }
+      if (res.alreadyVerified) {
+        setResendStatus("idle");
+        setCodeErr("Esta cuenta ya está verificada. Inicia sesión con tu contraseña.");
+        return;
+      }
       setResendStatus("sent");
-      setDigits(["", "", "", ""]);
-      setTimeout(() => digitRefs[0].current?.focus(), 50);
+      setDigits(Array(CODE_LEN).fill(""));
+      setTimeout(() => digitRefs.current[0]?.focus(), 50);
     } catch {
       setResendStatus("error");
     }
@@ -552,16 +567,15 @@ export default function OnboardingFlow({ onDraftReady }) {
                 zIndex: -1,
                 pointerEvents: "none",
                 background:
-                  "radial-gradient(closest-side, rgba(8,11,24,0.97) 0%, rgba(8,11,24,0.92) 52%, rgba(8,11,24,0.6) 76%, rgba(8,11,24,0) 100%)",
+                  "radial-gradient(closest-side, rgba(6,7,8,0.97) 0%, rgba(6,7,8,0.92) 52%, rgba(6,7,8,0.6) 76%, rgba(6,7,8,0) 100%)",
               }}
             />
             <div style={{ marginBottom: 36 }}>
               <span style={{ display: "block", lineHeight: 1, marginBottom: 10 }}><TapInMark size={48} color={VERDE_CORPORATIVO} /></span>
-              <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: "0.15em", color: "#8fa3b1" }}>TAPIN COLOMBIA</span>
+              <span style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.14em", color: "var(--tf-muted)" }}>TAPIN COLOMBIA</span>
             </div>
-            <h1 className="tf-question" style={{ fontSize: "clamp(28px, 6vw, 42px)", fontWeight: 300, lineHeight: 1.25, marginBottom: 20 }}>
-              Empecemos a crear<br />
-              <strong style={{ fontWeight: 700 }}>tu próximo evento</strong>
+            <h1 className="tf-question" style={{ fontSize: "clamp(34px, 9vw, 52px)", fontWeight: 600, lineHeight: 1.05, letterSpacing: "-0.035em", marginBottom: 18 }}>
+              Empecemos a crear tu próximo evento
             </h1>
             <p className="tf-hint" style={{ maxWidth: 460, margin: "0 auto 40px", fontSize: 16 }}>
               Del club de running al festival, del cumpleaños a la conferencia.
@@ -571,26 +585,26 @@ export default function OnboardingFlow({ onDraftReady }) {
               <button
                 type="button"
                 onClick={() => { setSkipWizard(true); go(10); }}
-                className="soft-btn ef-hover-fill"
-                style={{ fontSize: 16, padding: "16px 24px", borderRadius: 14, width: "100%", background: DS.ctaBg, color: DS.ctaColor, fontWeight: 700, border: "1px solid rgba(255,255,255,0.75)", boxShadow: "0 10px 30px rgba(0,0,0,0.45)" }}
+                className="soft-btn soft-btn-primary"
+                style={{ width: "100%", boxShadow: "0 10px 30px rgba(0,0,0,0.45)" }}
               >
                 Crear un evento
               </button>
               <button
                 type="button"
                 onClick={() => nav("/login")}
-                className="wbtn"
-                style={{ width: "100%", padding: "16px 24px", background: "rgba(255,255,255,0.13)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", border: "1px solid rgba(255,255,255,0.24)", borderRadius: 14, fontWeight: 700, fontSize: 16, cursor: "pointer" }}
+                className="soft-btn soft-btn-secondary"
+                style={{ width: "100%", background: "rgba(0,0,0,0.55)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}
               >
-                <span className="wbtn-text">Iniciar sesión</span>
+                Iniciar sesión
               </button>
               <button
                 type="button"
                 onClick={() => nav("/discover")}
-                className="wbtn"
-                style={{ width: "100%", padding: "16px 24px", background: "rgba(255,255,255,0.13)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", border: "1px solid rgba(255,255,255,0.24)", borderRadius: 14, cursor: "pointer", fontWeight: 700, fontSize: 16 }}
+                className="soft-btn ef-hover-fill"
+                style={{ width: "100%", background: "transparent", color: "var(--tf-text)", textDecoration: "underline", textUnderlineOffset: 4, minHeight: 44 }}
               >
-                <span className="wbtn-text-multi">Descubrir eventos</span>
+                Descubrir eventos
               </button>
             </div>
           </div>
@@ -722,7 +736,7 @@ export default function OnboardingFlow({ onDraftReady }) {
               />
             </div>
             {dateErr && (
-              <p style={{ color: "#991b1b", fontWeight: 700, marginTop: 16, fontSize: 14 }}>
+              <p style={{ color: "#f87171", fontWeight: 700, marginTop: 16, fontSize: 14 }}>
                 ⚠️ {dateErr}
               </p>
             )}
@@ -852,7 +866,7 @@ export default function OnboardingFlow({ onDraftReady }) {
             <PasswordStrength password={acPassword} />
 
             {acErr && (
-              <p style={{ color: "#991b1b", fontWeight: 700, marginTop: 14, fontSize: 14, lineHeight: 1.4 }}>
+              <p style={{ color: "#f87171", fontWeight: 700, marginTop: 14, fontSize: 14, lineHeight: 1.4 }}>
                 {acErr}
               </p>
             )}
@@ -866,46 +880,47 @@ export default function OnboardingFlow({ onDraftReady }) {
 
             <div style={{ marginTop: 24, textAlign: "center" }}>
               <button type="button" onClick={() => nav("/login")}
-                style={{ background: "none", border: "none", color: "#222b4c", fontWeight: 700, cursor: "pointer", fontSize: 14, textDecoration: "underline", textUnderlineOffset: 3 }}>
+                style={{ background: "none", border: "none", color: "#1b1d21", fontWeight: 700, cursor: "pointer", fontSize: 14, textDecoration: "underline", textUnderlineOffset: 3 }}>
                 Ya tengo cuenta → Iniciar sesión
               </button>
             </div>
           </form>
         )}
 
-        {/* ── PASO 8: Código de 4 dígitos ── */}
+        {/* ── PASO 8: Código de verificación ── */}
         {phase === 8 && (
           <div style={{ textAlign: "center" }}>
             <div style={{ fontSize: 48, marginBottom: 20 }}>📩</div>
             <h2 className="tf-question">Ingresa tu código</h2>
             <p className="tf-hint" style={{ maxWidth: 380, margin: "0 auto 8px" }}>
-              Enviamos un código de 4 dígitos a
+              Enviamos un código de {CODE_LEN} dígitos a
             </p>
-            <p style={{ fontWeight: 800, fontSize: 15, color: "#222b4c", marginBottom: 32 }}>
+            <p style={{ fontWeight: 600, fontSize: 15, color: "var(--tf-text)", marginBottom: 32, wordBreak: "break-all" }}>
               {pendingEmail}
             </p>
 
-            {/* 4 cajas de dígito */}
-            <div style={{ display: "flex", gap: 12, justifyContent: "center", marginBottom: 20 }}>
+            {/* Una caja por cifra */}
+            <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 20 }}>
               {digits.map((d, i) => (
                 <input
                   key={i}
-                  ref={digitRefs[i]}
+                  ref={(el) => { digitRefs.current[i] = el; }}
                   type="text"
                   inputMode="numeric"
-                  maxLength={1}
+                  aria-label={`Cifra ${i + 1} de ${CODE_LEN}`}
                   value={d}
                   autoFocus={i === 0}
                   onChange={(e) => handleDigitChange(i, e.target.value)}
                   onKeyDown={(e) => handleDigitKey(i, e)}
                   autoComplete={i === 0 ? "one-time-code" : "off"}
                   style={{
-                    width: 56, height: 64, textAlign: "center",
-                    fontSize: 28, fontWeight: 800, color: "#222b4c",
-                    border: "2px solid #b8c5d4", borderRadius: 14,
-                    outline: "none", background: "#f8fafc",
+                    width: "min(48px, 13vw)", height: 60, textAlign: "center",
+                    fontSize: 26, fontWeight: 600, color: "var(--tf-text)",
+                    border: "1.5px solid", borderRadius: 14,
+                    outline: "none", background: "var(--tf-field)",
                     transition: "border-color 0.15s",
-                    borderColor: d ? "#222b4c" : "#b8c5d4",
+                    borderColor: d ? "var(--tf-accent)" : "var(--tf-border)",
+                    padding: 0,
                   }}
                 />
               ))}
@@ -913,7 +928,7 @@ export default function OnboardingFlow({ onDraftReady }) {
 
             {codeBusy && <p style={{ color: "#8fa3b1", fontSize: 14 }}>Verificando…</p>}
             {codeErr && (
-              <p style={{ color: "#991b1b", fontWeight: 700, fontSize: 14, marginBottom: 12 }}>
+              <p style={{ color: "#f87171", fontWeight: 700, fontSize: 14, marginBottom: 12 }}>
                 {codeErr}
               </p>
             )}
@@ -931,13 +946,13 @@ export default function OnboardingFlow({ onDraftReady }) {
             <div style={{ marginTop: 28 }}>
               {resendStatus === "idle" && (
                 <button type="button" onClick={handleResend}
-                  style={{ background: "none", border: "none", color: "#222b4c", fontWeight: 700, cursor: "pointer", fontSize: 13, textDecoration: "underline", textUnderlineOffset: 3 }}>
+                  style={{ background: "none", border: "none", color: "var(--tf-text)", fontWeight: 600, cursor: "pointer", fontSize: 14, textDecoration: "underline", textUnderlineOffset: 3 }}>
                   ¿No llegó? Reenviar código
                 </button>
               )}
               {resendStatus === "sending" && <p style={{ fontSize: 13, color: "#8fa3b1" }}>Enviando…</p>}
-              {resendStatus === "sent" && <p style={{ fontSize: 13, color: "#16a34a", fontWeight: 700 }}>✓ Código reenviado — revisa tu correo</p>}
-              {resendStatus === "error" && <p style={{ fontSize: 13, color: "#991b1b", fontWeight: 700 }}>Error al reenviar. Intenta más tarde.</p>}
+              {resendStatus === "sent" && <p style={{ fontSize: 13, color: "#34d399", fontWeight: 700 }}>✓ Código reenviado — revisa tu correo</p>}
+              {resendStatus === "error" && <p style={{ fontSize: 13, color: "#f87171", fontWeight: 700 }}>Error al reenviar. Intenta más tarde.</p>}
             </div>
 
             <div style={{ marginTop: 20 }}>

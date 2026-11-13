@@ -78,7 +78,7 @@ export default function EventCard({ ev, destacado = false, duplicado = false }) 
         {/* Fecha · hora */}
         <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 3, fontSize: 11 }}>
           {fecha && (
-            <span style={{ fontWeight: 800, color: "#bfd9f2", background: "rgba(127,179,230,0.16)", borderRadius: 6, padding: "1px 7px", lineHeight: 1.35, letterSpacing: "0.02em" }}>
+            <span style={{ fontWeight: 800, color: "#a7f3d0", background: "rgba(52,211,153,0.16)", borderRadius: 6, padding: "1px 7px", lineHeight: 1.35, letterSpacing: "0.02em" }}>
               {fecha.d} {MONTHS[fecha.m - 1].toUpperCase()}
             </span>
           )}
@@ -87,11 +87,11 @@ export default function EventCard({ ev, destacado = false, duplicado = false }) 
               <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#ef4444" }} />EN VIVO
             </span>
           )}
-          {horaInicio && <span style={{ color: "rgba(238,241,247,0.5)" }}>{horaInicio}</span>}
+          {horaInicio && <span style={{ color: "rgba(229,238,255,0.5)" }}>{horaInicio}</span>}
           <span style={{
             marginLeft: "auto", fontWeight: 700, borderRadius: 6, padding: "1px 7px", lineHeight: 1.35, whiteSpace: "nowrap",
-            background: ev.isPaid ? "rgba(251,191,36,0.12)" : "rgba(34,197,94,0.12)",
-            color: ev.isPaid ? "#fbbf24" : "#22c55e",
+            background: ev.isPaid ? "rgba(251,191,36,0.12)" : "rgba(52,211,153,0.12)",
+            color: ev.isPaid ? "#fbbf24" : "#34d399",
           }}>
             {price}
           </span>
@@ -110,7 +110,7 @@ export default function EventCard({ ev, destacado = false, duplicado = false }) 
             </span>
           )}
           <h3 style={{
-            margin: 0, fontSize: 15, fontWeight: 500, color: "#eef1f7", lineHeight: 1.25,
+            margin: 0, fontSize: 15, fontWeight: 500, color: "#ffffff", lineHeight: 1.25,
             minWidth: 0, overflow: "hidden", display: "-webkit-box",
             WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
           }}>
@@ -121,12 +121,12 @@ export default function EventCard({ ev, destacado = false, duplicado = false }) 
         {/* Dónde */}
         {(lugar || ev.city) && (
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2, minWidth: 0 }}>
-            <span style={{ flexShrink: 0, width: ICON_BOX, height: ICON_BOX, display: "inline-flex", alignItems: "center", justifyContent: "center", color: "rgba(238,241,247,0.42)" }}>
+            <span style={{ flexShrink: 0, width: ICON_BOX, height: ICON_BOX, display: "inline-flex", alignItems: "center", justifyContent: "center", color: "rgba(229,238,255,0.42)" }}>
               {ev.isVirtual ? <IcoVideo /> : <IcoPin />}
             </span>
-            <span style={{ fontSize: 11.5, lineHeight: 1.3, color: "rgba(238,241,247,0.5)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            <span style={{ fontSize: 11.5, lineHeight: 1.3, color: "rgba(229,238,255,0.5)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {ev.isVirtual ? "Evento virtual" : lugar || ev.city}
-              {!ev.isVirtual && lugar && ev.city && <span style={{ color: "rgba(238,241,247,0.3)" }}> · {ev.city}</span>}
+              {!ev.isVirtual && lugar && ev.city && <span style={{ color: "rgba(229,238,255,0.3)" }}> · {ev.city}</span>}
             </span>
           </div>
         )}
@@ -147,7 +147,7 @@ export default function EventCard({ ev, destacado = false, duplicado = false }) 
             <img src={ev.hostAvatar} alt="" loading="lazy" decoding="async" width={ICON_BOX} height={ICON_BOX}
               style={{ width: ICON_BOX, height: ICON_BOX, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
           ) : (
-            <span style={{ width: ICON_BOX, height: ICON_BOX, borderRadius: "50%", flexShrink: 0, background: "rgba(127,179,230,0.25)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8.5, fontWeight: 700, color: "#bfd9f2" }}>
+            <span style={{ width: ICON_BOX, height: ICON_BOX, borderRadius: "50%", flexShrink: 0, background: "rgba(52,211,153,0.25)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8.5, fontWeight: 700, color: "#a7f3d0" }}>
               {(ev.hostName || "?").slice(0, 1).toUpperCase()}
             </span>
           )}
@@ -157,15 +157,15 @@ export default function EventCard({ ev, destacado = false, duplicado = false }) 
               title={`Ver todo lo que organiza ${ev.hostName || "este organizador"}`}
               style={{
                 position: "relative", zIndex: 2, pointerEvents: "auto",
-                fontSize: 11.5, lineHeight: 1.3, color: "rgba(191,217,242,0.85)",
-                textDecoration: "none", borderBottom: "1px solid rgba(191,217,242,0.35)",
+                fontSize: 11.5, lineHeight: 1.3, color: "rgba(167,243,208,0.85)",
+                textDecoration: "none", borderBottom: "1px solid rgba(167,243,208,0.35)",
                 minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
               }}
             >
               {ev.hostName || "Organizador"}
             </a>
           ) : (
-            <span style={{ fontSize: 11.5, lineHeight: 1.3, color: "rgba(238,241,247,0.5)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            <span style={{ fontSize: 11.5, lineHeight: 1.3, color: "rgba(229,238,255,0.5)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {ev.hostName || "Organizador"}
             </span>
           )}
@@ -184,7 +184,7 @@ export default function EventCard({ ev, destacado = false, duplicado = false }) 
         ) : (
           <div style={{
             width: "100%", height: "100%",
-            background: cat ? `linear-gradient(135deg, ${cat.color}44, #111)` : "linear-gradient(135deg, #1e3a5f, #0d1b2a)",
+            background: cat ? `linear-gradient(135deg, ${cat.color}44, #111)` : "linear-gradient(135deg, #1e3a5f, #0d0e10)",
             display: "flex", alignItems: "center", justifyContent: "center",
           }}>
             {cat && CAT_ICONS[cat.slug]

@@ -15,9 +15,9 @@ export function IconButton({
 }) {
   const tonos = {
     glass:  { background: "rgba(0,0,0,0.5)",            border: "1px solid rgba(255,255,255,0.2)",  color: "#fff" },
-    soft:   { background: "rgba(255,255,255,0.07)",     border: "1px solid rgba(255,255,255,0.14)", color: "#bfd9f2" },
-    accent: { background: "rgba(127,179,230,0.22)",     border: "1px solid rgba(127,179,230,0.45)", color: "#eef1f7" },
-    green:  { background: "rgba(52,199,89,0.16)",       border: "1px solid rgba(52,199,89,0.4)",    color: "#5ee07f" },
+    soft:   { background: "rgba(255,255,255,0.07)",     border: "1px solid rgba(255,255,255,0.14)", color: "#a7f3d0" },
+    accent: { background: "rgba(52,211,153,0.22)",     border: "1px solid rgba(52,211,153,0.45)", color: "#ffffff" },
+    green:  { background: "rgba(52,211,153,0.16)",       border: "1px solid rgba(52,211,153,0.4)",    color: "#6ee7b7" },
   };
   const base = {
     display: "inline-flex", alignItems: "center", justifyContent: "center",
@@ -77,7 +77,7 @@ export const IcoVideo = ({ size = ROW_ICON }) => (
 );
 
 /** Fila "icono + texto" con la caja y la alineación del sistema. */
-export function DataRow({ icon, children, color = "rgba(238,241,247,0.64)", size = 12, style }) {
+export function DataRow({ icon, children, color = "rgba(229,238,255,0.64)", size = 12, style }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0, ...style }}>
       <span style={{ flexShrink: 0, width: ROW_BOX, height: ROW_BOX, display: "inline-flex", alignItems: "center", justifyContent: "center", color }}>
@@ -124,7 +124,7 @@ export function AttendeeStack({
     width: size, height: size, borderRadius: "50%", flexShrink: 0,
     // El borde del color del fondo es lo que separa una cara de la siguiente
     // cuando se solapan; sin él se ven como una mancha.
-    border: "1.5px solid rgba(20,23,40,0.95)",
+    border: "1.5px solid rgba(18,20,22,0.95)",
     marginLeft: -size * 0.3,
     display: "flex", alignItems: "center", justifyContent: "center",
     fontSize: fuente, fontWeight: 700, lineHeight: 1, boxSizing: "border-box",
@@ -138,23 +138,23 @@ export function AttendeeStack({
             <img
               key={i} src={p.avatar} alt="" title={p.name || undefined}
               loading="lazy" decoding="async" width={size} height={size}
-              style={{ ...circulo, objectFit: "cover", background: "rgba(127,179,230,0.25)" }}
+              style={{ ...circulo, objectFit: "cover", background: "rgba(52,211,153,0.25)" }}
             />
           ) : (
             <span key={i} title={p.name || undefined}
-              style={{ ...circulo, background: "rgba(127,179,230,0.3)", color: "#dbe9fa" }}>
+              style={{ ...circulo, background: "rgba(52,211,153,0.3)", color: "#dbe9fa" }}>
               {(p.initial || p.name?.[0] || "?").toUpperCase()}
             </span>
           )
         ))}
         {resto > 0 && (
-          <span style={{ ...circulo, background: "rgba(255,255,255,0.12)", color: "rgba(238,241,247,0.8)", fontSize: fuente * 0.95 }}>
+          <span style={{ ...circulo, background: "rgba(255,255,255,0.12)", color: "rgba(229,238,255,0.8)", fontSize: fuente * 0.95 }}>
             +{resto > 99 ? "99" : resto}
           </span>
         )}
       </div>
       {texto && (
-        <span style={{ fontSize: 11.5, color: "rgba(238,241,247,0.5)", whiteSpace: "nowrap" }}>
+        <span style={{ fontSize: 11.5, color: "rgba(229,238,255,0.5)", whiteSpace: "nowrap" }}>
           {total === 1 ? "1 va" : `${total} van`}
         </span>
       )}
@@ -172,7 +172,7 @@ export function EventCover({ src, alt, ratio = "1 / 1", radius = COVER_RADIUS, p
       <div style={{
         position: "relative", width: "100%", aspectRatio: ratio,
         borderRadius: radius, overflow: "hidden",
-        background: "linear-gradient(135deg,#222b4c,#12182b)",
+        background: "linear-gradient(135deg,#1b1d21,#101113)",
         boxShadow: "0 8px 28px rgba(0,0,0,0.35)",
       }}>
         {src
@@ -190,8 +190,8 @@ export function CopiedToast({ visible, texto = "Enlace copiado" }) {
   return (
     <div style={{
       position: "fixed", bottom: 96, left: "50%", transform: "translateX(-50%)",
-      zIndex: 400, background: "rgba(20,23,40,0.97)", color: "#5ee07f",
-      border: "1px solid rgba(52,199,89,0.4)", borderRadius: 100,
+      zIndex: 400, background: "rgba(18,20,22,0.97)", color: "#6ee7b7",
+      border: "1px solid rgba(52,211,153,0.4)", borderRadius: 100,
       padding: "10px 18px", fontSize: 13.5, fontWeight: 700,
       boxShadow: "0 8px 28px rgba(0,0,0,0.5)", pointerEvents: "none",
     }}>
@@ -218,20 +218,20 @@ export function DirectionsSheet({ lat, lng, abierto, onCerrar }) {
   return (
     <div onClick={onCerrar}
       style={{ position: "fixed", inset: 0, zIndex: 350, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 16 }}>
-      <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 420, background: "rgba(20,23,40,0.98)", border: "1px solid rgba(255,255,255,0.13)", borderRadius: 22, overflow: "hidden", boxShadow: "0 24px 70px rgba(0,0,0,0.6)" }}>
-        <p style={{ margin: 0, padding: "18px 20px 12px", fontSize: 15, fontWeight: 700, color: "#eef1f7" }}>
+      <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 420, background: "rgba(18,20,22,0.98)", border: "1px solid rgba(255,255,255,0.13)", borderRadius: 22, overflow: "hidden", boxShadow: "0 24px 70px rgba(0,0,0,0.6)" }}>
+        <p style={{ margin: 0, padding: "18px 20px 12px", fontSize: 15, fontWeight: 700, color: "#ffffff" }}>
           ¿Con qué app quieres ir?
         </p>
         {apps.map((a) => (
           <a key={a.label} href={a.href} target="_blank" rel="noopener noreferrer" onClick={onCerrar}
-            style={{ display: "flex", alignItems: "center", gap: 12, padding: "15px 20px", textDecoration: "none", color: "#eef1f7", fontSize: 15, fontWeight: 600, borderTop: "1px solid rgba(255,255,255,0.07)" }}>
+            style={{ display: "flex", alignItems: "center", gap: 12, padding: "15px 20px", textDecoration: "none", color: "#ffffff", fontSize: 15, fontWeight: 600, borderTop: "1px solid rgba(255,255,255,0.07)" }}>
             <span style={{ width: 10, height: 10, borderRadius: "50%", background: a.color, flexShrink: 0 }} />
             {a.label}
-            <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="rgba(238,241,247,0.5)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: "auto" }}><path d="M7 17 17 7M7 7h10v10" /></svg>
+            <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="rgba(229,238,255,0.5)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: "auto" }}><path d="M7 17 17 7M7 7h10v10" /></svg>
           </a>
         ))}
         <button type="button" onClick={onCerrar}
-          style={{ width: "100%", padding: "15px 20px", background: "rgba(255,255,255,0.04)", border: "none", borderTop: "1px solid rgba(255,255,255,0.07)", color: "rgba(238,241,247,0.6)", fontSize: 14.5, fontWeight: 700, cursor: "pointer" }}>
+          style={{ width: "100%", padding: "15px 20px", background: "rgba(255,255,255,0.04)", border: "none", borderTop: "1px solid rgba(255,255,255,0.07)", color: "rgba(229,238,255,0.6)", fontSize: 14.5, fontWeight: 700, cursor: "pointer" }}>
           Cancelar
         </button>
       </div>

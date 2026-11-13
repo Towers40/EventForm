@@ -71,12 +71,12 @@ export default function TicketCarousel({ tickets, eventTitle, qrSize = 200, onIn
                 boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
               }}>
                 {varias && (
-                  <div style={{ fontSize: 11, fontWeight: 800, color: "#7fb3e6", letterSpacing: 1.5, marginBottom: 14, textTransform: "uppercase" }}>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: "#34d399", letterSpacing: 1.5, marginBottom: 14, textTransform: "uppercase" }}>
                     Entrada {i + 1} de {tickets.length}
                   </div>
                 )}
                 <PendingQr id={t.id} size={qrSize} approved={aprobada} />
-                <p style={{ fontFamily: "monospace", fontWeight: 700, marginTop: 16, fontSize: 13, color: "#7fb3e6", letterSpacing: 1 }}>
+                <p style={{ fontFamily: "monospace", fontWeight: 700, marginTop: 16, fontSize: 13, color: "#34d399", letterSpacing: 1 }}>
                   {t.id}
                 </p>
                 {aprobada ? (
@@ -96,8 +96,8 @@ export default function TicketCarousel({ tickets, eventTitle, qrSize = 200, onIn
                     }).catch(() => {})}
                     style={{
                       marginTop: 16, width: "100%", padding: "13px",
-                      background: "rgba(127,179,230,0.08)", color: "#7fb3e6",
-                      borderRadius: 14, border: "1px solid rgba(127,179,230,0.25)",
+                      background: "rgba(52,211,153,0.08)", color: "#34d399",
+                      borderRadius: 14, border: "1px solid rgba(52,211,153,0.25)",
                       fontWeight: 700, fontSize: 14, cursor: "pointer",
                       display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                     }}
@@ -125,7 +125,7 @@ export default function TicketCarousel({ tickets, eventTitle, qrSize = 200, onIn
                 aria-current={i === idx}
                 style={{
                   width: i === idx ? 22 : 8, height: 8, borderRadius: 4, padding: 0, border: "none",
-                  background: i === idx ? "#7fb3e6" : "rgba(238,241,247,0.28)",
+                  background: i === idx ? "#34d399" : "rgba(229,238,255,0.28)",
                   cursor: "pointer", transition: "width 0.2s, background 0.2s",
                 }}
               />
@@ -147,7 +147,7 @@ function Flecha({ dir, onClick, disabled }) {
         width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
         display: "inline-flex", alignItems: "center", justifyContent: "center",
         background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.14)",
-        color: disabled ? "rgba(238,241,247,0.22)" : "#bfd9f2",
+        color: disabled ? "rgba(229,238,255,0.22)" : "#a7f3d0",
         cursor: disabled ? "default" : "pointer", padding: 0,
       }}
     >

@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { Html5Qrcode } from "html5-qrcode";
-import { NEGRO_PURO, NEGRO_MUTED_70, VERDE_PASTEL_BG } from "../lib/theme.js";
 import { ensureCameraPermission } from "../lib/nativeCamera.js";
 
 const SCANNER_ID = "eventform-qr-reader";
@@ -89,25 +88,24 @@ export default function QrScanner({ active, onScan, onError }) {
         style={{
           width: "100%",
           minHeight: 260,
-          border: `2px solid ${NEGRO_PURO}`,
-          borderRadius: 14,
+          border: "none",
+          borderRadius: 16,
           overflow: "hidden",
-          background: VERDE_PASTEL_BG,
+          background: "#000",
         }}
       />
       <p
         style={{
-          fontSize: 13,
-          color: NEGRO_MUTED_70,
-          marginTop: 10,
-          fontWeight: 600,
+          fontSize: 14,
+          color: "var(--tf-muted)",
+          marginTop: 12,
           textAlign: "center",
         }}
       >
         {status === "error" ? message : message || "Iniciando escáner…"}
       </p>
       {status === "error" && (
-        <p style={{ fontSize: 12, color: NEGRO_MUTED_70, textAlign: "center" }}>
+        <p style={{ fontSize: 13, color: "var(--tf-faint)", textAlign: "center" }}>
           En iPhone/Android usa Chrome o Safari con HTTPS (o localhost en desarrollo).
         </p>
       )}
