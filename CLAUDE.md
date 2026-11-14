@@ -42,6 +42,9 @@ Instrucciones de arquitectura, stack y estilo para el asistente de IA.
 * **Portada:** encuadre `imagePos` {x,y} % + `imageZoom` (≥1). Pintar SIEMPRE con
   `coverImgStyle(pos, zoom)` de `src/lib/images.js` (editor, página pública,
   entrada, tarjetas). El zoom máximo lo limita la resolución real de la foto.
+  En táctil la foto solo se mueve en "modo encuadre" (se entra tocándola); fuera
+  de él, deslizar sobre la foto desplaza la página. No volver a poner
+  `touch-action: none` permanente en la portada.
 * **Ubicación:** `LocationSearch.jsx` (pantalla completa, campo ≥16 px para que
   iOS no haga zoom) + `searchEventPlaces` (UNA consulta a Photon por búsqueda,
   sesgada a la ciudad; Photon limita a quien abusa). Lugares de referencia
@@ -51,6 +54,10 @@ Instrucciones de arquitectura, stack y estilo para el asistente de IA.
   cómo llegar, compartir, PDF y contacto). La usan Mis tickets, la página del
   evento ("Ver entrada" y tras inscribirse) y `/t/:id`. En ordenador va en dos
   columnas. No crear otra vista de entrada: añadir props a esta.
+* **Menús desplegables:** se abren EN la página (empujan el contenido), sin
+  ventana ni fondo: `MenuFila` en HostApp (catálogo de campos con "+",
+  visibilidad). Compartir evento: `ShareEventModal` con logos; cada red copia
+  el enlace y se abre.
 * **Forma:** tarjetas radio 24, botones 52 px radio 14 (no píldora), campos 56 px
   radio 16. Clases: `.soft-btn-primary` (CTA), `.soft-btn-secondary` (contorno
   blanco), `.soft-btn-ghost` (superficie gris), `.tf-input-line`, `.panel-card`.
