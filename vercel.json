@@ -22,6 +22,14 @@
       ]
     }
   ],
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "event-form-[a-z0-9]+-towers40s-projects\\.vercel\\.app" }],
+      "destination": "https://event-form-navy.vercel.app/:path*",
+      "permanent": false
+    }
+  ],
   "rewrites": [
     { "source": "/api/ping", "destination": "/api/ping.js" },
     { "source": "/api/:path*", "destination": "/api/index.js" },

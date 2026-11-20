@@ -17,6 +17,9 @@ Instrucciones de arquitectura, stack y estilo para el asistente de IA.
 * **Auth/Email:** JWT + bcrypt (`server/auth.js`); correos por Gmail SMTP con
   nodemailer (`server/mailer.js`, `From` = cuenta autenticada).
 * **Hosting:** Vercel (frontend + backend) con CI/CD desde GitHub (`Towers40/EventForm`, rama `main`).
+  Las URLs propias de cada despliegue (`event-form-<hash>-towers40s-projects.vercel.app`)
+  quedan congeladas en su versión; `vercel.json` (`redirects`) las manda a
+  producción para que el panel de Vercel nunca abra una versión vieja. No quitarlo.
 
 ## 🏗️ Datos y estado
 * La **API es la fuente principal** de eventos/inscripciones. `localStorage`
