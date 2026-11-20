@@ -12,6 +12,8 @@
 //
 // API:
 //   <CategoryIcon slug="tech" size={44} />          baldosa completa
+//   <CategoryIcon slug="tech" size={56} round />    círculo (carrusel de Descubrir)
+//   <CalendarIcon size={76} round />                calendario a juego (estados vacíos)
 //   CAT_ICONS.tech(color, size)                     compatibilidad: devuelve la
 //                                                   misma baldosa (ignora color)
 
@@ -98,14 +100,41 @@ const GLYPHS = {
   ),
 };
 
+// Iconos de la interfaz con la misma piel que las categorías (mismo vidrio de
+// color y glifo claro), para que no aparezca un emoji suelto al lado de ellas.
+// El calendario usa violeta: ninguna categoría lo tiene y no compite con el
+// esmeralda, que se reserva para el CTA.
+const UI_STYLE = {
+  calendario: { from: "#c4b5fd", to: "#7c3aed", glyph: "#e6dfff" }, // violeta
+};
+const UI_GLYPHS = {
+  // Calendario: anillas, cabecera y unos días marcados.
+  calendario: (c) => (
+    <g>
+      <g {...S(c)}>
+        <rect x="3.6" y="5.4" width="16.8" height="15" rx="3.6" />
+        <path d="M8 3.3v4" />
+        <path d="M16 3.3v4" />
+        <path d="M3.6 10.2h16.8" />
+      </g>
+      <g fill={c}>
+        <circle cx="8.3" cy="14.1" r="1.2" />
+        <circle cx="12" cy="14.1" r="1.2" />
+        <circle cx="15.7" cy="14.1" r="1.2" opacity="0.6" />
+        <circle cx="8.3" cy="17.4" r="1.2" opacity="0.6" />
+        <circle cx="12" cy="17.4" r="1.2" opacity="0.6" />
+      </g>
+    </g>
+  ),
+};
+
 /**
- * Baldosa de categoría. `size` es el lado en px; el radio (≈ 30 %) y el glifo
- * (≈ 56 %) escalan con ella, igual que un icono de app.
+ * La pieza común: vidrio del color + glifo. `round` la hace círculo (el
+ * carrusel de Descubrir); si no, baldosa con radio ≈ 30 %, como un icono de
+ * app. En el círculo el glifo baja al 50 % para no rozar el borde.
  */
-export function CategoryIcon({ slug, size = 44, style, title }) {
-  const c = CATEGORY_STYLE[slug] || CATEGORY_STYLE.otro;
-  const glyph = (GLYPHS[slug] || GLYPHS.otro)(c.glyph);
-  const g = Math.round(size * 0.56);
+function Tile({ palette: c, glyph, size, round, style, title }) {
+  const g = Math.round(size * (round ? 0.5 : 0.56));
   return (
     <span
       role={title ? "img" : undefined}
@@ -113,7 +142,7 @@ export function CategoryIcon({ slug, size = 44, style, title }) {
       aria-hidden={title ? undefined : true}
       style={{
         width: size, height: size, flexShrink: 0,
-        borderRadius: size * 0.3,
+        borderRadius: round ? "50%" : size * 0.3,
         display: "inline-flex", alignItems: "center", justifyContent: "center",
         background: `linear-gradient(145deg, ${rgba(c.from, 0.36)} 0%, ${rgba(c.to, 0.26)} 100%)`,
         border: `1px solid ${rgba(c.from, 0.28)}`,
@@ -125,11 +154,33 @@ export function CategoryIcon({ slug, size = 44, style, title }) {
       }}
     >
       <svg width={g} height={g} viewBox="0 0 24 24" aria-hidden="true" style={{ display: "block" }}>
-        {glyph}
+        {glyph(c.glyph)}
       </svg>
     </span>
   );
 }
+
+/**
+ * Baldosa de categoría. `size` es el lado en px; el radio (≈ 30 %) y el glifo
+ * (≈ 56 %) escalan con ella, igual que un icono de app. `round` → círculo.
+ */
+export function CategoryIcon({ slug, size = 44, round = false, style, title }) {
+  return (
+    <Tile palette={CATEGORY_STYLE[slug] || CATEGORY_STYLE.otro} glyph={GLYPHS[slug] || GLYPHS.otro}
+      size={size} round={round} style={style} title={title} />
+  );
+}
+
+/** Calendario a juego con las categorías (estados vacíos, eventos sin portada). */
+export function CalendarIcon({ size = 44, round = false, style, title }) {
+  return (
+    <Tile palette={UI_STYLE.calendario} glyph={UI_GLYPHS.calendario}
+      size={size} round={round} style={style} title={title} />
+  );
+}
+
+/** "#rrggbb" + alfa → "rgba(r,g,b,a)", para quien pinte con estos colores. */
+export const categoryRgba = (slug, a) => rgba((CATEGORY_STYLE[slug] || CATEGORY_STYLE.otro).from, a);
 
 // Compatibilidad con el uso anterior `CAT_ICONS[slug](color, size)`.
 export const CAT_ICONS = Object.fromEntries(

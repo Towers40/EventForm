@@ -36,6 +36,10 @@ Instrucciones de arquitectura, stack y estilo para el asistente de IA.
   negativo (`-0.02em` a `-0.035em`), alineados a la izquierda; jerarquía por tamaño.
 * **Categorías:** baldosas tipo app (`CategoryIcon` en `src/lib/categoryIcons.jsx`):
   color de la categoría translúcido (~30 %) + glifo en tono claro de su familia.
+  En Descubrir van en círculo (`round`) dentro de `CategoryCarousel.jsx`: bucle
+  continuo; con ratón se para al pasar el cursor y agranda ese icono; en táctil
+  se desliza con inercia y se agranda el del centro (lupa). `CalendarIcon`
+  (violeta, misma piel) sustituye al emoji 🗓️ en estados vacíos.
 * **Encabezado:** en móvil `[avatar | ←] [logo centrado] [dashboard, +]`. En
   pantallas secundarias (`SUB_VIEWS` en HostApp) la flecha de volver ocupa el
   sitio del avatar; no poner flechas de volver dentro del contenido.

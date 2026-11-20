@@ -1,5 +1,5 @@
 import { DISCOVER_CATEGORIES } from "../lib/categories.js";
-import { CAT_ICONS, CategoryIcon, CATEGORY_STYLE } from "../lib/categoryIcons.jsx";
+import { CAT_ICONS, CategoryIcon, CalendarIcon, CATEGORY_STYLE } from "../lib/categoryIcons.jsx";
 import { IcoPin, IcoVideo, ROW_BOX, AttendeeStack } from "./ui.jsx";
 import { coverImgStyle } from "../lib/images.js";
 
@@ -187,7 +187,7 @@ export default function EventCard({ ev, destacado = false, duplicado = false }) 
           }}>
             {cat && CAT_ICONS[cat.slug]
               ? <CategoryIcon slug={cat.slug} size={36} />
-              : <span style={{ fontSize: 24, opacity: 0.5 }}>🗓️</span>}
+              : <CalendarIcon size={36} />}
           </div>
         )}
       </div>

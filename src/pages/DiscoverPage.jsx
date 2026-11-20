@@ -2,50 +2,9 @@ import { useState, useEffect, useRef } from "react";
 import { api } from "../lib/api.js";
 import { BRAND_NAME, CONTACT_EMAIL, TapInMark } from "../lib/brand.jsx";
 import { DISCOVER_CATEGORIES } from "../lib/categories.js";
-import { CAT_ICONS, CategoryIcon } from "../lib/categoryIcons.jsx";
+import { CAT_ICONS, CategoryIcon, CalendarIcon } from "../lib/categoryIcons.jsx";
 import EventCard from "../components/EventCard.jsx";
-
-/**
- * Categoría, sin recuadro de color.
- *
- * Antes cada icono venía dentro de una caja teñida de su color (tech azul,
- * social amarilla…). Siete cajas de colores distintos en fila leen como siete
- * botones sueltos, no como una sola familia: el fondo tapaba el dibujo y
- * separaba unos de otros. Ahora el icono va directo sobre el fondo de la
- * interfaz —el color sigue estando, pero en el trazo— y los elementos van
- * mucho más juntos (66 → 54 px de ancho, 10 → 2 px de separación).
- *
- * Lo seleccionado se marca con el color a plena intensidad, el nombre en
- * blanco y una barra fina debajo; no con un relleno.
- */
-function CategoryPill({ cat, active, dim, onClick }) {
-  // Baldosa de app con su color propio; la elegida lleva un aro blanco y el
-  // resto se atenúa, así se ve de un vistazo qué filtro está puesto.
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      title={cat.label}
-      aria-pressed={active}
-      style={{
-        display: "flex", flexDirection: "column", alignItems: "center", gap: 7,
-        width: 66, padding: "4px 0", background: "transparent", border: "none",
-        cursor: "pointer", opacity: dim ? 0.42 : 1, transition: "opacity 0.15s, transform 0.12s",
-      }}
-    >
-      <CategoryIcon slug={cat.slug} size={50}
-        style={{ outline: active ? "2px solid #ffffff" : "2px solid transparent", outlineOffset: 3, transition: "outline-color .15s" }} />
-      <span style={{
-        fontSize: 12, lineHeight: 1.2, textAlign: "center", whiteSpace: "nowrap",
-        fontWeight: active ? 600 : 500,
-        color: active ? "#ffffff" : "rgba(229,238,255,0.72)",
-      }}>
-        {cat.short || cat.label}
-      </span>
-    </button>
-  );
-}
-
+import CategoryCarousel from "../components/CategoryCarousel.jsx";
 
 const chipStyle = (activo) => ({
   flexShrink: 0, whiteSpace: "nowrap", cursor: "pointer",
@@ -213,18 +172,13 @@ export default function DiscoverPage({ embedded = false }) {
         </div>
 
         {/* Categorías: pegadas al buscador, porque filtrar por categoría es
-            parte de buscar. Fila centrada que se envuelve sola en móvil. */}
-        <div className="ef-cats">
-          {DISCOVER_CATEGORIES.map(cat => (
-            <CategoryPill
-              key={cat.slug}
-              cat={cat}
-              active={activeCategory === cat.slug}
-              dim={Boolean(activeCategory) && activeCategory !== cat.slug}
-              onClick={() => handleCategory(cat.slug)}
-            />
-          ))}
-        </div>
+            parte de buscar. Carrusel circular en bucle: con ratón se para al
+            pasar por encima; en móvil se desliza y la del centro se agranda. */}
+        <CategoryCarousel
+          categories={DISCOVER_CATEGORIES}
+          active={activeCategory}
+          onSelect={handleCategory}
+        />
       </div>
 
       <div style={{ maxWidth: 1560, margin: "0 auto", padding: "0 24px 80px" }}>
@@ -281,7 +235,7 @@ export default function DiscoverPage({ embedded = false }) {
               {activeCat ? (
                 <>
                   {CAT_ICONS[activeCat.slug]
-                    ? <CategoryIcon slug={activeCat.slug} size={26} />
+                    ? <CategoryIcon slug={activeCat.slug} size={26} round />
                     : <span>{activeCat.emoji}</span>}
                   {activeCat.label}
                 </>
@@ -328,7 +282,9 @@ export default function DiscoverPage({ embedded = false }) {
             </div>
           ) : events.length === 0 ? (
             <div style={{ textAlign: "center", padding: "60px 0" }}>
-              <div style={{ fontSize: 52, marginBottom: 16 }}>🗓️</div>
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: 18 }}>
+                <CalendarIcon size={76} round />
+              </div>
               <p style={{ color: "#8fa3b1", fontSize: 16, marginBottom: 20 }}>
                 {filtrando ? "No hay eventos con esos filtros." : "No hay eventos públicos todavía."}
               </p>
@@ -402,16 +358,6 @@ export default function DiscoverPage({ embedded = false }) {
           50%      { transform: scale(1.15); opacity: 0.75; }
         }
         @media (max-width: 480px) { .hide-mobile { display: none !important; } }
-
-        /* Categorías: fila apretada bajo el buscador. El ancho máximo es lo
-           que decide cuántas caben por línea; en móvil se baja a 232 px para
-           que queden 4 + 3 centradas y no 6 + 1 huérfana. */
-        .ef-cats {
-          display: grid; grid-template-columns: repeat(7, 66px); justify-content: center;
-          gap: 10px 4px; margin: 20px auto 0;
-        }
-        /* En móvil, 4 + 3 como una rejilla de apps. */
-        @media (max-width: 560px) { .ef-cats { grid-template-columns: repeat(4, 66px); gap: 14px 10px; } }
 
         /* La rejilla del listado (.ef-ev-grid) vive en typeform.css: la
            comparte el perfil del organizador. */
